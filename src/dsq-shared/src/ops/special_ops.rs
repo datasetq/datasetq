@@ -162,20 +162,15 @@ impl Operation for AssignmentOperation {
     ) -> Result<Value> {
         // Handle field assignment on objects
         if let Value::Object(obj) = value {
-            // Check if this is a simple field assignment like .field |= value
-            // target_ops should contain [IdentityOperation, FieldAccessOperation(field)]
+            // Check if this is a field assignment like .field |= value or .a.b.c |= value
+            // target_ops should contain [IdentityOperation, FieldAccessOperation(fields)]
             if self.target_ops.len() == 2 {
                 // Check if second operation is field access
                 if let Some(field_op) = self.target_ops[1]
                     .as_any()
                     .downcast_ref::<super::basic_ops::FieldAccessOperation>()
                 {
-                    if field_op.fields.len() == 1 {
-                        let field_name = &field_op.fields[0];
-
-                        // Get current value of the field
-                        let current_value = obj.get(field_name).cloned().unwrap_or(Value::Null);
-
+                    if !field_op.fields.is_empty() {
                         // Evaluate the value_ops to get the new value
                         let new_value = if self.value_ops.len() == 1 {
                             self.value_ops[0].apply_with_context(value, context)?
@@ -183,25 +178,63 @@ impl Operation for AssignmentOperation {
                             Value::Null
                         };
 
-                        // Apply the operator
-                        let final_value = match self.operator {
-                            AssignmentOperator::AddAssign => {
-                                match (&current_value, &new_value) {
-                                    (Value::Int(a), Value::Int(b)) => Value::Int(a + b),
-                                    (Value::Float(a), Value::Float(b)) => Value::Float(a + b),
-                                    (Value::String(a), Value::String(b)) => {
-                                        Value::String(format!("{}{}", a, b))
+                        // Helper function to update nested field
+                        fn update_nested(
+                            obj: &std::collections::HashMap<String, Value>,
+                            fields: &[String],
+                            new_value: Value,
+                            operator: &AssignmentOperator,
+                        ) -> Value {
+                            if fields.is_empty() {
+                                return Value::Object(obj.clone());
+                            }
+
+                            let field_name = &fields[0];
+                            let mut new_obj = obj.clone();
+
+                            if fields.len() == 1 {
+                                // Last field - apply the assignment
+                                let current_value =
+                                    obj.get(field_name).cloned().unwrap_or(Value::Null);
+                                let final_value = match operator {
+                                    AssignmentOperator::AddAssign => {
+                                        match (&current_value, &new_value) {
+                                            (Value::Int(a), Value::Int(b)) => Value::Int(a + b),
+                                            (Value::Float(a), Value::Float(b)) => {
+                                                Value::Float(a + b)
+                                            }
+                                            (Value::String(a), Value::String(b)) => {
+                                                Value::String(format!("{}{}", a, b))
+                                            }
+                                            _ => new_value,
+                                        }
                                     }
-                                    _ => new_value, // For other types, just use the new value
+                                    AssignmentOperator::UpdateAssign => new_value,
+                                };
+                                new_obj.insert(field_name.clone(), final_value);
+                            } else {
+                                // Not the last field - recurse into nested object
+                                if let Some(Value::Object(nested)) = obj.get(field_name) {
+                                    let updated =
+                                        update_nested(nested, &fields[1..], new_value, operator);
+                                    new_obj.insert(field_name.clone(), updated);
+                                } else {
+                                    // Path doesn't exist or not an object, create nested structure
+                                    let empty = std::collections::HashMap::new();
+                                    let updated =
+                                        update_nested(&empty, &fields[1..], new_value, operator);
+                                    new_obj.insert(field_name.clone(), updated);
                                 }
                             }
-                            AssignmentOperator::UpdateAssign => new_value,
-                        };
+                            Value::Object(new_obj)
+                        }
 
-                        // Create new object with modified field
-                        let mut new_obj = obj.clone();
-                        new_obj.insert(field_name.clone(), final_value);
-                        return Ok(Value::Object(new_obj));
+                        return Ok(update_nested(
+                            obj,
+                            &field_op.fields,
+                            new_value,
+                            &self.operator,
+                        ));
                     }
                 }
             }

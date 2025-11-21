@@ -763,11 +763,14 @@ impl FilterCompiler {
         let base_filter = self.compile_expr(base, ctx)?;
 
         let mut operations = base_filter.operations;
-        let mut complexity = base_filter.complexity;
+        let complexity = base_filter.complexity + fields.len();
 
-        for field in fields {
-            operations.push(Box::new(FieldAccessOperation::new(field.clone())));
-            complexity += 1;
+        // Create a single FieldAccessOperation with all fields
+        // This allows assignment operations to see the full field path
+        if !fields.is_empty() {
+            operations.push(Box::new(FieldAccessOperation::with_fields(
+                fields.to_vec(),
+            )));
         }
 
         Ok(CompiledFilter {
@@ -1853,16 +1856,7 @@ impl Operation for FunctionCallOperation {
                                         e
                                     ))
                                 })?;
-                                let val = match any_val {
-                                    polars::prelude::AnyValue::Int64(i) => Value::Int(i),
-                                    polars::prelude::AnyValue::Float64(f) => Value::Float(f),
-                                    polars::prelude::AnyValue::Utf8(s) => {
-                                        Value::String(s.to_string())
-                                    }
-                                    polars::prelude::AnyValue::Boolean(b) => Value::Bool(b),
-                                    polars::prelude::AnyValue::Null => Value::Null,
-                                    _ => Value::String(format!("{:?}", any_val)), // Fallback
-                                };
+                                let val = value_from_any_value(any_val).unwrap_or(Value::Null);
                                 row_obj.insert(col_name.to_string(), val);
                             }
                             let row_value = Value::Object(row_obj);
@@ -1954,16 +1948,7 @@ impl Operation for FunctionCallOperation {
                                         e
                                     ))
                                 })?;
-                                let val = match any_val {
-                                    polars::prelude::AnyValue::Int64(i) => Value::Int(i),
-                                    polars::prelude::AnyValue::Float64(f) => Value::Float(f),
-                                    polars::prelude::AnyValue::Utf8(s) => {
-                                        Value::String(s.to_string())
-                                    }
-                                    polars::prelude::AnyValue::Boolean(b) => Value::Bool(b),
-                                    polars::prelude::AnyValue::Null => Value::Null,
-                                    _ => Value::String(format!("{:?}", any_val)), // Fallback
-                                };
+                                let val = value_from_any_value(any_val).unwrap_or(Value::Null);
                                 row_obj.insert(col_name.to_string(), val);
                             }
                             let row_value = Value::Object(row_obj);
@@ -2150,16 +2135,7 @@ impl Operation for FunctionCallOperation {
                                         e
                                     ))
                                 })?;
-                                let val = match any_val {
-                                    polars::prelude::AnyValue::Int64(i) => Value::Int(i),
-                                    polars::prelude::AnyValue::Float64(f) => Value::Float(f),
-                                    polars::prelude::AnyValue::Utf8(s) => {
-                                        Value::String(s.to_string())
-                                    }
-                                    polars::prelude::AnyValue::Boolean(b) => Value::Bool(b),
-                                    polars::prelude::AnyValue::Null => Value::Null,
-                                    _ => Value::String(format!("{:?}", any_val)), // Fallback
-                                };
+                                let val = value_from_any_value(any_val).unwrap_or(Value::Null);
                                 row_obj.insert(col_name.to_string(), val);
                             }
                             let row_value = Value::Object(row_obj);
