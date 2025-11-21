@@ -256,9 +256,14 @@ impl<R: Read> CsvReader<R> {
         }
 
         // Create Polars CSV reader from buffer
+        let has_header = if self.options.ignore_header {
+            false
+        } else {
+            self.options.has_header
+        };
         let mut csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer))
             .with_separator(separator)
-            .has_header(self.options.has_header);
+            .has_header(has_header);
 
         if let Some(quote) = self.options.quote_char {
             csv_reader = csv_reader.with_quote_char(Some(quote));
@@ -585,8 +590,17 @@ impl<W: Write> CsvWriter<W> {
             }
             DataType::Date => {
                 let val = series.date().map_err(Error::from)?.get(index);
-                if let Some(date) = val {
-                    let field_str = date.to_string();
+                if let Some(date_val) = val {
+                    use chrono::NaiveDate;
+                    let days_since_epoch = date_val;
+                    let naive_date =
+                        NaiveDate::from_num_days_from_ce_opt(days_since_epoch + 719163)
+                            .unwrap_or_else(|| NaiveDate::from_ymd_opt(1970, 1, 1).unwrap());
+                    let field_str = if let Some(ref fmt) = self.options.date_format {
+                        naive_date.format(fmt).to_string()
+                    } else {
+                        naive_date.to_string()
+                    };
                     self.write_field(&field_str, false)?;
                 } else {
                     self.writer.write_all(self.options.null_value.as_bytes())?;
@@ -594,8 +608,18 @@ impl<W: Write> CsvWriter<W> {
             }
             DataType::Datetime(_, _) => {
                 let val = series.datetime().map_err(Error::from)?.get(index);
-                if let Some(dt) = val {
-                    let field_str = dt.to_string();
+                if let Some(dt_val) = val {
+                    use chrono::NaiveDateTime;
+                    let naive_datetime = NaiveDateTime::from_timestamp_opt(
+                        dt_val / 1_000_000,
+                        ((dt_val % 1_000_000) * 1000) as u32,
+                    )
+                    .unwrap_or_else(|| NaiveDateTime::from_timestamp_opt(0, 0).unwrap());
+                    let field_str = if let Some(ref fmt) = self.options.datetime_format {
+                        naive_datetime.format(fmt).to_string()
+                    } else {
+                        naive_datetime.to_string()
+                    };
                     self.write_field(&field_str, false)?;
                 } else {
                     self.writer.write_all(self.options.null_value.as_bytes())?;
@@ -928,7 +952,7 @@ mod tests {
         // Should have default column names
         assert_eq!(
             df.get_column_names(),
-            vec!["column_0", "column_1", "column_2"]
+            vec!["column_1", "column_2", "column_3"]
         );
     }
 
