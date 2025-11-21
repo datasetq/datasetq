@@ -1353,12 +1353,11 @@ mod tests {
 
     #[test]
     fn test_sum_mean_with_nulls_and_mixed_types() {
-        let items = vec![
-            &Value::Object(HashMap::from([("value".to_string(), Value::Int(10))])),
-            &Value::Object(HashMap::from([("value".to_string(), Value::Null)])),
-            &Value::Object(HashMap::from([("value".to_string(), Value::Float(20.5))])),
-            &Value::Object(HashMap::from([("value".to_string(), Value::Int(5))])),
-        ];
+        let v1 = Value::Object(HashMap::from([("value".to_string(), Value::Int(10))]));
+        let v2 = Value::Object(HashMap::from([("value".to_string(), Value::Null)]));
+        let v3 = Value::Object(HashMap::from([("value".to_string(), Value::Float(20.5))]));
+        let v4 = Value::Object(HashMap::from([("value".to_string(), Value::Int(5))]));
+        let items = vec![&v1, &v2, &v3, &v4];
 
         let sum_agg = AggregationFunction::Sum("value".to_string());
         let sum_result = apply_aggregation_to_group(&sum_agg, &items).unwrap();
@@ -1369,10 +1368,9 @@ mod tests {
         assert_eq!(mean_result, Value::Float(11.833333333333334)); // 35.5 / 3
 
         // All nulls
-        let null_items = vec![
-            &Value::Object(HashMap::from([("value".to_string(), Value::Null)])),
-            &Value::Object(HashMap::from([("value".to_string(), Value::Null)])),
-        ];
+        let null1 = Value::Object(HashMap::from([("value".to_string(), Value::Null)]));
+        let null2 = Value::Object(HashMap::from([("value".to_string(), Value::Null)]));
+        let null_items = vec![&null1, &null2];
         let sum_null = apply_aggregation_to_group(&sum_agg, &null_items).unwrap();
         assert_eq!(sum_null, Value::Null);
 
@@ -1382,26 +1380,25 @@ mod tests {
 
     #[test]
     fn test_min_max_with_different_types() {
-        let items = vec![
-            &Value::Object(HashMap::from([("int_val".to_string(), Value::Int(10))])),
-            &Value::Object(HashMap::from([("int_val".to_string(), Value::Int(5))])),
-            &Value::Object(HashMap::from([(
-                "float_val".to_string(),
-                Value::Float(7.5),
-            )])),
-            &Value::Object(HashMap::from([(
-                "float_val".to_string(),
-                Value::Float(12.3),
-            )])),
-            &Value::Object(HashMap::from([(
-                "str_val".to_string(),
-                Value::String("apple".to_string()),
-            )])),
-            &Value::Object(HashMap::from([(
-                "str_val".to_string(),
-                Value::String("banana".to_string()),
-            )])),
-        ];
+        let v1 = Value::Object(HashMap::from([("int_val".to_string(), Value::Int(10))]));
+        let v2 = Value::Object(HashMap::from([("int_val".to_string(), Value::Int(5))]));
+        let v3 = Value::Object(HashMap::from([(
+            "float_val".to_string(),
+            Value::Float(7.5),
+        )]));
+        let v4 = Value::Object(HashMap::from([(
+            "float_val".to_string(),
+            Value::Float(12.3),
+        )]));
+        let v5 = Value::Object(HashMap::from([(
+            "str_val".to_string(),
+            Value::String("apple".to_string()),
+        )]));
+        let v6 = Value::Object(HashMap::from([(
+            "str_val".to_string(),
+            Value::String("banana".to_string()),
+        )]));
+        let items = vec![&v1, &v2, &v3, &v4, &v5, &v6];
 
         let min_int = AggregationFunction::Min("int_val".to_string());
         let min_int_result = apply_aggregation_to_group(&min_int, &items).unwrap();
@@ -1507,10 +1504,11 @@ mod tests {
         assert!(result_unsupported.is_err());
 
         // Unsupported aggregation type
-        let items = vec![&Value::Object(HashMap::from([(
+        let bool_val = Value::Object(HashMap::from([(
             "value".to_string(),
             Value::Bool(true),
-        )]))];
+        )]));
+        let items = vec![&bool_val];
         let sum_agg = AggregationFunction::Sum("value".to_string());
         let result_type_error = apply_aggregation_to_group(&sum_agg, &items);
         assert!(result_type_error.is_err());

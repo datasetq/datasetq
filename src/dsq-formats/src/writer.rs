@@ -919,6 +919,7 @@ mod tests {
         assert!(output.contains("  \"age\": 25"));
     }
 
+    #[cfg(all(feature = "json5", feature = "json"))]
     #[test]
     fn test_serialize_json5() {
         let df = create_test_dataframe();
@@ -940,6 +941,7 @@ mod tests {
         assert!(output.contains(r#""active":true"#));
     }
 
+    #[cfg(all(feature = "json5", feature = "json"))]
     #[test]
     fn test_serialize_json5_lines() {
         let df = create_test_dataframe();

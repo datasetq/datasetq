@@ -1050,7 +1050,7 @@ mod tests {
         ])
         .unwrap();
 
-        let expr = col("").add(lit(10)); // Add 10 to each column
+        let expr = col("") + lit(10); // Add 10 to each column
         let result = Transform::map_columns(&df, expr).unwrap();
 
         assert_eq!(result.height(), 3);
