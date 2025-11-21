@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_url_extract_path_dataframe() {
+    fn test_url_extract_path_dataframe() -> Result<()> {
         let urls = Series::new(
             "url".into(),
             &[
@@ -185,10 +185,11 @@ mod tests {
             }
             _ => panic!("Expected DataFrame"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_url_extract_path_series() {
+    fn test_url_extract_path_series() -> Result<()> {
         let series = Series::new(
             "urls".into(),
             &["https://example.com/path1", "https://example.com/path2"],
@@ -211,6 +212,7 @@ mod tests {
             }
             _ => panic!("Expected Series"),
         }
+        Ok(())
     }
 
     #[test]

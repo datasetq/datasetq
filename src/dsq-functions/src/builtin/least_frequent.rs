@@ -39,31 +39,48 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
             if df.height() == 0 {
                 return Ok(Value::Null);
             }
-            // For DataFrame, find least frequent value across all columns
-            let mut all_values = Vec::new();
-            for col_name in df.get_column_names() {
-                if let Ok(series) = df.column(col_name) {
-                    for i in 0..series.len() {
-                        if let Ok(val) = series.get(i) {
-                            let value = value_from_any_value(val).unwrap_or(Value::Null);
-                            all_values.push(value);
-                        }
+            // For DataFrame, find least frequent value in the first column
+            let col_names = df.get_column_names();
+            if col_names.is_empty() {
+                return Ok(Value::Null);
+            }
+
+            let series = df.column(col_names[0]).map_err(|e| {
+                dsq_shared::error::operation_error(&format!("Failed to get first column: {}", e))
+            })?;
+
+            // Track counts and maintain insertion order
+            let mut counts: HashMap<String, usize> = HashMap::new();
+            let mut value_order: Vec<Value> = Vec::new();
+            let mut seen: HashMap<String, bool> = HashMap::new();
+
+            for i in 0..series.len() {
+                if let Ok(val) = series.get(i) {
+                    let value = value_from_any_value(val).unwrap_or(Value::Null);
+                    let key = serde_json::to_string(&value).unwrap_or_default();
+                    *counts.entry(key.clone()).or_insert(0) += 1;
+                    if !seen.contains_key(&key) {
+                        value_order.push(value);
+                        seen.insert(key, true);
                     }
                 }
             }
-            let mut counts: HashMap<String, (Value, usize)> = HashMap::new();
-            for val in &all_values {
-                let key = serde_json::to_string(val).unwrap_or_default();
-                let entry = counts.entry(key).or_insert_with(|| (val.clone(), 0));
-                entry.1 += 1;
+
+            if value_order.is_empty() {
+                return Ok(Value::Null);
             }
-            let min_count = counts.values().map(|(_, count)| *count).min().unwrap_or(0);
-            let least_frequent: Vec<&Value> = counts
-                .values()
-                .filter(|(_, count)| *count == min_count)
-                .map(|(val, _)| val)
-                .collect();
-            Ok(least_frequent.first().map_or(Value::Null, |v| (*v).clone()))
+
+            let min_count = counts.values().min().copied().unwrap_or(0);
+
+            // Find the last value in order that has the minimum count
+            for value in value_order.iter().rev() {
+                let key = serde_json::to_string(&value).unwrap_or_default();
+                if counts.get(&key) == Some(&min_count) {
+                    return Ok(value.clone());
+                }
+            }
+
+            Ok(Value::Null)
         }
         Value::Series(series) => {
             if series.len() == 0 {

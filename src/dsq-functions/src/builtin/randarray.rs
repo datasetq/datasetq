@@ -1,6 +1,10 @@
+#[allow(unused_imports)]
 use crate::FunctionRegistration;
+#[allow(unused_imports)]
 use dsq_shared::value::Value;
+#[allow(unused_imports)]
 use dsq_shared::Result;
+#[allow(unused_imports)]
 use inventory;
 
 #[cfg(feature = "rand")]
