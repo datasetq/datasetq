@@ -1050,7 +1050,8 @@ mod tests {
         ])
         .unwrap();
 
-        let expr = col("").add(lit(10)); // Add 10 to each column
+        // Use all() to reference all columns in the temporary per-column DataFrame
+        let expr = all() + lit(10);
         let result = Transform::map_columns(&df, expr).unwrap();
 
         assert_eq!(result.height(), 3);

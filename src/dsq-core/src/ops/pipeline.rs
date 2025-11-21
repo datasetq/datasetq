@@ -151,7 +151,7 @@ impl Operation for SelectOperation {
 }
 
 pub struct FilterOperation {
-    predicate: Box<dyn Fn(&Value) -> Result<bool> + Send + Sync>,
+    pub predicate: Box<dyn Fn(&Value) -> Result<bool> + Send + Sync>,
 }
 
 impl std::fmt::Debug for FilterOperation {
