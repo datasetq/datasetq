@@ -768,9 +768,7 @@ impl FilterCompiler {
         // Create a single FieldAccessOperation with all fields
         // This allows assignment operations to see the full field path
         if !fields.is_empty() {
-            operations.push(Box::new(FieldAccessOperation::with_fields(
-                fields.to_vec(),
-            )));
+            operations.push(Box::new(FieldAccessOperation::with_fields(fields.to_vec())));
         }
 
         Ok(CompiledFilter {
