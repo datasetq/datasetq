@@ -1,0 +1,80 @@
+[package]
+name = "dsq-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "Core functionality for dsq - data processing with jq syntax"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["data", "jq", "query", "dataframe", "processing"]
+categories = ["command-line-utilities", "data-structures"]
+
+[dependencies]
+# Data processing
+arrow = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+json5 = "0.4"
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Parsing and evaluation
+nom = { workspace = true }
+
+# Async runtime (for streaming)
+futures = { workspace = true }
+
+# Utilities
+regex = { workspace = true }
+indexmap = { workspace = true }
+itertools = "0.12"
+either = "1"
+
+# Memory management
+bytes = "1.5"
+smallvec = "1.11"
+
+# Logging
+log = { workspace = true }
+
+# CLI (optional)
+
+# Local crates
+dsq-formats = { path = "../dsq-formats" }
+dsq-io = { path = "../dsq-io" }
+dsq-parser = { path = "../dsq-parser" }
+dsq-shared = { path = "../dsq-shared" }
+dsq-filter = { path = "../dsq-filter" }
+rand = "0.8"
+
+[dev-dependencies]
+tempfile = "3.8"
+criterion = "0.5"
+proptest = "1.4"
+pretty_assertions = "1.4"
+
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1.35", features = ["rt", "macros", "fs", "io-util"] }
+polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "temporal", "strings", "is_in"], optional = true }
+dsq-filter = { path = "../dsq-filter", features = ["rand"] }
+dsq-formats = { path = "../dsq-formats", features = ["parquet"] }
+once_cell = "1.19"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "temporal", "strings", "is_in"], optional = true }
+
+[features]
+default = ["all-formats", "io"]
+all-formats = ["csv", "json", "parquet", "avro"]
+csv = []
+json = []
+parquet = []
+avro = ["polars/avro"]
+io = []
+filter = ["polars"]
+repl = []

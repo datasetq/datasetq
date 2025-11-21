@@ -1,0 +1,49 @@
+[package]
+name = "dsq-filter"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "Filter system for dsq that operates at the AST level"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+homepage = "https://datasetq.com"
+documentation = "https://docs.rs/dsq-filter"
+readme = "README.md"
+keywords = ["jq", "data", "filter", "ast", "json"]
+categories = ["data-structures", "parsing", "command-line-utilities"]
+
+[dependencies]
+# Core dependencies
+dsq-shared = { path = "../dsq-shared" }
+dsq-parser = { path = "../dsq-parser" }
+dsq-functions = { path = "../dsq-functions", default-features = false }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Utilities
+serde = { workspace = true }
+serde_json = { workspace = true }
+log = { workspace = true }
+rand = { version = "0.8", optional = true }
+lru = "0.12"
+
+# Profiling
+coz = { version = "0.1", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+dsq-functions = { path = "../dsq-functions", features = ["rand"] }
+rand = "0.8"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
+
+[features]
+rand = ["dep:rand"]
+profiling = ["coz"]
+
+[dev-dependencies]
+tempfile = "3.8"
+criterion = "0.5"

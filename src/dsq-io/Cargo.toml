@@ -1,0 +1,32 @@
+[package]
+name = "dsq-io"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "I/O utilities for dsq - handles reading and writing to disk, STDIN, STDOUT"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["io", "file", "stdin", "stdout"]
+categories = ["filesystem"]
+
+[dependencies]
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Avro support (for error types)
+apache-avro = "0.16"
+
+# JSON serialization
+serde_json = { workspace = true }
+
+# Local crates
+dsq-shared = { path = "../dsq-shared" }
+dsq-formats = { path = "../dsq-formats", features = ["all-formats"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+polars = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "io-std", "macros", "rt"] }
+
+[dev-dependencies]
+tempfile = "3.8"

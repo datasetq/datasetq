@@ -1,0 +1,10 @@
+[build]
+# rustc-wrapper = "sccache"
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "--cfg", "getrandom_backend=\"wasm_js\""
+]
+
+[env]
+CFLAGS_wasm32_unknown_unknown = "-DZDICT_DISABLE_COVER"

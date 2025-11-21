@@ -1,0 +1,189 @@
+[package]
+name = "datasetq"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "A data processing tool with a jq-like syntax for structured data formats, including CSV, JSON, Parquet, Avro, and more."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+homepage = "https://datasetq.com"
+documentation = "https://docs.rs/dsq"
+readme = "README.md"
+keywords = ["jq", "data", "csv", "json", "parquet"]
+categories = ["command-line-utilities", "data-structures", "parsing"]
+
+[workspace]
+members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli"]
+
+[workspace.lints.clippy]
+pedantic = "warn"
+nursery = "warn"
+cargo = "warn"
+
+[workspace.dependencies]
+# Core dependencies shared across workspace
+anyhow = "1.0"
+thiserror = "1.0"
+log = "0.4"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Data processing
+polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+arrow = "53"
+
+# Parsing
+nom = "7.1"
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Utilities
+indexmap = "2.1"
+regex = "1.10"
+base64 = "0.22"
+
+# Big numbers
+num-bigint = { version = "0.4", features = ["serde"] }
+num-traits = "0.2"
+
+# CLI
+clap = { version = "4.4", features = ["derive", "cargo", "env"] }
+
+# Async
+tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "fs"] }
+futures = "0.3"
+
+# Parallelism
+rayon = "1.10"
+
+# Testing
+tempfile = "3.8"
+criterion = "0.5"
+proptest = "1.4"
+pretty_assertions = "1.4"
+
+[lib]
+name = "dsq"
+crate-type = ["cdylib"]
+
+
+
+
+
+
+
+[dependencies]
+# Core DSQ crates (shared across all targets)
+dsq-core = { path = "src/dsq-core" }
+dsq-shared = { path = "src/dsq-shared" }
+dsq-parser = { path = "src/dsq-parser" }
+dsq-filter = { path = "src/dsq-filter" }
+
+# CLI and configuration
+clap = { version = "4.4", features = ["derive", "cargo", "env"], optional = true }
+clap_complete = { version = "4.4", optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+serde_yaml = { version = "0.9", optional = true }
+toml = { version = "0.8", optional = true }
+
+# I/O and utilities
+apache-avro = { version = "0.16", features = ["snappy"], optional = true }
+atty = { version = "0.2", optional = true }
+chrono = { workspace = true }
+env_logger = { version = "0.10", optional = true }
+log = { workspace = true }
+num_cpus = { version = "1.16", optional = true }
+tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "fs"], optional = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Additional utilities
+dirs = { version = "5.0", optional = true }
+tempfile = { version = "3.8", optional = true }
+inventory = "0.3.21"
+rand = "0.8"
+coz = "0.1"
+
+
+
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "wasi"))'.dependencies]
+
+[target.'cfg(all(target_arch = "wasm32", not(target_os = "wasi")))'.dependencies]
+wasm-bindgen = "0.2"
+serde_json = "1.0"
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"], optional = true }
+getrandom = { version = "0.3.3", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+polars = { version = "0.35", default-features = false, features = ["csv", "json", "strings", "dtype-datetime", "dtype-date", "dtype-time"], optional = true }
+getrandom = { version = "0.2", features = ["js"] }
+zstd-sys = { version = "2.0.16", default-features = false }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+tempfile = "3.8"
+criterion = "0.5"
+coz = "0.1"
+dsq-formats = { path = "src/dsq-formats" }
+
+
+
+[features]
+default = ["all-formats", "bin"]
+all-formats = ["csv", "json", "parquet", "arrow", "avro"]
+csv = []
+json = []
+parquet = []
+arrow = ["polars/ipc"]
+avro = ["apache-avro"]
+cli = ["clap", "clap_complete", "atty", "env_logger", "num_cpus", "tokio", "serde", "serde_json", "serde_yaml", "toml", "dirs", "tempfile", "getrandom"]
+bin = ["cli"]
+filter = ["polars"]
+wasm = ["serde_json", "polars"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.profiling]
+inherits = "dev"
+opt-level = 3
+debug = true
+lto = false
+codegen-units = 16
+
+[profile.coverage]
+inherits = "dev"
+debug = true
+opt-level = 0
+
+[[bench]]
+name = "micro_bench"
+harness = false
+
+[[bench]]
+name = "comparison_bench"
+harness = false
+
+[[bench]]
+name = "json_reading_bench"
+harness = false
+
+

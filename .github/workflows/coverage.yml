@@ -1,0 +1,67 @@
+name: Code Coverage
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Run tests with coverage
+        run: cargo tarpaulin --workspace --timeout 300 --out Xml --out Html --output-dir coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/cobertura.xml
+          fail_ci_if_error: false
+
+      - name: Archive coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+
+      - name: Check coverage threshold
+        run: |
+          # Extract coverage percentage from XML
+          coverage=$(grep -oP 'line-rate="\K[0-9.]+' coverage/cobertura.xml | head -1)
+          coverage_percent=$(echo "$coverage * 100" | bc -l | cut -d. -f1)
+          echo "Current coverage: ${coverage_percent}%"
+
+          # Set minimum threshold (adjust as needed)
+          threshold=70
+
+          if [ "$coverage_percent" -lt "$threshold" ]; then
+            echo "Coverage ${coverage_percent}% is below threshold ${threshold}%"
+            echo "Note: This is currently informational only. Target is 90%."
+            # exit 1  # Uncomment to make this a hard requirement
+          else
+            echo "Coverage ${coverage_percent}% meets threshold ${threshold}%"
+          fi

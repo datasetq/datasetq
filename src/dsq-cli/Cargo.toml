@@ -1,0 +1,57 @@
+[package]
+name = "dsq-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "CLI for dsq - data processing with jq syntax"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+homepage = "https://datasetq.com"
+documentation = "https://docs.rs/dsq-cli"
+readme = "README.md"
+keywords = ["jq", "data", "cli", "query", "dataframe"]
+categories = ["command-line-utilities", "data-structures"]
+
+[dependencies]
+# Core DSQ crates (shared across all targets)
+dsq-core = { path = "../dsq-core", features = ["filter", "io"] }
+dsq-shared = { path = "../dsq-shared" }
+dsq-parser = { path = "../dsq-parser" }
+dsq-filter = { path = "../dsq-filter" }
+dsq-functions = { path = "../dsq-functions" }
+dsq-formats = { path = "../dsq-formats" }
+dsq-io = { path = "../dsq-io" }
+
+# Data processing
+polars = { workspace = true }
+
+# Logging
+log = { workspace = true }
+
+# CLI dependencies
+clap = { workspace = true }
+clap_complete = { version = "4.4" }
+atty = "0.2"
+env_logger = "0.10"
+num_cpus = "1.16"
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = "0.9"
+toml = "0.8"
+dirs = "5.0"
+tempfile = { workspace = true }
+getrandom = "0.3.3"
+anyhow = { workspace = true }
+
+# Profiling
+coz = { version = "0.1", optional = true }
+
+[features]
+default = ["cli"]
+cli = []
+profiling = ["coz", "dsq-filter/profiling", "dsq-formats/profiling"]
+
+[[bin]]
+name = "dsq"
+path = "src/main.rs"

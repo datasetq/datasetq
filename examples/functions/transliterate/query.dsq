@@ -1,0 +1,1 @@
+map({id, latin_text: transliterate(.text; "cyrillic"; "latin")})

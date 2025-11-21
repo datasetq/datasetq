@@ -1,0 +1,34 @@
+[package]
+name = "dsq-parser"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "Parser for DSQ filter language that produces an AST"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["data", "jq", "query", "parser", "ast"]
+categories = ["parsing", "data-structures"]
+
+[dependencies]
+# Shared utilities
+dsq-shared = { path = "../dsq-shared" }
+
+# Parsing
+nom = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Big integer support
+num-bigint = { workspace = true }
+
+# Utilities
+indexmap = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.4"

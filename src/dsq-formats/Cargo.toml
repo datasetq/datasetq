@@ -1,0 +1,63 @@
+[package]
+name = "dsq-formats"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "File format support for dsq - handles reading and writing various data formats"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["data", "formats", "csv", "json", "parquet"]
+categories = ["data-structures", "parsing"]
+
+[dependencies]
+# Data processing
+arrow = { workspace = true }
+chrono = { workspace = true }
+
+# Avro support
+apache-avro = { version = "0.16", features = ["snappy"] }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+json5 = "0.4"
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Shared types
+dsq-shared = { path = "../dsq-shared" }
+
+# Utilities
+regex = { workspace = true }
+indexmap = { workspace = true }
+paste = "1.0"
+
+# Logging
+log = { workspace = true }
+
+# Profiling
+coz = { version = "0.1", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+polars = { version = "0.35", features = ["lazy", "csv", "json", "temporal", "strings", "ipc"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "temporal", "strings"], optional = true }
+
+[dev-dependencies]
+tempfile = "3.8"
+criterion = "0.5"
+proptest = "1.4"
+
+[features]
+default = ["all-formats"]
+all-formats = ["csv", "json", "avro"]
+csv = []
+json = []
+parquet = []
+avro = ["polars/avro"]
+json5 = []
+cli = []
+profiling = ["coz"]

@@ -1,0 +1,44 @@
+[package]
+name = "dsq-shared"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "Shared types and utilities for DSQ crates"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["data", "shared", "utilities"]
+categories = ["data-structures"]
+
+[dependencies]
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Serialization (minimal for shared types)
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Big integer support
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+
+# Date/time (needs both targets for different features)
+chrono = { workspace = true }
+
+# Utilities
+indexmap = { workspace = true }
+base64 = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+rayon = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
+chrono = { version = "0.4", features = ["serde", "wasmbind"] }
+
+
+
+[dev-dependencies]
+pretty_assertions = "1.4"
+tempfile = "3.8"
