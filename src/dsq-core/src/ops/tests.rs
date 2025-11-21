@@ -150,7 +150,7 @@ fn test_filter_operation() {
         Value::DataFrame(filtered_df) => {
             assert_eq!(filtered_df.height(), 3); // Alice(30), Charlie(35), Dave(28) should pass age > 27
             let names = filtered_df.column("name").unwrap().utf8().unwrap();
-            let ages = filtered_df.column("age").unwrap().i32().unwrap();
+            let ages = filtered_df.column("age").unwrap().i64().unwrap();
             // Should contain Alice, Charlie, Dave (Bob is 25, filtered out)
             assert!(
                 names.get(0).unwrap().contains("Alice")
@@ -822,8 +822,8 @@ fn test_pipeline_filter_method() {
 
     match result {
         Value::DataFrame(filtered_df) => {
-            assert_eq!(filtered_df.height(), 2); // Alice(30) and Bob(25) filtered out, Charlie(35) and Dave(28) remain? Wait, 30 is not > 30
-                                                 // Actually, only Charlie is > 30
+            // Only Charlie (age 35) has age > 30
+            assert_eq!(filtered_df.height(), 1);
             let names = filtered_df.column("name").unwrap().utf8().unwrap();
             assert_eq!(names.get(0).unwrap(), "Charlie");
         }
