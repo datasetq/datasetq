@@ -15,4 +15,9 @@
 
   languages.ruby.enable = true;
 
+  # https://devenv.sh/pre-commit-hooks/
+  git-hooks.hooks = {
+    rustfmt.enable = true;
+  };
+
 }
