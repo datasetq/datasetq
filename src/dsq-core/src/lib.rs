@@ -348,7 +348,7 @@ pub mod utils {
     /// # Examples
     ///
     /// ```rust
-    /// use dsq_core::array;
+    /// use dsq_core::utils::array;
     /// use dsq_core::Value;
     ///
     /// let arr = array([

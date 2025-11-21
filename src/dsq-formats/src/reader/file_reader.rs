@@ -65,7 +65,7 @@ impl FileReader {
                 Some(b'"'),
                 None,
                 None,
-                crate::csv::CsvEncoding::Utf8,
+                crate::writer::CsvEncoding::Utf8,
             ),
         };
 

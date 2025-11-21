@@ -7,10 +7,10 @@
 
 use crate::cli::CliConfig;
 use dsq_core::{
-    DataFormat,
     error::{Error, Result},
     filter::{ErrorMode, ExecutorConfig},
     io::{ReadOptions, WriteOptions},
+    DataFormat,
 };
 use dsq_shared::value::Value;
 
