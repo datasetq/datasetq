@@ -67,6 +67,11 @@ jobs:
         with:
           components: clippy
 
+      - name: Install mold linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold clang
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -83,6 +88,11 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install mold linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold clang
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -106,6 +116,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install mold linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold clang
+
       - name: Install cargo-audit
         run: cargo install cargo-audit
 
@@ -120,6 +135,11 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install mold linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold clang
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
