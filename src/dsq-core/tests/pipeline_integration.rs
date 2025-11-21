@@ -1,5 +1,5 @@
 use dsq_core::ops::basic::SortOptions;
-use dsq_core::ops::filter_ops::*;
+use dsq_core::ops::aggregate::AggregationFunction;
 use dsq_core::ops::pipeline::*;
 use dsq_core::Value;
 use polars::prelude::*;
@@ -48,12 +48,14 @@ fn test_pipeline_with_aggregation() {
     let value = Value::DataFrame(df);
 
     let result = OperationPipeline::new()
-        .group_by(vec!["department".to_string()])
-        .aggregate(vec![
-            dsq_core::ops::aggregate::AggregationFunction::Count,
-            dsq_core::ops::aggregate::AggregationFunction::Mean("age".to_string()),
-            dsq_core::ops::aggregate::AggregationFunction::Sum("salary".to_string()),
-        ])
+        .aggregate(
+            vec!["department".to_string()],
+            vec![
+                AggregationFunction::Count,
+                AggregationFunction::Mean("age".to_string()),
+                AggregationFunction::Sum("salary".to_string()),
+            ],
+        )
         .execute(value)
         .unwrap();
 

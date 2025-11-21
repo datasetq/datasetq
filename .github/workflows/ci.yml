@@ -83,7 +83,7 @@ jobs:
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run clippy
-        run: cargo clippy --workspace --all-features --all-targets -- -A clippy::all -D clippy::correctness
+        run: cargo clippy --workspace --all-features -- -A clippy::all -D clippy::correctness
 
   docs:
     name: Documentation

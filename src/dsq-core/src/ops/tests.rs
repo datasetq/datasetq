@@ -1,6 +1,5 @@
 use super::*;
 use crate::ops::basic::SortOptions;
-use crate::ops::filter_ops::*;
 use crate::ops::pipeline::*;
 use polars::prelude::*;
 use std::collections::HashMap;
