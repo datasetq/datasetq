@@ -102,7 +102,7 @@ jobs:
           "$hash  ${{ env.BINARY_NAME }}-${{ matrix.target }}.zip" | Out-File -FilePath "dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.zip.sha256" -Encoding ascii
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
           path: dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.*
@@ -176,7 +176,7 @@ jobs:
           sha256sum ${PKG_NAME}.deb > ${PKG_NAME}.deb.sha256
 
       - name: Upload DEB
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-deb-${{ matrix.arch }}
           path: "*.deb*"
@@ -266,7 +266,7 @@ jobs:
           for f in *.rpm; do sha256sum "$f" > "$f.sha256"; done
 
       - name: Upload RPM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-rpm-${{ matrix.arch }}
           path: "*.rpm*"
@@ -347,7 +347,7 @@ jobs:
             "
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-apk-${{ matrix.arch }}
           path: "*.apk.tar.gz*"
