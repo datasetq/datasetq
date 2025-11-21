@@ -34,7 +34,7 @@ jobs:
         run: cargo bench --workspace --no-fail-fast
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: benchmark-results
           path: target/criterion/
