@@ -380,6 +380,7 @@ mod tests {
     use crate::builtin::transliterate::builtin_transliterate;
     use chrono::Datelike;
     use dsq_shared::value::Value;
+    use polars::prelude::*;
     use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {

@@ -374,9 +374,9 @@ mod tests {
 
     #[test]
     fn test_parquet_lazy_read() {
-        let df = create_test_dataframe();
+        let mut df = create_test_dataframe();
         let temp_file = NamedTempFile::new().unwrap();
-        write_parquet_file(&df, temp_file.path()).unwrap();
+        write_parquet_file(&mut df, temp_file.path()).unwrap();
 
         let lf = read_parquet_file_lazy(temp_file.path()).unwrap();
         let df_read = lf.collect().unwrap();
@@ -387,9 +387,9 @@ mod tests {
 
     #[test]
     fn test_parquet_read_with_options() {
-        let df = create_test_dataframe();
+        let mut df = create_test_dataframe();
         let temp_file = NamedTempFile::new().unwrap();
-        write_parquet_file(&df, temp_file.path()).unwrap();
+        write_parquet_file(&mut df, temp_file.path()).unwrap();
 
         let options = ParquetReadOptions {
             n_rows: Some(2),

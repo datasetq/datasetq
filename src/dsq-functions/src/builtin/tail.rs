@@ -53,6 +53,7 @@ pub fn builtin_tail(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
+    use polars::prelude::*;
 
     #[test]
     fn test_tail_array_default() {

@@ -104,6 +104,7 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
+    use polars::prelude::*;
 
     #[test]
     fn test_buffer_array_with_batch_size() {
