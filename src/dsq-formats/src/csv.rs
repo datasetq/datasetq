@@ -1194,7 +1194,7 @@ mod tests {
 
         let mut reader = CsvReader::with_options(cursor, options);
         let headers = reader.headers().unwrap();
-        assert_eq!(headers, vec!["column_0", "column_1", "column_2"]);
+        assert_eq!(headers, vec!["column_1", "column_2", "column_3"]);
     }
 
     #[test]
@@ -1288,7 +1288,7 @@ mod tests {
         assert_eq!(df.height(), 3); // Header row treated as data
         assert_eq!(
             df.get_column_names(),
-            vec!["column_0", "column_1", "column_2"]
+            vec!["column_1", "column_2", "column_3"]
         );
     }
 
