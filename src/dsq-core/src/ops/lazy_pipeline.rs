@@ -3,8 +3,8 @@
 //! This module provides a pipeline that operates exclusively on LazyFrame,
 //! allowing Polars to optimize the entire query plan before execution.
 
-use crate::error::{Error, Result};
 use crate::Value;
+use crate::error::{Error, Result};
 use polars::prelude::*;
 
 /// A pipeline that operates on LazyFrame for optimal query optimization

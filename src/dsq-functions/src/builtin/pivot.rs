@@ -1,5 +1,5 @@
-use dsq_shared::value::{value_from_any_value, Value};
 use dsq_shared::Result;
+use dsq_shared::value::{Value, value_from_any_value};
 use inventory;
 use polars::prelude::*;
 use std::collections::HashMap;

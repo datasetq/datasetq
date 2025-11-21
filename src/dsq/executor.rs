@@ -4,10 +4,10 @@
 //! filters on data files through the command-line interface.
 
 use crate::config::Config;
+use dsq_core::Value;
 use dsq_core::error::{Error, Result};
 use dsq_core::filter::{FilterCompiler, FilterExecutor as CoreFilterExecutor};
 use dsq_core::io::{read_file, write_file};
-use dsq_core::Value;
 use polars::prelude::SerWriter;
 
 use std::borrow::Cow;

@@ -4,10 +4,10 @@
 //! with support for different output destinations and formatting options.
 
 use crate::config::Config;
-use dsq_core::error::{Error, Result};
-use dsq_core::io::write_file;
 use dsq_core::DataFormat;
 use dsq_core::Value;
+use dsq_core::error::{Error, Result};
+use dsq_core::io::write_file;
 use polars::prelude::*;
 use std::path::Path;
 use tokio::fs as tokio_fs;

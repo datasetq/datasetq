@@ -19,6 +19,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install mold linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold clang
+
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -31,7 +36,7 @@ jobs:
           key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --force
 
       - name: Run tests with coverage
         run: cargo tarpaulin --workspace --timeout 300 --out Xml --out Html --output-dir coverage

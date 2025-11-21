@@ -6,8 +6,8 @@
 use crate::config::Config;
 use crate::executor::Executor;
 use crate::output::OutputWriter;
-use dsq_core::error::{Error, Result};
 use dsq_core::Value;
+use dsq_core::error::{Error, Result};
 use std::io::{self, Write};
 use std::path::Path;
 
