@@ -19,7 +19,7 @@ pub fn builtin_tail(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "tail() second argument must be a non-negative integer",
-                ))
+                ));
             }
         }
     } else {

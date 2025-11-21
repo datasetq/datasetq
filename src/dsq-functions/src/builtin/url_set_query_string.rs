@@ -17,7 +17,7 @@ pub fn builtin_url_set_query_string(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "url_set_query_string() second argument must be a string",
-            ))
+            ));
         }
     };
 
@@ -26,7 +26,7 @@ pub fn builtin_url_set_query_string(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "url_set_query_string() third argument must be a string",
-            ))
+            ));
         }
     };
 

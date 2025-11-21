@@ -23,7 +23,7 @@ pub fn builtin_round(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "round() first argument must be numeric",
-            ))
+            ));
         }
     };
 
@@ -33,7 +33,7 @@ pub fn builtin_round(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "round() second argument must be an integer",
-                ))
+                ));
             }
         }
     } else {

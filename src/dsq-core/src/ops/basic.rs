@@ -759,7 +759,7 @@ fn series_to_values(series: &Series) -> Result<Vec<Value>> {
             return Err(Error::operation(format!(
                 "Unsupported data type: {:?}",
                 series.dtype()
-            )))
+            )));
         }
     }
 

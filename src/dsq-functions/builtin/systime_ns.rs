@@ -1,5 +1,5 @@
-use dsq_shared::value::Value;
 use dsq_shared::Result;
+use dsq_shared::value::Value;
 use inventory;
 use polars::prelude::*;
 use std::time::SystemTime;
@@ -139,10 +139,12 @@ mod tests {
     fn test_systime_ns_too_many_args() {
         let result = builtin_systime_ns(&[Value::Int(1), Value::Int(2)]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("expects 0 or 1 arguments"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("expects 0 or 1 arguments")
+        );
     }
 
     #[test]

@@ -17,7 +17,7 @@ pub fn builtin_quartile(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "quartile() second argument must be 1, 2, or 3",
-                ))
+                ));
             }
         }
     } else {

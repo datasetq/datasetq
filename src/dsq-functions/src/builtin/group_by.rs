@@ -169,7 +169,7 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
                                                     return Err(operation_error(format!(
                                                         "group_by() take failed: {}",
                                                         e
-                                                    )))
+                                                    )));
                                                 }
                                             }
                                         }

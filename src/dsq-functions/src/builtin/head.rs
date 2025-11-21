@@ -26,7 +26,7 @@ pub fn builtin_head(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "head() second argument must be a non-negative integer",
-                ))
+                ));
             }
         }
     } else {

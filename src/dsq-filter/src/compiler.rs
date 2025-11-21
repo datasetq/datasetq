@@ -2546,7 +2546,7 @@ impl Operation for SliceOperation {
                 _ => {
                     return Err(dsq_shared::error::operation_error(
                         "Slice start must be an integer",
-                    ))
+                    ));
                 }
             }
         } else {
@@ -2563,7 +2563,7 @@ impl Operation for SliceOperation {
                 _ => {
                     return Err(dsq_shared::error::operation_error(
                         "Slice end must be an integer",
-                    ))
+                    ));
                 }
             }
         } else {

@@ -220,7 +220,7 @@ impl Value {
                             from: "array".to_string(),
                             to: "dataframe".to_string(),
                         }
-                        .into())
+                        .into());
                     }
                 };
 
@@ -247,7 +247,7 @@ impl Value {
                                 from: "array".to_string(),
                                 to: "dataframe".to_string(),
                             }
-                            .into())
+                            .into());
                         }
                     }
                 }

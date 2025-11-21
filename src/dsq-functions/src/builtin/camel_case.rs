@@ -50,7 +50,7 @@ pub fn builtin_camel_case(args: &[Value]) -> Result<Value> {
                     return Err(dsq_shared::error::operation_error(format!(
                         "camel_case() failed on DataFrame: {}",
                         e
-                    )))
+                    )));
                 }
             }
         }
@@ -69,7 +69,7 @@ pub fn builtin_camel_case(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "camel_case() requires string, array, DataFrame, or Series",
-            ))
+            ));
         }
     }
 }

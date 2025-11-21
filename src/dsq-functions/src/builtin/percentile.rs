@@ -17,7 +17,7 @@ pub fn builtin_percentile(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "percentile() second argument must be 0-100 or 0.0-1.0",
-            ))
+            ));
         }
     };
 

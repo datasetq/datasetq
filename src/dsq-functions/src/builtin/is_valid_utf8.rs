@@ -34,7 +34,7 @@ pub fn builtin_is_valid_utf8(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "is_valid_utf8() array must contain integers 0-255",
-                        ))
+                        ));
                     }
                 }
             }

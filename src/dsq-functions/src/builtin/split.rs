@@ -18,7 +18,7 @@ pub fn builtin_split(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "split() separator must be a string",
-                ))
+                ));
             }
         }
     } else {

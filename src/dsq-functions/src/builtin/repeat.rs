@@ -14,7 +14,7 @@ pub fn builtin_repeat(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "repeat() second argument must be a non-negative integer",
-            ))
+            ));
         }
     };
 

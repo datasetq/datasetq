@@ -17,7 +17,7 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "histogram() bins must be positive integer",
-                ))
+                ));
             }
         }
     } else {
@@ -58,7 +58,7 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "histogram() requires array or series",
-            ))
+            ));
         }
     };
 

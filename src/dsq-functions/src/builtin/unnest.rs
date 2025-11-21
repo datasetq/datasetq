@@ -39,7 +39,7 @@ pub fn builtin_unnest(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "unnest() separator must be a string",
-                ))
+                ));
             }
         }
     } else {

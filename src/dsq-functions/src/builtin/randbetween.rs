@@ -26,7 +26,7 @@ pub fn builtin_randbetween(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "randbetween() min must be an integer",
-            ))
+            ));
         }
     };
 
@@ -35,7 +35,7 @@ pub fn builtin_randbetween(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "randbetween() max must be an integer",
-            ))
+            ));
         }
     };
 
@@ -71,7 +71,7 @@ pub fn builtin_randbetween_wasm(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "randbetween() min must be an integer",
-            ))
+            ));
         }
     };
 
@@ -80,7 +80,7 @@ pub fn builtin_randbetween_wasm(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "randbetween() max must be an integer",
-            ))
+            ));
         }
     };
 

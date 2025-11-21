@@ -81,7 +81,7 @@ pub fn builtin_strptime(args: &[Value]) -> Result<Value> {
                 _ => {
                     return Err(dsq_shared::error::operation_error(
                         "strptime() second argument must be a string for DataFrame",
-                    ))
+                    ));
                 }
             };
             let mut new_series = Vec::new();
@@ -135,7 +135,7 @@ pub fn builtin_strptime(args: &[Value]) -> Result<Value> {
                 _ => {
                     return Err(dsq_shared::error::operation_error(
                         "strptime() second argument must be a string for Series",
-                    ))
+                    ));
                 }
             };
             if series.dtype() == &DataType::Utf8 {

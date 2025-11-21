@@ -23,7 +23,7 @@ pub fn builtin_strflocaltime(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "strflocaltime() second argument must be a format string",
-            ))
+            ));
         }
     };
 

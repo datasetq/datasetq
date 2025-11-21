@@ -27,7 +27,7 @@ pub fn builtin_melt(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "melt() id_vars must be string or array of strings",
-                        ))
+                        ));
                     }
                 }
             } else {
@@ -53,7 +53,7 @@ pub fn builtin_melt(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "melt() value_vars must be string or array of strings",
-                        ))
+                        ));
                     }
                 }
             } else {

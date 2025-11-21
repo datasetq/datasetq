@@ -14,7 +14,7 @@ pub fn builtin_spaces_to_tabs(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "spaces_to_tabs() second argument must be a positive integer",
-                ))
+                ));
             }
         }
     } else {

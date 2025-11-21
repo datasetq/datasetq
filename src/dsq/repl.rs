@@ -6,8 +6,8 @@
 use crate::config::Config;
 use crate::executor::Executor;
 use crate::output::OutputWriter;
-use dsq_core::error::{Error, Result};
 use dsq_core::Value;
+use dsq_core::error::{Error, Result};
 use std::io::{self, Write};
 use std::path::Path;
 
@@ -39,7 +39,12 @@ impl Repl {
     pub async fn run(&mut self) -> Result<()> {
         println!("Welcome to dsq interactive mode!");
         println!("Type 'help' for available commands, 'quit' to exit.");
-        println!("Current data: {}", self.current_data.as_ref().map_or("none".to_string(), |_| "loaded".to_string()));
+        println!(
+            "Current data: {}",
+            self.current_data
+                .as_ref()
+                .map_or("none".to_string(), |_| "loaded".to_string())
+        );
         println!();
 
         let stdin = io::stdin();
@@ -133,7 +138,10 @@ impl Repl {
     async fn load_file(&mut self, path: &str) -> Result<()> {
         let path = Path::new(path);
         if !path.exists() {
-            return Err(Error::operation(format!("File does not exist: {}", path.display())));
+            return Err(Error::operation(format!(
+                "File does not exist: {}",
+                path.display()
+            )));
         }
 
         self.current_data = Some(self.executor.read_input(path).await?);
@@ -167,7 +175,9 @@ impl Repl {
 
         // For REPL, we'll create a temporary executor to avoid mutating the main one
         let mut temp_executor = Executor::new(self.config.clone());
-        let result = temp_executor.filter_executor.execute_str(filter, data.clone())?;
+        let result = temp_executor
+            .filter_executor
+            .execute_str(filter, data.clone())?;
 
         println!("Result:");
         self.output_writer.write_to_stdout(&result.value)?;
@@ -177,8 +187,22 @@ impl Repl {
 
         // Print execution stats if verbose
         if self.config.debug.verbosity > 0 {
-            eprintln!("Execution time: {} ms", result.stats.as_ref().map(|s| s.execution_time.as_millis() as u64).unwrap_or(0));
-            eprintln!("Operations: {}", result.stats.as_ref().map(|s| s.operations_executed).unwrap_or(0));
+            eprintln!(
+                "Execution time: {} ms",
+                result
+                    .stats
+                    .as_ref()
+                    .map(|s| s.execution_time.as_millis() as u64)
+                    .unwrap_or(0)
+            );
+            eprintln!(
+                "Operations: {}",
+                result
+                    .stats
+                    .as_ref()
+                    .map(|s| s.operations_executed)
+                    .unwrap_or(0)
+            );
         }
 
         Ok(())
@@ -255,9 +279,9 @@ enum CommandResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dsq_core::Value;
     use std::io::Write;
     use tempfile::NamedTempFile;
-    use dsq_core::Value;
 
     #[tokio::test]
     async fn test_repl_new() {

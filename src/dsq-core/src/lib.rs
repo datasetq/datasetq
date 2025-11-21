@@ -1169,7 +1169,9 @@ mod tests {
                                             _ => panic!("Unexpected employee name: {}", name),
                                         }
                                     } else {
-                                        panic!("Expected string name, int new_salary, string department");
+                                        panic!(
+                                            "Expected string name, int new_salary, string department"
+                                        );
                                     }
                                 }
                                 _ => panic!("Expected object in result array"),

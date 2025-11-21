@@ -17,7 +17,7 @@ pub fn builtin_humanize(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "humanize() format must be a string",
-                ))
+                ));
             }
         }
     } else {

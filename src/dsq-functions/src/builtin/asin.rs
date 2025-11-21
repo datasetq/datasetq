@@ -60,7 +60,7 @@ pub fn builtin_asin(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "asin() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

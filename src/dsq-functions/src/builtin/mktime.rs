@@ -21,7 +21,7 @@ pub fn builtin_mktime(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "mktime() argument must be a string",
-                ))
+                ));
             }
         }
     };

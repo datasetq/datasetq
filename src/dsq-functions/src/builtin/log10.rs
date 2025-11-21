@@ -60,7 +60,7 @@ pub fn builtin_log10(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "log10() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

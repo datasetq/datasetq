@@ -15,7 +15,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "cut() first argument must be a DataFrame",
-            ))
+            ));
         }
     };
 
@@ -28,7 +28,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "cut() column names must be strings",
-                        ))
+                        ));
                     }
                 }
             }
@@ -37,7 +37,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "cut() second argument must be an array of column names",
-            ))
+            ));
         }
     };
 

@@ -506,7 +506,7 @@ impl Value {
                         _ => {
                             return Err(crate::error::operation_error(
                                 "Cannot convert array to DataFrame: not all elements are objects",
-                            ))
+                            ));
                         }
                     }
                 }

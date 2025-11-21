@@ -37,16 +37,16 @@
 //! # Ok::<(), dsq_core::Error>(())
 //! ```
 
+use crate::Value;
 use crate::error::{Error, FilterError, Result, TypeError};
 use crate::ops::{
-    aggregate::{group_by, group_by_agg, AggregationFunction},
-    basic::{head, select_columns, sort_by_columns, tail, SortOptions},
-    join::{join, JoinKeys, JoinOptions, JoinType},
-    transform::{cast_column, transpose, ColumnDataType},
     Operation, OperationPipeline, OperationType,
+    aggregate::{AggregationFunction, group_by, group_by_agg},
+    basic::{SortOptions, head, select_columns, sort_by_columns, tail},
+    join::{JoinKeys, JoinOptions, JoinType, join},
+    transform::{ColumnDataType, cast_column, transpose},
 };
-use crate::Value;
-use dsq_formats::{from_csv as dsq_from_csv, from_json as dsq_from_json, DataFormat};
+use dsq_formats::{DataFormat, from_csv as dsq_from_csv, from_json as dsq_from_json};
 
 #[cfg(feature = "io")]
 use dsq_formats::{ReadOptions, WriteOptions};
@@ -55,8 +55,8 @@ use dsq_io::{read_file, write_file};
 
 #[cfg(feature = "filter")]
 use dsq_filter::{
-    execute_filter, ErrorMode as FilterErrorMode, ExecutorConfig, FilterCompiler, FilterExecutor,
-    OptimizationLevel,
+    ErrorMode as FilterErrorMode, ExecutorConfig, FilterCompiler, FilterExecutor,
+    OptimizationLevel, execute_filter,
 };
 
 use polars::prelude::*;

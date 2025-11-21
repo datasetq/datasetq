@@ -593,7 +593,9 @@ mod tests {
         assert!(matches!(filter.expr, Expr::Pipeline(_)));
 
         // Test the full example_001 query with complex object and nested pipeline
-        let filter = parse_success("group_by(.department) | map({\n  dept: .[0].department,\n  count: length,\n  avg_salary: (map(.salary) | add / length)\n})");
+        let filter = parse_success(
+            "group_by(.department) | map({\n  dept: .[0].department,\n  count: length,\n  avg_salary: (map(.salary) | add / length)\n})",
+        );
         assert!(matches!(&filter.expr, Expr::Pipeline(exprs) if exprs.len() == 2));
         if let Expr::Pipeline(exprs) = &filter.expr {
             assert!(matches!(&exprs[0], Expr::FunctionCall { name, .. } if name == "group_by"));
@@ -1165,7 +1167,9 @@ mod tests {
     #[test]
     fn test_complex_expressions_comprehensive() {
         // Test complex nested pipelines
-        let filter = parse_success("map(select(.age > 30)) | group_by(.department) | map({dept: .[0].department, employees: ., avg_salary: (map(.salary) | add / length)})");
+        let filter = parse_success(
+            "map(select(.age > 30)) | group_by(.department) | map({dept: .[0].department, employees: ., avg_salary: (map(.salary) | add / length)})",
+        );
         assert!(matches!(filter.expr, Expr::Pipeline(exprs) if exprs.len() == 3));
 
         // Test conditional logic
@@ -1173,7 +1177,9 @@ mod tests {
         assert!(matches!(filter.expr, Expr::If { .. }));
 
         // Test aggregations
-        let filter = parse_success("group_by(.category) | map({category: .[0].category, total: map(.amount) | add, count: length})");
+        let filter = parse_success(
+            "group_by(.category) | map({category: .[0].category, total: map(.amount) | add, count: length})",
+        );
         assert!(matches!(filter.expr, Expr::Pipeline(_)));
     }
 
@@ -1185,13 +1191,11 @@ mod tests {
             ".name",
             ".user.name",
             ".items[0].price",
-
             // Array operations
             ".[]",
             ".[0:5]",
             ".[1:]",
             ".[:10]",
-
             // Function calls
             "length",
             "length(.items)",
@@ -1199,16 +1203,13 @@ mod tests {
             "select(.age > 30)",
             "sort_by(.price)",
             "group_by(.department)",
-
             // Object construction
             "{name, age}",
             "{name: .user.name, age: .user.age}",
             "{full_name: (.first + \" \" + .last)}",
-
             // Array construction
             "[1, 2, 3]",
             "[.name, .age]",
-
             // Literals
             "\"hello world\"",
             "42",
@@ -1216,50 +1217,38 @@ mod tests {
             "true",
             "false",
             "null",
-
             // Binary operations
             "1 + 2",
             ".age > 30",
             ".name == \"John\"",
             ".active and .verified",
-
             // Unary operations
             "not .disabled",
             "del(.obsolete)",
-
             // Assignment
             ".salary += 5000",
             ".status |= \"active\"",
-
             // If expressions
             "if .type == \"premium\" then .price * 1.2 else .price end",
-
             // Pipelines
             ".users | map(.name) | sort",
             "map(select(.age > 21)) | .[0:10]",
-
             // Select statements
             "select name, age from users where age > 21",
             "select avg(salary) from employees group by department",
-
             // Complex expressions
             "map(.salary + .bonus) | add / length",
             "group_by(.category) | map({cat: .[0].category, total: map(.amount) | add})",
-
             // Try-catch (mapped to iferror)
             "try .field catch null",
-
             // Variables
             "$config.timeout",
             "$user.preferences.theme",
-
             // Parentheses
             "(1 + 2) * 3",
             "(.a + .b) / 2",
-
             // Sequences
             ".name, .age, .email",
-
             // Complex nested
             "map(select(.status == \"active\" and .type != \"trial\")) | group_by(.region) | map({region: .[0].region, count: length, avg_score: (map(.score) | add / length)})",
         ];
@@ -1289,52 +1278,36 @@ mod tests {
             // Nested function calls with multiple arguments
             "reduce(.a; .b; . + .)",
             "map(select(.age >= 18 and .age <= 65)) | sort_by(.name) | .[0:20]",
-
             // Complex object with nested structures
             "{user: {name: .first + \" \" + .last, age: .age}, metadata: {created: .timestamp}}",
-
             // Array slicing with complex indices
             ".data[(.start_index + 1):(.end_index - 1)]",
-
             // Multiple assignments in pipeline
             "map(.salary += .bonus) | map(.status |= \"updated\") | map({name, salary: .salary, status: .status})",
-
             // Complex select with multiple conditions
             "select name, department, salary where salary > 50000 and (department == \"Engineering\" or department == \"Sales\") order by salary desc",
-
             // Nested if expressions
             "if .type == \"employee\" then if .level == \"senior\" then .salary * 1.5 else .salary * 1.2 end else .salary end",
-
             // Complex aggregations
             "group_by(.department) | map({dept: .[0].department, employees: ., stats: {count: length, avg_salary: (map(.salary) | add / length), max_salary: map(.salary) | max, min_salary: map(.salary) | min}})",
-
             // Function calls with complex arguments
             "map_values(if type == \"object\" then map_values(.) else . end)",
-
             // Variables in complex expressions
             "$config.base_salary + (.experience_years * $config.salary_multiplier)",
-
             // Array operations with functions
             "map(.tags | sort | unique) | flatten | group_by(.) | map({tag: .[0], count: length}) | sort_by(.count) | reverse",
-
             // Complex pipelines with multiple transformations
             ".data | select(.active) | map(.value * 1.1) | sort | .[10:50] | map(round(.)) | sum",
-
             // Try-catch in complex context
             "map(try .optional_field catch 0) | select(. > 0) | avg",
-
             // Mixed data types and operations
             "[1, 2, 3] | map(. * .) | add + (.data | length)",
-
             // Recursive structures
             "map(if type == \"array\" then map(.) else . end)",
-
             // Advanced string operations
             "map(.name | tolower | replace(\" \", \"_\")) | unique",
-
             // Date/time operations (assuming functions exist)
             "select(hour(.timestamp) >= 9 and hour(.timestamp) <= 17) | group_by(day(.timestamp)) | map({date: .[0].timestamp, count: length})",
-
             // More complex expressions
             "map(.transactions | select(.amount > 0) | map(.amount) | add) | sort | reverse | .[0:10]",
             "group_by(.category) | map({category: .[0].category, items: ., total: map(.price * .quantity) | add, avg_price: (map(.price) | add) / length})",

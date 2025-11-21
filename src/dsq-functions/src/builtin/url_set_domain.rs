@@ -17,7 +17,7 @@ pub fn builtin_url_set_domain(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "url_set_domain() second argument must be a string",
-            ))
+            ));
         }
     };
 

@@ -4,11 +4,11 @@
 //! with support for different output destinations and formatting options.
 
 use crate::config::Config;
-use dsq_core::error::{Error, Result};
 use dsq_core::DataFormat;
 use dsq_core::Value;
-use polars::prelude::*;
+use dsq_core::error::{Error, Result};
 use dsq_core::io::write_file;
+use polars::prelude::*;
 use std::path::Path;
 use tokio::fs as tokio_fs;
 
@@ -115,7 +115,11 @@ impl OutputWriter {
             None => {
                 match format {
                     Some(DataFormat::Csv) | Some(DataFormat::Tsv) => {
-                        let separator = if matches!(format, Some(DataFormat::Tsv)) { b'\t' } else { b',' };
+                        let separator = if matches!(format, Some(DataFormat::Tsv)) {
+                            b'\t'
+                        } else {
+                            b','
+                        };
                         let mut writer = std::io::stdout();
                         use polars::io::csv::CsvWriter;
                         match value {
@@ -132,40 +136,49 @@ impl OutputWriter {
                                     .with_separator(separator)
                                     .finish(&mut df)?;
                             }
-                            _ => return Err(Error::operation("Cannot write non-DataFrame value to CSV/TSV")),
+                            _ => {
+                                return Err(Error::operation(
+                                    "Cannot write non-DataFrame value to CSV/TSV",
+                                ));
+                            }
                         }
                     }
-                     Some(DataFormat::Json) | None => {
-                         let json_value = value.to_json()?;
-                         if pretty {
-                             let json_str = serde_json::to_string_pretty(&json_value)
-                                 .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
-                             println!("{}", json_str);
-                         } else {
-                             let json_str = serde_json::to_string(&json_value)
-                                 .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
-                             println!("{}", json_str);
-                         }
-                     }
-                     Some(DataFormat::JsonLines) => {
-                         // NDJSON: output each element of top-level arrays as separate lines
-                         let json_value = value.to_json()?;
-                         match json_value {
-                             serde_json::Value::Array(arr) => {
-                                 for item in arr {
-                                     let json_str = serde_json::to_string(&item)
-                                         .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
-                                     println!("{}", json_str);
-                                 }
-                             }
-                             _ => {
-                                 // For non-arrays, output as single line
-                                 let json_str = serde_json::to_string(&json_value)
-                                     .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
-                                 println!("{}", json_str);
-                             }
-                         }
-                     }
+                    Some(DataFormat::Json) | None => {
+                        let json_value = value.to_json()?;
+                        if pretty {
+                            let json_str =
+                                serde_json::to_string_pretty(&json_value).map_err(|e| {
+                                    Error::operation(format!("JSON serialization error: {}", e))
+                                })?;
+                            println!("{}", json_str);
+                        } else {
+                            let json_str = serde_json::to_string(&json_value).map_err(|e| {
+                                Error::operation(format!("JSON serialization error: {}", e))
+                            })?;
+                            println!("{}", json_str);
+                        }
+                    }
+                    Some(DataFormat::JsonLines) => {
+                        // NDJSON: output each element of top-level arrays as separate lines
+                        let json_value = value.to_json()?;
+                        match json_value {
+                            serde_json::Value::Array(arr) => {
+                                for item in arr {
+                                    let json_str = serde_json::to_string(&item).map_err(|e| {
+                                        Error::operation(format!("JSON serialization error: {}", e))
+                                    })?;
+                                    println!("{}", json_str);
+                                }
+                            }
+                            _ => {
+                                // For non-arrays, output as single line
+                                let json_str = serde_json::to_string(&json_value).map_err(|e| {
+                                    Error::operation(format!("JSON serialization error: {}", e))
+                                })?;
+                                println!("{}", json_str);
+                            }
+                        }
+                    }
                     _ => {
                         // For other formats, convert to string representation
                         println!("{}", value);
@@ -247,7 +260,6 @@ mod tests {
     use std::collections::HashMap;
     use tempfile::NamedTempFile;
 
-
     fn create_test_config() -> Config {
         Config::default()
     }
@@ -256,7 +268,8 @@ mod tests {
         DataFrame::new(vec![
             Series::new("name", vec!["Alice", "Bob"]),
             Series::new("age", vec![30i64, 25i64]),
-        ]).unwrap()
+        ])
+        .unwrap()
     }
 
     fn create_test_lazyframe() -> LazyFrame {
@@ -385,7 +398,9 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&value, Some(path), Some(DataFormat::Csv), false).await;
+        let result = writer
+            .write_with_options(&value, Some(path), Some(DataFormat::Csv), false)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -402,7 +417,9 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&value, Some(path), Some(DataFormat::Tsv), false).await;
+        let result = writer
+            .write_with_options(&value, Some(path), Some(DataFormat::Tsv), false)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -421,7 +438,9 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&obj, Some(path), Some(DataFormat::Json), true).await;
+        let result = writer
+            .write_with_options(&obj, Some(path), Some(DataFormat::Json), true)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -441,7 +460,9 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&obj, Some(path), Some(DataFormat::Json), false).await;
+        let result = writer
+            .write_with_options(&obj, Some(path), Some(DataFormat::Json), false)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -453,14 +474,22 @@ mod tests {
         let config = create_test_config();
         let writer = OutputWriter::new(config);
         let arr = Value::Array(vec![
-            Value::Object(HashMap::from([("name".to_string(), Value::String("Alice".to_string()))])),
-            Value::Object(HashMap::from([("name".to_string(), Value::String("Bob".to_string()))])),
+            Value::Object(HashMap::from([(
+                "name".to_string(),
+                Value::String("Alice".to_string()),
+            )])),
+            Value::Object(HashMap::from([(
+                "name".to_string(),
+                Value::String("Bob".to_string()),
+            )])),
         ]);
 
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&arr, Some(path), Some(DataFormat::JsonLines), false).await;
+        let result = writer
+            .write_with_options(&arr, Some(path), Some(DataFormat::JsonLines), false)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -474,12 +503,17 @@ mod tests {
     async fn test_write_with_options_jsonlines_single() {
         let config = create_test_config();
         let writer = OutputWriter::new(config);
-        let obj = Value::Object(HashMap::from([("name".to_string(), Value::String("Alice".to_string()))]));
+        let obj = Value::Object(HashMap::from([(
+            "name".to_string(),
+            Value::String("Alice".to_string()),
+        )]));
 
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&obj, Some(path), Some(DataFormat::JsonLines), false).await;
+        let result = writer
+            .write_with_options(&obj, Some(path), Some(DataFormat::JsonLines), false)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -498,7 +532,9 @@ mod tests {
         let path = temp_file.path();
 
         // Test with a format that's not handled (should fall back to string representation)
-        let result = writer.write_with_options(&value, Some(path), Some(DataFormat::Parquet), false).await;
+        let result = writer
+            .write_with_options(&value, Some(path), Some(DataFormat::Parquet), false)
+            .await;
         assert!(result.is_ok());
 
         let content = fs::read_to_string(path).unwrap();
@@ -514,7 +550,9 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
-        let result = writer.write_with_options(&value, Some(path), Some(DataFormat::Csv), false).await;
+        let result = writer
+            .write_with_options(&value, Some(path), Some(DataFormat::Csv), false)
+            .await;
         assert!(result.is_err());
     }
 
@@ -539,13 +577,13 @@ mod tests {
 
         // Create a value that might cause JSON serialization issues
         // Most values should work, but let's test with a complex nested structure
-        let nested = Value::Object(HashMap::from([
-            ("data".to_string(), Value::Array(vec![
-                Value::Object(HashMap::from([
-                    ("nested".to_string(), Value::Array(vec![Value::Int(1), Value::Int(2)]))
-                ]))
-            ]))
-        ]));
+        let nested = Value::Object(HashMap::from([(
+            "data".to_string(),
+            Value::Array(vec![Value::Object(HashMap::from([(
+                "nested".to_string(),
+                Value::Array(vec![Value::Int(1), Value::Int(2)]),
+            )]))]),
+        )]));
 
         let result = writer.write_to_stdout(&nested);
         assert!(result.is_ok());

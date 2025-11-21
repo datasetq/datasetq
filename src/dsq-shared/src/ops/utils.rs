@@ -111,7 +111,7 @@ pub fn div_values(a: &Value, b: &Value) -> Result<Value> {
     let b_float = match b {
         Value::Int(y) if *y == 0 => return Err(crate::error::operation_error("Division by zero")),
         Value::Float(y) if *y == 0.0 => {
-            return Err(crate::error::operation_error("Division by zero"))
+            return Err(crate::error::operation_error("Division by zero"));
         }
         Value::Int(y) => *y as f64,
         Value::Float(y) => *y,
@@ -119,7 +119,7 @@ pub fn div_values(a: &Value, b: &Value) -> Result<Value> {
             return Err(crate::error::operation_error(format!(
                 "Cannot divide by {}",
                 b.type_name()
-            )))
+            )));
         }
     };
     match a {

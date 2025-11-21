@@ -1269,7 +1269,7 @@ pub fn serialize_json<W: Write>(
         _ => {
             return Err(Error::operation(
                 "Expected DataFrame for JSON serialization",
-            ))
+            ));
         }
     };
 
