@@ -423,21 +423,40 @@ impl Config {
 
     /// Load configuration from multiple sources
     pub fn load() -> Result<Self> {
+        Self::load_with_env_reader(|key| std::env::var(key).ok())
+    }
+
+    /// Load configuration with a custom environment variable reader
+    /// This allows for testing without environment variable leakage
+    fn load_with_env_reader<F>(env_reader: F) -> Result<Self>
+    where
+        F: Fn(&str) -> Option<String>,
+    {
         let mut config = Self::default();
 
         // 1. Load from config file if it exists
-        if let Some(config_path) = Self::find_config_file(None) {
+        let home_dir = env_reader("HOME");
+        if let Some(config_path) = Self::find_config_file_with_home(None, home_dir.as_deref()) {
             config.merge_file(&config_path)?;
         }
 
         // 2. Apply environment variables
-        config.merge_env()?;
+        config.merge_env_with_reader(env_reader)?;
 
         Ok(config)
     }
 
     /// Find configuration file in standard locations
     pub(crate) fn find_config_file(current_dir: Option<&Path>) -> Option<PathBuf> {
+        let home = std::env::var("HOME").ok();
+        Self::find_config_file_with_home(current_dir, home.as_deref())
+    }
+
+    /// Find configuration file with injectable home directory
+    fn find_config_file_with_home(
+        current_dir: Option<&Path>,
+        home_dir: Option<&str>,
+    ) -> Option<PathBuf> {
         let current_dir_buf = if let Some(dir) = current_dir {
             dir.to_path_buf()
         } else {
@@ -455,7 +474,7 @@ impl Config {
         }
 
         // Check home directory
-        if let Ok(home) = std::env::var("HOME") {
+        if let Some(home) = home_dir {
             for name in &config_names {
                 let path = Path::new(&home).join(".config").join("dsq").join(name);
                 if path.exists() {
@@ -1092,7 +1111,6 @@ pub fn validate_config(config: &Config) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env;
     use std::fs;
     use tempfile::TempDir;
 
@@ -1291,51 +1309,41 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let temp_path = temp_dir.path();
 
-        // Ensure HOME is not set
-        // SAFETY: This is a test-only code that manipulates environment variables.
-        // It's safe because:
-        // 1. Tests run in isolated processes
-        // 2. We're only modifying test-specific environment variables
-        // 3. The cleanup ensures no persistent state is left
-        unsafe {
-            env::remove_var("HOME");
-        }
-
-        // Test no config files exist
-        assert!(Config::find_config_file(Some(temp_path)).is_none());
+        // Test no config files exist (no HOME set)
+        assert!(Config::find_config_file_with_home(Some(temp_path), None).is_none());
 
         // Create a config file in current directory
         fs::write(temp_path.join("dsq.toml"), "test").unwrap();
         assert_eq!(
-            Config::find_config_file(Some(temp_path)).unwrap(),
+            Config::find_config_file_with_home(Some(temp_path), None).unwrap(),
             temp_path.join("dsq.toml")
         );
 
         // Test priority: current dir first
         fs::write(temp_path.join("dsq.yaml"), "test").unwrap();
         assert_eq!(
-            Config::find_config_file(Some(temp_path)).unwrap(),
+            Config::find_config_file_with_home(Some(temp_path), None).unwrap(),
             temp_path.join("dsq.toml")
         );
 
         // Remove toml, should find yaml
         fs::remove_file(temp_path.join("dsq.toml")).unwrap();
         assert_eq!(
-            Config::find_config_file(Some(temp_path)).unwrap(),
+            Config::find_config_file_with_home(Some(temp_path), None).unwrap(),
             temp_path.join("dsq.yaml")
         );
 
         // Test hidden files
         fs::write(temp_path.join(".dsq.toml"), "test").unwrap();
         assert_eq!(
-            Config::find_config_file(Some(temp_path)).unwrap(),
+            Config::find_config_file_with_home(Some(temp_path), None).unwrap(),
             temp_path.join(".dsq.toml")
         ); // hidden toml comes before yaml
 
         // Remove yaml, should find hidden toml
         fs::remove_file(temp_path.join("dsq.yaml")).unwrap();
         assert_eq!(
-            Config::find_config_file(Some(temp_path)).unwrap(),
+            Config::find_config_file_with_home(Some(temp_path), None).unwrap(),
             temp_path.join(".dsq.toml")
         );
     }
@@ -1676,26 +1684,6 @@ dataframe_optimizations = true
 batch_size = 7777
 "#;
 
-        // Clean up
-        // SAFETY: This is test-only code that manipulates environment variables.
-        // It's safe in a test context because:
-        // 1. Tests run in isolated processes
-        // 2. We're controlling the test environment to verify configuration loading
-        // 3. All changes are cleaned up after the test
-        unsafe {
-            env::remove_var("DSQ_BATCH_SIZE");
-        }
-        unsafe {
-            env::remove_var("DSQ_LAZY");
-        }
-        unsafe {
-            env::remove_var("HOME");
-        }
-
-        // Set HOME to temp_dir
-        unsafe {
-            env::set_var("HOME", temp_path);
-        }
         fs::create_dir_all(temp_path.join(".config").join("dsq")).unwrap();
         fs::write(
             temp_path.join(".config").join("dsq").join("dsq.toml"),
@@ -1703,17 +1691,18 @@ batch_size = 7777
         )
         .unwrap();
 
-        let config = Config::load().unwrap();
+        // Use mock environment reader to avoid environment variable leakage
+        let temp_path_str = temp_path.to_str().unwrap().to_string();
+        let env_reader = move |key: &str| match key {
+            "HOME" => Some(temp_path_str.clone()),
+            _ => None, // No other DSQ_* env vars set
+        };
+
+        let config = Config::load_with_env_reader(env_reader).unwrap();
 
         assert!(!config.filter.lazy_evaluation);
         assert_eq!(config.performance.batch_size, 7777);
         assert!(!config.debug.debug_mode); // default
-
-        // Clean up
-        // SAFETY: Test cleanup - restoring environment to original state
-        unsafe {
-            env::remove_var("HOME");
-        }
     }
 
     #[test]
