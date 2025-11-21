@@ -1719,7 +1719,7 @@ pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
             null_values.clone(),
             encoding.clone(),
         ),
-        _ => (b',', true, Some(b'"'), None, None, CsvEncoding::Utf8),
+        _ => (b',', true, Some(b'"'), None, None, crate::writer::CsvEncoding::Utf8),
     };
 
     let mut csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer))

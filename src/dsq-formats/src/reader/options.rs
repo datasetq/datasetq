@@ -1,4 +1,4 @@
-use crate::csv::CsvEncoding;
+use crate::writer::CsvEncoding;
 
 /// Options for reading data
 #[derive(Debug, Clone)]
@@ -12,6 +12,7 @@ pub struct ReadOptions {
     /// Whether to use lazy evaluation
     pub lazy: bool,
     /// Custom schema to apply
+    #[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
     pub schema: Option<polars::prelude::Schema>,
     /// Skip first N rows
     pub skip_rows: usize,
@@ -28,6 +29,7 @@ impl Default for ReadOptions {
             infer_schema: true,
             infer_schema_length: Some(1000),
             lazy: false,
+            #[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
             schema: None,
             skip_rows: 0,
             columns: None,
