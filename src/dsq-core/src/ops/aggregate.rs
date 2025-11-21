@@ -1286,7 +1286,7 @@ mod tests {
 
         let last_agg = AggregationFunction::Last("value".to_string());
         let last_result = apply_aggregation_to_group(&last_agg, &items).unwrap();
-        assert_eq!(last_result, Value::Int(3));
+        assert_eq!(last_result, Value::Int(2)); // Last item in [1, 3, 2] is 2
 
         // Empty group
         let empty_items: Vec<&Value> = vec![];

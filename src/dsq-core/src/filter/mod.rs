@@ -153,21 +153,21 @@ mod tests {
     }
 
     #[test]
-    fn test_explain_filter_placeholder() {
-        // Test the placeholder explain_filter function
+    fn test_explain_filter_identity() {
+        // Test the explain_filter function for identity filter
         let result = explain_filter(".");
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(err.to_string().contains("not yet implemented"));
+        assert!(result.is_ok());
+        let explanation = result.unwrap();
+        assert!(explanation.contains("Identity"));
     }
 
     #[test]
     fn test_explain_filter_with_complex_filter() {
         // Test explain_filter with a more complex filter string
         let result = explain_filter("map(.name) | sort");
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(err.to_string().contains("not yet implemented"));
+        assert!(result.is_ok());
+        let explanation = result.unwrap();
+        assert!(explanation.contains("Filter:"));
     }
 
     #[test]
