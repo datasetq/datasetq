@@ -2287,6 +2287,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "rand")]
     fn test_builtin_rand() {
         // Test rand with no arguments
         let result = builtin::rand::builtin_rand(&[]).unwrap();
