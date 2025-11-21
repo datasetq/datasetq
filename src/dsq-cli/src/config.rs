@@ -5,6 +5,7 @@
 //! and configuration files. It provides a unified configuration structure that
 //! can be used throughout the application.
 
+#[cfg(feature = "cli")]
 use crate::cli::CliConfig;
 use dsq_core::{
     error::{Error, Result},
@@ -795,6 +796,7 @@ impl Config {
     }
 
     /// Apply CLI configuration overrides
+    #[cfg(feature = "cli")]
     pub fn apply_cli(&mut self, cli_config: &CliConfig) -> Result<()> {
         // I/O settings
         if let Some(format) = &cli_config.input_format {
@@ -1471,6 +1473,7 @@ performance:
     }
 
     #[test]
+    #[cfg(feature = "cli")]
     fn test_cli_override_comprehensive() {
         let mut config = Config::default();
         let mut cli_config = CliConfig::default();

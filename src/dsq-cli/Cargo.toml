@@ -57,6 +57,11 @@ avro = []
 io-arrow = []
 profiling = ["coz", "dsq-filter/profiling", "dsq-formats/profiling"]
 
+[lib]
+name = "dsq_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "dsq"
 path = "src/main.rs"
+required-features = ["cli"]

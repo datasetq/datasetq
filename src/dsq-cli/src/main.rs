@@ -1,9 +1,10 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod cli;
-#[cfg(feature = "cli")]
 mod config;
 mod executor;
+#[cfg(feature = "cli")]
 mod output;
+#[cfg(feature = "cli")]
 mod repl;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -12,7 +13,7 @@ use crate::cli::{parse_args, CliConfig, Commands, ConfigCommands};
 use crate::config::{create_default_config_file, validate_config, Config};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::executor::Executor;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "cli"))]
 use crate::repl::Repl;
 #[cfg(not(target_arch = "wasm32"))]
 use anyhow::Error;
@@ -37,7 +38,7 @@ use std::path::{Path, PathBuf};
 #[cfg(not(target_arch = "wasm32"))]
 use std::process;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), feature = "cli"))]
 #[tokio::main]
 async fn main() {
     // Initialize coz profiling if enabled
