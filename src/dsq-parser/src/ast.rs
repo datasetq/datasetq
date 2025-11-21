@@ -26,7 +26,7 @@ pub enum Expr {
         fields: Vec<String>,
     },
 
-    /// Array access (.[index])
+    /// Array access (`.[index]`)
     ArrayAccess {
         /// The array expression
         array: Box<Expr>,
@@ -34,7 +34,7 @@ pub enum Expr {
         index: Box<Expr>,
     },
 
-    /// Array slicing (.[start:end])
+    /// Array slicing (`.[start:end]`)
     ArraySlice {
         /// The array expression
         array: Box<Expr>,

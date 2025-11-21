@@ -50,6 +50,11 @@ coz = { version = "0.1", optional = true }
 [features]
 default = ["cli"]
 cli = []
+csv = []
+json = []
+parquet = []
+avro = []
+io-arrow = []
 profiling = ["coz", "dsq-filter/profiling", "dsq-formats/profiling"]
 
 [[bin]]

@@ -35,7 +35,7 @@
 //!
 //! The library is organized into several key modules:
 //!
-//! - [`value`] - Core value type that bridges JSON and `DataFrames`
+//! - `value` - Core value type that bridges JSON and `DataFrames`
 //! - [`ops`] - Data operations (select, filter, aggregate, join, transform)
 //! - [`io`] - Input/output for various file formats
 //! - [`filter`] - jq-compatible filter compilation and execution

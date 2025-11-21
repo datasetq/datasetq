@@ -1,13 +1,11 @@
 #![allow(invalid_reference_casting)]
 
-use crate::error::{Error, FormatError, Result};
-use crate::format::DataFormat;
-use dsq_shared::value::Value;
+use crate::error::{Error, Result};
 use polars::io::parquet::ParallelStrategy;
 use polars::prelude::*;
 
 use std::fs::File;
-use std::io::{Read, Seek};
+use std::io::Read;
 use std::path::Path;
 
 /// Parquet-specific reading options

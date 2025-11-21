@@ -2,8 +2,10 @@
 mod data_reader;
 mod dispatch;
 mod file_reader;
+/// JSON parsing utilities
 pub mod json_utils;
 mod memory_reader;
+/// Reader options and configuration
 pub mod options;
 
 // Re-export all components

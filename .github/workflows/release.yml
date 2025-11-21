@@ -50,6 +50,10 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             cross: false
+          # WebAssembly
+          - target: wasm32-wasip1
+            os: ubuntu-latest
+            cross: false
 
     steps:
       - uses: actions/checkout@v4
@@ -83,12 +87,21 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Prepare artifacts (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && !contains(matrix.target, 'wasm')
         run: |
           mkdir -p dist
           cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }} dist/
           cd dist
           tar -czvf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz ${{ env.BINARY_NAME }}
+          sha256sum ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz > ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz.sha256
+
+      - name: Prepare artifacts (WASM)
+        if: contains(matrix.target, 'wasm')
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}.wasm dist/
+          cd dist
+          tar -czvf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz ${{ env.BINARY_NAME }}.wasm
           sha256sum ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz > ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz.sha256
 
       - name: Prepare artifacts (Windows)

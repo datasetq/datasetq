@@ -4,7 +4,6 @@
 
 use crate::value::Value;
 use crate::Result;
-use std::any::Any;
 
 /// Assignment operators for variable assignments and updates
 #[derive(Debug, Clone, Copy, PartialEq)]

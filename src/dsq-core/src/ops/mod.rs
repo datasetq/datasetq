@@ -68,7 +68,7 @@
 //!
 //! - [`basic`] - Fundamental operations like selection, filtering, sorting
 //! - [`aggregate`] - Grouping and aggregation operations
-//! - [`join`] - Operations for combining multiple datasets
+//! - `join` - Operations for combining multiple datasets
 //! - [`transform`] - Data transformation and reshaping operations
 //!
 //! Each operation is designed to work with the [`Value`] enum, which can represent
@@ -78,7 +78,7 @@
 //! # Error Handling
 //!
 //! All operations return [`Result<Value>`] where errors are represented by the
-//! [`Error`] type. Common error scenarios include:
+//! `Error` type. Common error scenarios include:
 //!
 //! - Type mismatches (e.g., trying to sort non-comparable values)
 //! - Missing columns or fields

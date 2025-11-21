@@ -2,6 +2,8 @@
 //!
 //! This module contains helper functions used by multiple operation types.
 
+#![allow(clippy::cast_precision_loss)]
+
 use crate::value::Value;
 use crate::Result;
 

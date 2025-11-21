@@ -36,7 +36,7 @@ impl Default for JsonReadOptions {
             flatten: false,
             flatten_separator: ".".to_string(),
             max_depth: 64,
-            buffer_size: 262144, // 256KB for better JSON parsing performance
+            buffer_size: 262_144, // 256KB for better JSON parsing performance
         }
     }
 }
@@ -69,7 +69,7 @@ impl Default for JsonWriteOptions {
             null_value: None,
             escape_unicode: false,
             line_terminator: "\n".to_string(),
-            buffer_size: 262144, // 256KB for faster JSON serialization
+            buffer_size: 262_144, // 256KB for faster JSON serialization
         }
     }
 }
@@ -340,7 +340,6 @@ impl<R: std::io::BufRead> JsonReader<R> {
                             "Warning: Ignoring invalid JSON on line {}: {}",
                             line_number, e
                         );
-                        continue;
                     } else {
                         return Err(Error::Format(FormatError::InvalidOption(format!(
                             "Invalid JSON on line {}: {}",

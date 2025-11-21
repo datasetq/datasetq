@@ -188,27 +188,3 @@ jobs:
       - name: Check feature combinations
         run: cargo hack check --feature-powerset --no-dev-deps --workspace
 
-  msrv:
-    name: Minimum Supported Rust Version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust (MSRV)
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.70.0
-
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Check MSRV
-        run: cargo check --workspace

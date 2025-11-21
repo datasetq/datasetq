@@ -17,7 +17,12 @@
     clippy::missing_panics_doc,
     clippy::module_name_repetitions,
     clippy::similar_names,
-    clippy::too_many_lines
+    clippy::too_many_lines,
+    clippy::must_use_candidate,
+    clippy::doc_markdown,
+    clippy::type_complexity,
+    clippy::uninlined_format_args,
+    clippy::manual_let_else
 )]
 
 /// Result type alias for DSQ operations

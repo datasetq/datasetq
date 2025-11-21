@@ -17,7 +17,7 @@ fn main() {
 
     // Use cargo metadata to find the exact location of zstd-sys
     if let Ok(output) = Command::new("cargo")
-        .args(&["metadata", "--format-version", "1"])
+        .args(["metadata", "--format-version", "1"])
         .output()
     {
         if let Ok(metadata) = String::from_utf8(output.stdout) {
@@ -94,7 +94,7 @@ fn patch_stdlib_h(path: &PathBuf) {
 fn capture_build_info() {
     // Capture git hash
     if let Ok(output) = Command::new("git")
-        .args(&["rev-parse", "--short", "HEAD"])
+        .args(["rev-parse", "--short", "HEAD"])
         .output()
     {
         if output.status.success() {
@@ -105,7 +105,7 @@ fn capture_build_info() {
     }
 
     // Capture build date
-    if let Ok(output) = Command::new("date").args(&["+%Y-%m-%d"]).output() {
+    if let Ok(output) = Command::new("date").args(["+%Y-%m-%d"]).output() {
         if output.status.success() {
             if let Ok(build_date) = String::from_utf8(output.stdout) {
                 println!("cargo:rustc-env=BUILD_DATE={}", build_date.trim());
@@ -114,7 +114,7 @@ fn capture_build_info() {
     }
 
     // Capture rustc version
-    if let Ok(output) = Command::new("rustc").args(&["--version"]).output() {
+    if let Ok(output) = Command::new("rustc").args(["--version"]).output() {
         if output.status.success() {
             if let Ok(rustc_version) = String::from_utf8(output.stdout) {
                 // Extract just version number

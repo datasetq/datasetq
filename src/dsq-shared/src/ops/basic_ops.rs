@@ -147,7 +147,7 @@ impl Operation for IterateOperation {
                     let mut row_obj = std::collections::HashMap::new();
                     for col_name in df.get_column_names() {
                         if let Ok(series) = df.column(col_name) {
-                            if let Some(val) = series.get(i).ok() {
+                            if let Ok(val) = series.get(i) {
                                 let value = match val {
                                     polars::prelude::AnyValue::Int64(i) => Value::Int(i),
                                     polars::prelude::AnyValue::Float64(f) => Value::Float(f),

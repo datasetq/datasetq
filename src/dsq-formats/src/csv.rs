@@ -52,7 +52,7 @@ impl Default for CsvReadOptions {
             skip_rows: 0,
             skip_rows_after_header: 0,
             ignore_header: false,
-            buffer_size: 262144, // 256KB - much better for modern systems
+            buffer_size: 262_144, // 256KB - much better for modern systems
         }
     }
 }
@@ -97,7 +97,7 @@ impl Default for CsvWriteOptions {
             time_format: None,
             float_precision: None,
             include_header: true,
-            buffer_size: 262144, // 256KB buffer for faster writes
+            buffer_size: 262_144, // 256KB buffer for faster writes
         }
     }
 }

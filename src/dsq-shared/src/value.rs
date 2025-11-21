@@ -4,7 +4,6 @@
 //! that can be processed by DSQ, including JSON-like values and Polars DataFrames.
 
 use chrono::{DateTime, Duration, NaiveDate};
-use num_bigint::BigInt;
 use num_traits::identities::Zero;
 use polars::prelude::*;
 use serde::ser::{SerializeMap, SerializeSeq};
@@ -391,7 +390,7 @@ impl Value {
                     .get(index);
                 if let Some(days) = val {
                     let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
-                    let actual_date = epoch + chrono::Duration::days(days as i64);
+                    let actual_date = epoch + chrono::Duration::days(i64::from(days));
                     Ok(JsonValue::String(
                         actual_date.format("%Y-%m-%d").to_string(),
                     ))
@@ -408,6 +407,7 @@ impl Value {
                     .get(index);
                 if let Some(ns) = val {
                     let secs = ns / 1_000_000_000;
+                    #[allow(clippy::cast_sign_loss)]
                     let nsecs = (ns % 1_000_000_000) as u32;
                     let dt = chrono::DateTime::from_timestamp(secs, nsecs)
                         .unwrap()
@@ -825,34 +825,37 @@ impl serde::Serialize for Value {
     }
 }
 
-/// Convert AnyValue to Value
-pub fn value_from_any_value<'a>(av: polars::prelude::AnyValue<'a>) -> Option<Value> {
+/// Convert `AnyValue` to `Value`
+#[must_use]
+#[allow(clippy::needless_pass_by_value)]
+pub fn value_from_any_value(av: polars::prelude::AnyValue<'_>) -> Option<Value> {
     match av {
         AnyValue::Null => Some(Value::Null),
         AnyValue::Boolean(b) => Some(Value::Bool(b)),
         AnyValue::Utf8(s) => Some(Value::String(s.to_string())),
-        AnyValue::Int8(i) => Some(Value::Int(i as i64)),
-        AnyValue::Int16(i) => Some(Value::Int(i as i64)),
-        AnyValue::Int32(i) => Some(Value::Int(i as i64)),
+        AnyValue::Int8(i) => Some(Value::Int(i64::from(i))),
+        AnyValue::Int16(i) => Some(Value::Int(i64::from(i))),
+        AnyValue::Int32(i) => Some(Value::Int(i64::from(i))),
         AnyValue::Int64(i) => Some(Value::Int(i)),
-        AnyValue::UInt8(i) => Some(Value::Int(i as i64)),
-        AnyValue::UInt16(i) => Some(Value::Int(i as i64)),
-        AnyValue::UInt32(i) => Some(Value::Int(i as i64)),
+        AnyValue::UInt8(i) => Some(Value::Int(i64::from(i))),
+        AnyValue::UInt16(i) => Some(Value::Int(i64::from(i))),
+        AnyValue::UInt32(i) => Some(Value::Int(i64::from(i))),
+        #[allow(clippy::cast_possible_wrap)]
         AnyValue::UInt64(i) => Some(Value::Int(i as i64)),
-        AnyValue::Float32(f) => Some(Value::Float(f as f64)),
+        AnyValue::Float32(f) => Some(Value::Float(f64::from(f))),
         AnyValue::Float64(f) => Some(Value::Float(f)),
         _ => None,
     }
 }
 
-/// Convert a DataFrame row to a Value::Object
+/// Convert a `DataFrame` row to a `Value::Object`
 pub fn df_row_to_value(df: &polars::prelude::DataFrame, row_idx: usize) -> crate::Result<Value> {
     let mut obj = HashMap::new();
 
     for col_name in df.get_column_names() {
         let series = df
             .column(col_name)
-            .map_err(|e| crate::error::operation_error(format!("Failed to get column: {}", e)))?;
+            .map_err(|e| crate::error::operation_error(format!("Failed to get column: {e}")))?;
         let value = series_value_at(series, row_idx)?;
         obj.insert(col_name.to_string(), value);
     }
@@ -890,6 +893,7 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
                 .u64()
                 .map_err(|e| crate::error::operation_error(format!("UInt access error: {e}")))?
                 .get(idx);
+            #[allow(clippy::cast_possible_wrap)]
             Ok(Value::Int(val.unwrap_or(0) as i64))
         }
         DataType::Float32 | DataType::Float64 => {
@@ -913,7 +917,7 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
                 .get(idx);
             if let Some(days) = val {
                 let epoch = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
-                let actual_date = epoch + Duration::days(days as i64);
+                let actual_date = epoch + Duration::days(i64::from(days));
                 Ok(Value::String(actual_date.format("%Y-%m-%d").to_string()))
             } else {
                 Ok(Value::Null)
@@ -926,6 +930,7 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
                 .get(idx);
             if let Some(ns) = val {
                 let secs = ns / 1_000_000_000;
+                #[allow(clippy::cast_sign_loss)]
                 let nsecs = (ns % 1_000_000_000) as u32;
                 let dt = DateTime::from_timestamp(secs, nsecs).unwrap().naive_utc();
                 Ok(Value::String(dt.format("%Y-%m-%d %H:%M:%S%.f").to_string()))
@@ -938,6 +943,7 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
 }
 
 /// Check if a value is truthy (non-null, non-empty, non-zero)
+#[must_use]
 pub fn is_truthy(v: &Value) -> bool {
     match v {
         Value::Null => false,
@@ -949,7 +955,7 @@ pub fn is_truthy(v: &Value) -> bool {
         Value::Array(a) => !a.is_empty(),
         Value::Object(o) => !o.is_empty(),
         Value::DataFrame(df) => df.height() > 0,
-        Value::Series(s) => s.len() > 0,
+        Value::Series(s) => !s.is_empty(),
         Value::LazyFrame(_) => true, // Assume lazy frames are truthy if present
     }
 }

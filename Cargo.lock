@@ -1203,6 +1203,7 @@ dependencies = [
  "apache-avro",
  "arrow",
  "chrono",
+ "clap",
  "coz",
  "criterion",
  "dsq-shared",
