@@ -13,13 +13,6 @@ pub enum Error {
     Io(io::Error),
 
     /// Polars errors (`DataFrame` operations)
-    #[cfg(any(
-        feature = "csv",
-        feature = "json",
-        feature = "json5",
-        feature = "parquet",
-        feature = "avro"
-    ))]
     Polars(polars::error::PolarsError),
 
     /// JSON parsing errors
@@ -69,13 +62,6 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Io(e) => write!(f, "I/O error: {e}"),
-            #[cfg(any(
-                feature = "csv",
-                feature = "json",
-                feature = "json5",
-                feature = "parquet",
-                feature = "avro"
-            ))]
             Error::Polars(e) => write!(f, "DataFrame error: {}", e),
             Error::Json(e) => write!(f, "JSON error: {}", e),
             Error::Format(e) => write!(f, "Format error: {}", e),
@@ -121,13 +107,6 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Error::Io(e) => Some(e),
-            #[cfg(any(
-                feature = "csv",
-                feature = "json",
-                feature = "json5",
-                feature = "parquet",
-                feature = "avro"
-            ))]
             Error::Polars(e) => Some(e),
             Error::Json(e) => Some(e),
             _ => None,
@@ -144,13 +123,6 @@ impl From<io::Error> for Error {
     }
 }
 
-#[cfg(any(
-    feature = "csv",
-    feature = "json",
-    feature = "json5",
-    feature = "parquet",
-    feature = "avro"
-))]
 impl From<polars::error::PolarsError> for Error {
     fn from(e: polars::error::PolarsError) -> Self {
         Error::Polars(e)
