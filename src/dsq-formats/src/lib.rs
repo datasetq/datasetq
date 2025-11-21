@@ -88,25 +88,14 @@ pub mod error;
 pub mod format;
 
 // Format implementations
-#[cfg(any(
-    feature = "csv",
-    feature = "json",
-    feature = "json5",
-    feature = "parquet",
-    feature = "avro"
-))]
 /// ADT (ASCII Delimited Text) format reading and writing
 pub mod adt;
-#[cfg(feature = "csv")]
 /// CSV format reading and writing
 pub mod csv;
-#[cfg(feature = "json")]
 /// JSON format reading and writing
 pub mod json;
-#[cfg(feature = "json5")]
 /// JSON5 format reading and writing
 pub mod json5;
-#[cfg(feature = "parquet")]
 /// Parquet format reading and writing
 pub mod parquet;
 

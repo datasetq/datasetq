@@ -44,10 +44,10 @@ clap = { workspace = true, optional = true }
 coz = { version = "0.1", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.35", features = ["lazy", "csv", "json", "temporal", "strings", "ipc"], optional = true }
+polars = { version = "0.35", features = ["lazy", "csv", "json", "temporal", "strings", "ipc", "avro"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "temporal", "strings"], optional = true }
+polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "temporal", "strings"] }
 
 [dev-dependencies]
 tempfile = "3.8"
@@ -57,10 +57,10 @@ proptest = "1.4"
 [features]
 default = ["all-formats"]
 all-formats = ["csv", "json", "avro"]
-csv = ["dep:polars"]
-json = ["dep:polars"]
-parquet = ["dep:polars"]
-avro = ["dep:polars", "polars/avro"]
-json5 = ["dep:polars"]
+csv = []
+json = []
+parquet = []
+avro = []
+json5 = []
 cli = ["dep:clap"]
 profiling = ["coz"]
