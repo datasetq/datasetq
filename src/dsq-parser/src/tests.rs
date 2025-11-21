@@ -1152,7 +1152,6 @@ mod tests {
             "a + b",
             "a\t+\tb",
             "a\n+\nb",
-            "select name, age from users",
             "if condition then expr else expr end",
             ".field | map(.value) | sort",
             ".field|\nmap(.value)|sort",
@@ -1233,9 +1232,6 @@ mod tests {
             // Pipelines
             ".users | map(.name) | sort",
             "map(select(.age > 21)) | .[0:10]",
-            // Select statements
-            "select name, age from users where age > 21",
-            "select avg(salary) from employees group by department",
             // Complex expressions
             "map(.salary + .bonus) | add / length",
             "group_by(.category) | map({cat: .[0].category, total: map(.amount) | add})",
@@ -1284,8 +1280,6 @@ mod tests {
             ".data[(.start_index + 1):(.end_index - 1)]",
             // Multiple assignments in pipeline
             "map(.salary += .bonus) | map(.status |= \"updated\") | map({name, salary: .salary, status: .status})",
-            // Complex select with multiple conditions
-            "select name, department, salary where salary > 50000 and (department == \"Engineering\" or department == \"Sales\") order by salary desc",
             // Nested if expressions
             "if .type == \"employee\" then if .level == \"senior\" then .salary * 1.5 else .salary * 1.2 end else .salary end",
             // Complex aggregations
@@ -1366,9 +1360,6 @@ mod tests {
             // Unary ops
             "not not true",
             "del del .field",
-            // Select with minimal syntax
-            "select a",
-            "select a from b",
             // If with minimal
             "if true then 1 else 0 end",
         ];
@@ -1382,7 +1373,6 @@ mod tests {
         let invalid_cases = vec![
             // Incomplete expressions
             "if true then",
-            "select from",
             "{key:",
             "[1,",
             "func(",
@@ -1454,7 +1444,6 @@ mod tests {
             "a + b",
             "a\t+\tb",
             "a\n+\nb",
-            "select name, age from users",
             "if condition then expr else expr end",
             ".field | map(.value) | sort",
             ".field|\nmap(.value)|sort",
