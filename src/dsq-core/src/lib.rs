@@ -323,7 +323,7 @@ pub mod utils {
     /// # Examples
     ///
     /// ```rust
-    /// use dsq_core::utils::object;
+    /// use dsq_core::object;
     /// use dsq_core::Value;
     ///
     /// let obj = object([
@@ -345,7 +345,7 @@ pub mod utils {
     /// # Examples
     ///
     /// ```rust
-    /// use dsq_core::utils::array;
+    /// use dsq_core::array;
     /// use dsq_core::Value;
     ///
     /// let arr = array([
@@ -517,7 +517,8 @@ pub mod utils {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::*;
+    #[allow(unused_imports)]
+    use crate::utils::{array, object};
     use polars::prelude::*;
     use std::collections::HashMap;
     #[allow(unused_imports)]
@@ -748,6 +749,7 @@ mod tests {
     mod filter_tests {
         use super::*;
         use crate::filter;
+        use crate::utils::{array, object};
         use polars::prelude::*;
         use std::fs;
         use std::io::Write;
@@ -755,44 +757,44 @@ mod tests {
 
         fn create_mock_data() -> Value {
             // Create mock data similar to the example datasets
-            let data = utils::array(vec![
-                utils::object(vec![
+            let data = array(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book A")),
                     ("genre".to_string(), Value::string("Fiction")),
                     ("price".to_string(), Value::float(19.99)),
                     ("author".to_string(), Value::string("Author A")),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book B")),
                     ("genre".to_string(), Value::string("Non-Fiction")),
                     ("price".to_string(), Value::float(24.99)),
                     ("author".to_string(), Value::string("Author B")),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book C")),
                     ("genre".to_string(), Value::string("Fiction")),
                     ("price".to_string(), Value::float(15.99)),
                     ("author".to_string(), Value::string("Author C")),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book D")),
                     ("genre".to_string(), Value::string("Fiction")),
                     ("price".to_string(), Value::float(29.99)),
                     ("author".to_string(), Value::string("Author D")),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book E")),
                     ("genre".to_string(), Value::string("Science")),
                     ("price".to_string(), Value::float(34.99)),
                     ("author".to_string(), Value::string("Author E")),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book F")),
                     ("genre".to_string(), Value::string("Fiction")),
                     ("price".to_string(), Value::float(12.99)),
                     ("author".to_string(), Value::string("Author F")),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("title".to_string(), Value::string("Book G")),
                     ("genre".to_string(), Value::string("Non-Fiction")),
                     ("price".to_string(), Value::float(22.99)),
@@ -804,62 +806,62 @@ mod tests {
 
         fn create_employee_data() -> Value {
             // Create mock employee data
-            let data = utils::array(vec![
-                utils::object(vec![
+            let data = array(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Alice Johnson")),
                     ("department".to_string(), Value::string("Sales")),
                     ("salary".to_string(), Value::int(75000)),
                     ("age".to_string(), Value::int(32)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Bob Smith")),
                     ("department".to_string(), Value::string("Engineering")),
                     ("salary".to_string(), Value::int(82000)),
                     ("age".to_string(), Value::int(28)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Carol Williams")),
                     ("department".to_string(), Value::string("Sales")),
                     ("salary".to_string(), Value::int(68000)),
                     ("age".to_string(), Value::int(35)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("David Brown")),
                     ("department".to_string(), Value::string("Engineering")),
                     ("salary".to_string(), Value::int(95000)),
                     ("age".to_string(), Value::int(41)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Eve Davis")),
                     ("department".to_string(), Value::string("Marketing")),
                     ("salary".to_string(), Value::int(62000)),
                     ("age".to_string(), Value::int(29)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Frank Miller")),
                     ("department".to_string(), Value::string("Engineering")),
                     ("salary".to_string(), Value::int(88000)),
                     ("age".to_string(), Value::int(33)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Grace Wilson")),
                     ("department".to_string(), Value::string("Sales")),
                     ("salary".to_string(), Value::int(71000)),
                     ("age".to_string(), Value::int(26)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Henry Moore")),
                     ("department".to_string(), Value::string("Engineering")),
                     ("salary".to_string(), Value::int(102000)),
                     ("age".to_string(), Value::int(38)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Ivy Taylor")),
                     ("department".to_string(), Value::string("Marketing")),
                     ("salary".to_string(), Value::int(65000)),
                     ("age".to_string(), Value::int(31)),
                 ]),
-                utils::object(vec![
+                object(vec![
                     ("name".to_string(), Value::string("Jack Anderson")),
                     ("department".to_string(), Value::string("Sales")),
                     ("salary".to_string(), Value::int(79000)),

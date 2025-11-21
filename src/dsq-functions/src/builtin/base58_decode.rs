@@ -44,6 +44,7 @@ inventory::submit! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base58::ToBase58;
     use dsq_shared::value::Value;
 
     #[test]
