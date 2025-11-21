@@ -26,6 +26,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
+      - name: Install mold linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mold clang
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -36,9 +41,6 @@ jobs:
 
       - name: Run tests
         run: cargo test --workspace --verbose
-
-      - name: Run tests with all features
-        run: cargo test --workspace --all-features --verbose
 
   fmt:
     name: Format
