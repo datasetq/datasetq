@@ -51,6 +51,7 @@ pub fn builtin_first(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
+    use polars::prelude::*;
 
     #[test]
     fn test_first_empty_array() {

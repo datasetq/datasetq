@@ -44,6 +44,7 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
+    use polars::prelude::*;
 
     #[test]
     fn test_reverse_array() {

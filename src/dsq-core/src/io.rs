@@ -1329,7 +1329,7 @@ mod tests {
         let read_options = ReadOptions::default();
         let write_options = WriteOptions::default();
 
-        let convert_result = convert_file(csv_path, json_path, &read_options, &write_options);
+        let convert_result = convert_file(csv_path, &json_path, &read_options, &write_options);
         assert!(
             convert_result.is_ok(),
             "Failed to convert CSV to JSON: {:?}",

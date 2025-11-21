@@ -56,6 +56,7 @@ pub fn builtin_head(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
+    use polars::prelude::*;
 
     #[test]
     fn test_head_array_default() {
