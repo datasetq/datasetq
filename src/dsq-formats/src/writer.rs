@@ -828,6 +828,7 @@ mod tests {
         assert!(lines[0].contains(r#""active":true"#));
     }
 
+    #[cfg(feature = "parquet")]
     #[test]
     fn test_serialize_parquet() {
         let df = create_test_dataframe();
@@ -843,6 +844,7 @@ mod tests {
         assert!(!buffer.is_empty());
     }
 
+    #[cfg(feature = "parquet")]
     #[test]
     fn test_serialize_parquet_compression() {
         let df = create_test_dataframe();

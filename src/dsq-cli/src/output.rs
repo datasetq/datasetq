@@ -258,6 +258,7 @@ mod tests {
     use super::*;
     use dsq_core::Value;
     use std::collections::HashMap;
+    use std::fs;
     use tempfile::NamedTempFile;
 
     fn create_test_config() -> Config {

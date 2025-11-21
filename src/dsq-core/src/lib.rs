@@ -518,7 +518,7 @@ pub mod utils {
 mod tests {
     use super::*;
     #[allow(unused_imports)]
-    use crate::utils::{array, object};
+    use crate::utils::{array, extract_dataframe, object, to_dataframe, value_stats};
     use polars::prelude::*;
     use std::collections::HashMap;
     #[allow(unused_imports)]

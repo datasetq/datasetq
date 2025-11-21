@@ -255,11 +255,11 @@ mod tests {
         let reader = from_path("nonexistent.csv");
         assert!(reader.is_ok());
         // Reading should fail for nonexistent file
-        let reader = reader.unwrap();
+        let mut reader = reader.unwrap();
         let result = reader.read(&ReadOptions::default());
         assert!(result.is_err());
 
-        let reader = from_path_with_format("nonexistent.csv", DataFormat::Csv);
+        let mut reader = from_path_with_format("nonexistent.csv", DataFormat::Csv);
         // from_path_with_format returns FileReader directly
         let result = reader.read(&ReadOptions::default());
         assert!(result.is_err());

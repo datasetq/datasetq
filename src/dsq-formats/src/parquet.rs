@@ -304,10 +304,10 @@ mod tests {
 
     #[test]
     fn test_parquet_roundtrip() {
-        let df = create_test_dataframe();
+        let mut df = create_test_dataframe();
 
         let temp_file = NamedTempFile::new().unwrap();
-        write_parquet_file(&df, temp_file.path()).unwrap();
+        write_parquet_file(&mut df, temp_file.path()).unwrap();
 
         let df_read = read_parquet_file(temp_file.path()).unwrap();
 
@@ -318,11 +318,11 @@ mod tests {
 
     #[test]
     fn test_parquet_file_io() {
-        let df = create_test_dataframe();
+        let mut df = create_test_dataframe();
         let temp_file = NamedTempFile::new().unwrap();
 
         // Write to file
-        write_parquet_file(&df, temp_file.path()).unwrap();
+        write_parquet_file(&mut df, temp_file.path()).unwrap();
 
         // Read from file
         let df_read = read_parquet_file(temp_file.path()).unwrap();
@@ -333,11 +333,11 @@ mod tests {
 
     #[test]
     fn test_parquet_detection() {
-        let df = create_test_dataframe();
+        let mut df = create_test_dataframe();
         let temp_file = NamedTempFile::new().unwrap();
 
         // Write a Parquet file
-        write_parquet_file(&df, temp_file.path()).unwrap();
+        write_parquet_file(&mut df, temp_file.path()).unwrap();
 
         // Should detect as Parquet
         assert!(detect_parquet_format(temp_file.path()).unwrap());

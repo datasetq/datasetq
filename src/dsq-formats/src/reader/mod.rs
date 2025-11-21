@@ -11,9 +11,11 @@ pub mod options;
 // Re-export all components
 pub use data_reader::DataReader;
 pub use dispatch::{
-    deserialize, deserialize_adt, deserialize_csv, deserialize_json, deserialize_json5,
-    deserialize_parquet, from_csv, from_json,
+    deserialize, deserialize_adt, deserialize_csv, deserialize_json, deserialize_json5, from_csv,
+    from_json,
 };
+#[cfg(feature = "parquet")]
+pub use dispatch::deserialize_parquet;
 pub use file_reader::FileReader;
 pub use memory_reader::MemoryReader;
 pub use options::{FormatReadOptions, ReadOptions};
