@@ -1,6 +1,5 @@
 use dsq_shared::value::Value;
 use dsq_shared::Result;
-use polars::prelude::*;
 use std::collections::HashMap;
 
 pub fn builtin_std(args: &[Value]) -> Result<Value> {

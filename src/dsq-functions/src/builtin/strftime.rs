@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDate, TimeZone, Timelike, Utc};
+use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;

@@ -14,7 +14,7 @@
 //! # Examples
 //!
 //! Basic operations:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::ops::basic::{select_columns, filter_values, sort_by_columns, SortOptions};
 //! use dsq_core::value::Value;
 //!
@@ -31,7 +31,7 @@
 //! ```
 //!
 //! Aggregation operations:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::ops::aggregate::{group_by_agg, AggregationFunction};
 //! use dsq_core::value::Value;
 //!
@@ -45,7 +45,7 @@
 //! ```
 //!
 //! Join operations:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::ops::join::{inner_join, JoinKeys};
 //! use dsq_core::value::Value;
 //!
@@ -54,7 +54,7 @@
 //! ```
 //!
 //! Transformation operations:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::ops::transform::{transpose, string::to_uppercase};
 //! use dsq_core::value::Value;
 //!

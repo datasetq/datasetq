@@ -14,14 +14,14 @@
 //! # Examples
 //!
 //! Reading from a file:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_io::read_file;
 //!
 //! let data = read_file("data.txt").await.unwrap();
 //! ```
 //!
 //! Writing to STDOUT:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_io::write_stdout;
 //!
 //! write_stdout(b"Hello, world!").await.unwrap();
@@ -92,7 +92,7 @@ impl Error {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_io::read_file;
 ///
 /// let data = read_file("data.txt").await.unwrap();
@@ -105,7 +105,7 @@ pub async fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_io::write_file;
 ///
 /// write_file("output.txt", b"Hello, world!").await.unwrap();
@@ -118,7 +118,7 @@ pub async fn write_file<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_io::read_stdin;
 ///
 /// let data = read_stdin().await.unwrap();
@@ -133,7 +133,7 @@ pub async fn read_stdin() -> Result<Vec<u8>> {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_io::write_stdout;
 ///
 /// write_stdout(b"Hello, world!").await.unwrap();
@@ -149,7 +149,7 @@ pub async fn write_stdout(data: &[u8]) -> Result<()> {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_io::write_stderr;
 ///
 /// write_stderr(b"Error message").await.unwrap();

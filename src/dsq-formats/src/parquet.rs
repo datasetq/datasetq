@@ -258,7 +258,7 @@ pub fn write_parquet_file<P: AsRef<Path>>(df: &mut DataFrame, path: P) -> Result
 pub fn write_parquet_file_with_options<P: AsRef<Path>>(
     df: &mut DataFrame,
     path: P,
-    options: &ParquetWriteOptions,
+    _options: &ParquetWriteOptions,
 ) -> Result<()> {
     let file = File::create(path)?;
     let writer = ParquetWriter::new(file);

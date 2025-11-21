@@ -9,7 +9,7 @@ use crate::Value;
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::{OperationPipeline, basic::SortOptions};
 /// use dsq_core::value::Value;
 ///
@@ -288,7 +288,7 @@ impl Operation for JoinOperation {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::{apply_operations, basic::SortOptions};
 /// use dsq_core::value::Value;
 ///

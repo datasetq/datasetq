@@ -4,7 +4,6 @@ use crate::reader::options::{FormatReadOptions, ReadOptions};
 use dsq_shared::value::Value;
 use polars::prelude::*;
 use std::collections::HashMap;
-use std::io::Read;
 use std::path::Path;
 
 /// File-based data reader

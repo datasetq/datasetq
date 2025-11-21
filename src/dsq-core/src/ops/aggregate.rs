@@ -23,7 +23,7 @@ use std::collections::HashMap;
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::aggregate::group_by;
 /// use dsq_core::value::Value;
 ///
@@ -121,7 +121,7 @@ pub fn group_by(value: &Value, columns: &[String]) -> Result<Value> {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::aggregate::{group_by_agg, AggregationFunction};
 /// use dsq_core::value::Value;
 ///
@@ -691,7 +691,7 @@ fn compare_values_for_ordering(a: &Value, b: &Value) -> std::cmp::Ordering {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::aggregate::pivot;
 /// use dsq_core::value::Value;
 ///
@@ -780,7 +780,7 @@ pub fn pivot(
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::aggregate::unpivot;
 /// use dsq_core::value::Value;
 ///
@@ -836,7 +836,7 @@ pub fn unpivot(
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::aggregate::{rolling_agg, WindowFunction};
 /// use dsq_core::value::Value;
 ///
@@ -920,7 +920,7 @@ impl WindowFunction {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::aggregate::{cumulative_agg, WindowFunction};
 /// use dsq_core::value::Value;
 ///

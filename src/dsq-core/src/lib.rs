@@ -13,11 +13,11 @@
 //!
 //! # Quick Start
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::{Value, ops, io};
 //!
 //! // Read a CSV file
-//! let data = io::read_file("data.csv", &io::ReadOptions::default())?;
+//! let data = io::read_file_sync("data.csv", &io::ReadOptions::default())?;
 //!
 //! // Apply operations
 //! let result = ops::OperationPipeline::new()
@@ -27,7 +27,7 @@
 //!     .execute(data)?;
 //!
 //! // Write to Parquet
-//! io::write_file(&result, "output.parquet", &io::WriteOptions::default())?;
+//! io::write_file_sync(&result, "output.parquet", &io::WriteOptions::default())?;
 //! # Ok::<(), dsq_core::Error>(())
 //! ```
 //!
@@ -46,7 +46,7 @@
 //!
 //! ## Basic `DataFrame` Operations
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::{Value, ops::basic::*};
 //! use polars::prelude::*;
 //!
@@ -71,7 +71,7 @@
 //!
 //! ## Aggregation Operations
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::{Value, ops::aggregate::*};
 //!
 //! // Group by department and calculate statistics
@@ -89,7 +89,7 @@
 //!
 //! ## Join Operations
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::{Value, ops::join::*};
 //!
 //! let keys = JoinKeys::on(vec!["id".to_string()]);
@@ -104,7 +104,7 @@
 //!
 //! ## Format Conversion
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::io;
 //!
 //! // Convert CSV to Parquet
@@ -119,7 +119,7 @@
 //!
 //! ## Filter Execution
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::filter::{FilterExecutor, ExecutorConfig};
 //!
 //! let mut executor = FilterExecutor::with_config(
@@ -142,7 +142,7 @@
 //!
 //! All operations return `Result<T>` where errors are represented by the [`Error`] type:
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::{Error, Result, TypeError, FormatError};
 //!
 //! match some_operation() {

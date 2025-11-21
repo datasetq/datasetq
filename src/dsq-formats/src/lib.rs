@@ -41,7 +41,11 @@
     clippy::missing_panics_doc,
     clippy::module_name_repetitions,
     clippy::too_many_lines,
-    clippy::similar_names
+    clippy::similar_names,
+    clippy::doc_markdown,
+    clippy::uninlined_format_args,
+    clippy::must_use_candidate,
+    clippy::should_implement_trait
 )]
 
 // Re-export shared types

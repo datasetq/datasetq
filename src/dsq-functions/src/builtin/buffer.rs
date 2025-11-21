@@ -3,7 +3,6 @@ use dsq_shared::error::operation_error;
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
-use polars::prelude::*;
 
 pub fn builtin_buffer(args: &[Value]) -> Result<Value> {
     if args.is_empty() {
@@ -105,7 +104,6 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     #[test]
     fn test_buffer_array_with_batch_size() {

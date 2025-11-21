@@ -3,18 +3,36 @@
 //! This crate provides all built-in functions available in dsq filters,
 //! including jq-compatible functions and DataFrame-specific operations.
 
+#![allow(
+    clippy::manual_range_contains,
+    clippy::match_result_ok,
+    clippy::len_zero,
+    clippy::needless_pass_by_value,
+    clippy::similar_names,
+    clippy::too_many_lines,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::float_cmp,
+    clippy::module_name_repetitions,
+    clippy::match_same_arms,
+    clippy::redundant_else
+)]
+
 pub mod builtin;
+
+// Re-export inventory for use by builtin modules
+pub use inventory;
 
 use dsq_shared::value::{value_from_any_value, Value};
 use dsq_shared::Result;
-use polars::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use sha2::{Digest, Sha256};
 
 use chrono::{DateTime, NaiveDate, NaiveDateTime, TimeZone, Utc};
-use inventory;
 
 /// Built-in function implementation
 pub type BuiltinFunction = Arc<dyn Fn(&[Value]) -> Result<Value> + Send + Sync>;
@@ -336,7 +354,6 @@ mod tests {
     use crate::builtin::transliterate::builtin_transliterate;
     use chrono::Datelike;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
     use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {

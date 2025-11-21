@@ -1,4 +1,4 @@
-use base58::{FromBase58, ToBase58};
+use base58::FromBase58;
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 

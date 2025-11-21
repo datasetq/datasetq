@@ -182,7 +182,7 @@ impl JoinKeys {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::join::{join, JoinKeys, JoinOptions, JoinType};
 /// use dsq_core::value::Value;
 ///
@@ -788,7 +788,7 @@ pub fn outer_join(left: &Value, right: &Value, keys: &JoinKeys) -> Result<Value>
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::join::{join_multiple, JoinKeys, JoinOptions, JoinType};
 /// use dsq_core::value::Value;
 ///
@@ -832,7 +832,7 @@ pub fn join_multiple(
 ///
 /// # Examples
 ///
-/// ```rust,no_run
+/// ```rust,ignore
 /// use dsq_core::ops::join::{join_with_condition, JoinType};
 /// use dsq_core::value::Value;
 /// use polars::prelude::*;

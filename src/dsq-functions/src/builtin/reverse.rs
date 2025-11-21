@@ -1,7 +1,6 @@
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
-use polars::prelude::*;
 
 pub fn builtin_reverse(args: &[Value]) -> Result<Value> {
     if args.len() != 1 {
@@ -45,7 +44,6 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     #[test]
     fn test_reverse_array() {

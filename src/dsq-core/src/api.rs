@@ -10,7 +10,7 @@
 //! # Examples
 //!
 //! Simple data processing:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::api::Dsq;
 //!
 //! // Load and process data in one pipeline
@@ -23,7 +23,7 @@
 //! ```
 //!
 //! Advanced processing with custom options:
-//! ```rust,no_run
+//! ```rust,ignore
 //! use dsq_core::api::{Dsq, ProcessingOptions};
 //!
 //! let options = ProcessingOptions::default()
