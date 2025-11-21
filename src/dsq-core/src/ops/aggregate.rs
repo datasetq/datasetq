@@ -1504,10 +1504,7 @@ mod tests {
         assert!(result_unsupported.is_err());
 
         // Unsupported aggregation type
-        let bool_val = Value::Object(HashMap::from([(
-            "value".to_string(),
-            Value::Bool(true),
-        )]));
+        let bool_val = Value::Object(HashMap::from([("value".to_string(), Value::Bool(true))]));
         let items = vec![&bool_val];
         let sum_agg = AggregationFunction::Sum("value".to_string());
         let result_type_error = apply_aggregation_to_group(&sum_agg, &items);
