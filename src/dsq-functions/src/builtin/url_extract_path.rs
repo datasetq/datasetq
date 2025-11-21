@@ -35,7 +35,12 @@ pub fn builtin_url_extract_path(args: &[Value]) -> Result<Value> {
                     if series.dtype() == &DataType::Utf8 {
                         let extracted_series = series
                             .utf8()
-                            .unwrap()
+                            .map_err(|e| {
+                                dsq_shared::error::operation_error(format!(
+                                    "url_extract_path() failed to cast series to utf8: {}",
+                                    e
+                                ))
+                            })?
                             .apply(|s| {
                                 s.map(|s| match Url::parse(s) {
                                     Ok(url) => Cow::Owned(url.path().to_string()),
@@ -65,7 +70,12 @@ pub fn builtin_url_extract_path(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let extracted_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_extract_path() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.map(|s| match Url::parse(s) {
                             Ok(url) => Cow::Owned(url.path().to_string()),
@@ -162,7 +172,12 @@ mod tests {
                 let series = result_df.column("url").unwrap();
                 let values: Vec<String> = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_extract_path() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .into_iter()
                     .map(|s| s.unwrap_or("").to_string())
                     .collect();
@@ -183,7 +198,12 @@ mod tests {
             Value::Series(result_series) => {
                 let values: Vec<String> = result_series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_extract_path() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .into_iter()
                     .map(|s| s.unwrap_or("").to_string())
                     .collect();

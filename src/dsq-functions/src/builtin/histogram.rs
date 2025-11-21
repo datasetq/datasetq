@@ -35,16 +35,21 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
             .collect::<Vec<f64>>(),
         Value::Series(series) => {
             if let Ok(float_chunked) = series.cast(&DataType::Float64) {
-                float_chunked
-                    .f64()
-                    .unwrap()
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<f64>>()
+                let f64_series = float_chunked.f64().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "histogram() failed to cast to f64: {}",
+                        e
+                    ))
+                })?;
+                f64_series.into_iter().flatten().collect::<Vec<f64>>()
             } else if let Ok(int_chunked) = series.cast(&DataType::Int64) {
-                int_chunked
-                    .i64()
-                    .unwrap()
+                let i64_series = int_chunked.i64().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "histogram() failed to cast to i64: {}",
+                        e
+                    ))
+                })?;
+                i64_series
                     .into_iter()
                     .flatten()
                     .map(|x| x as f64)

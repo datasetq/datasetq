@@ -42,8 +42,12 @@ pub fn builtin_url_extract_domain_without_www(args: &[Value]) -> Result<Value> {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype() == &DataType::Utf8 {
                         let domain_series = series
-                            .utf8()
-                            .unwrap()
+                            .utf8().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "url_extract_domain_without_www() failed to cast series to utf8: {}",
+                                e
+                            ))
+                        })?
                             .apply(|s| {
                                 s.map(|s| match Url::parse(s) {
                                     Ok(url) => {
@@ -81,7 +85,12 @@ pub fn builtin_url_extract_domain_without_www(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let domain_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_extract_domain_without_www() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.map(|s| match Url::parse(s) {
                             Ok(url) => {

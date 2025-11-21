@@ -41,9 +41,13 @@ pub fn builtin_cos(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype().is_numeric() {
-                        let cos_series = series
-                            .f64()
-                            .unwrap()
+                        let f64_series = series.f64().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "cos() failed to cast series to f64: {}",
+                                e
+                            ))
+                        })?;
+                        let cos_series = f64_series
                             .apply(|opt_f| opt_f.map(|f| f.cos()))
                             .into_series();
                         let mut s = cos_series;
@@ -66,9 +70,13 @@ pub fn builtin_cos(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                let cos_series = series
-                    .f64()
-                    .unwrap()
+                let f64_series = series.f64().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "cos() failed to cast series to f64: {}",
+                        e
+                    ))
+                })?;
+                let cos_series = f64_series
                     .apply(|opt_f| opt_f.map(|f| f.cos()))
                     .into_series();
                 Ok(Value::Series(cos_series))

@@ -51,7 +51,9 @@ fn extract_timestamp(value: &Value) -> Result<DateTime<Utc>> {
             } else if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S") {
                 Ok(dt.and_utc())
             } else if let Ok(date) = chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                let dt = date.and_hms_opt(0, 0, 0).unwrap();
+                let dt = date
+                    .and_hms_opt(0, 0, 0)
+                    .ok_or_else(|| dsq_shared::error::operation_error("Invalid time components"))?;
                 Ok(dt.and_utc())
             } else {
                 Err(dsq_shared::error::operation_error(

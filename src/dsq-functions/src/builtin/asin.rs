@@ -71,9 +71,13 @@ pub fn builtin_asin(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype().is_numeric() {
-                        let asin_series = series
-                            .f64()
-                            .unwrap()
+                        let f64_series = series.f64().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "asin() failed to cast series to f64: {}",
+                                e
+                            ))
+                        })?;
+                        let asin_series = f64_series
                             .apply(|opt_f| {
                                 opt_f.and_then(|f| {
                                     if f < -1.0 || f > 1.0 {
@@ -104,9 +108,13 @@ pub fn builtin_asin(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                let asin_series = series
-                    .f64()
-                    .unwrap()
+                let f64_series = series.f64().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "asin() failed to cast series to f64: {}",
+                        e
+                    ))
+                })?;
+                let asin_series = f64_series
                     .apply(|opt_f| {
                         opt_f.and_then(|f| {
                             if f < -1.0 || f > 1.0 {

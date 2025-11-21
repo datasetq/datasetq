@@ -53,7 +53,12 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
                     if series.dtype() == &DataType::Utf8 {
                         let set_series = series
                             .utf8()
-                            .unwrap()
+                            .map_err(|e| {
+                                dsq_shared::error::operation_error(format!(
+                                "url_set_domain_without_www() failed to cast series to utf8: {}",
+                                e
+                            ))
+                            })?
                             .apply(|s| {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(mut url) => {
@@ -95,7 +100,12 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let set_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_set_domain_without_www() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(mut url) => {

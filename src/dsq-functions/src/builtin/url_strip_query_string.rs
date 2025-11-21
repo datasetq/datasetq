@@ -48,7 +48,12 @@ pub fn builtin_url_strip_query_string(args: &[Value]) -> Result<Value> {
                     if series.dtype() == &DataType::Utf8 {
                         let stripped_series = series
                             .utf8()
-                            .unwrap()
+                            .map_err(|e| {
+                                dsq_shared::error::operation_error(format!(
+                                    "url_strip_query_string() failed to cast series to utf8: {}",
+                                    e
+                                ))
+                            })?
                             .apply(|s| {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(mut url) => {
@@ -87,7 +92,12 @@ pub fn builtin_url_strip_query_string(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let stripped_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_strip_query_string() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(mut url) => {

@@ -50,9 +50,13 @@ pub fn builtin_base64_decode(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype() == &DataType::Utf8 {
-                        let decoded_series = series
-                            .utf8()
-                            .unwrap()
+                        let utf8_series = series.utf8().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "base64_decode() failed to cast series to utf8: {}",
+                                e
+                            ))
+                        })?;
+                        let decoded_series = utf8_series
                             .apply(|s| {
                                 s.and_then(|s| match general_purpose::STANDARD.decode(s) {
                                     Ok(bytes) => match String::from_utf8(bytes) {
@@ -83,9 +87,13 @@ pub fn builtin_base64_decode(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype() == &DataType::Utf8 {
-                let decoded_series = series
-                    .utf8()
-                    .unwrap()
+                let utf8_series = series.utf8().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "base64_decode() failed to cast series to utf8: {}",
+                        e
+                    ))
+                })?;
+                let decoded_series = utf8_series
                     .apply(|s| {
                         s.and_then(|s| match general_purpose::STANDARD.decode(s) {
                             Ok(bytes) => match String::from_utf8(bytes) {

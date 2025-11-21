@@ -71,11 +71,13 @@ pub fn builtin_sqrt(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype().is_numeric() {
-                        let sqrt_series = series
-                            .f64()
-                            .unwrap()
-                            .apply(|v| v.map(|v| v.sqrt()))
-                            .into_series();
+                        let f64_series = series.f64().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "sqrt() failed to cast series to f64: {}",
+                                e
+                            ))
+                        })?;
+                        let sqrt_series = f64_series.apply(|v| v.map(|v| v.sqrt())).into_series();
                         let mut s = sqrt_series;
                         s.rename(col_name);
                         new_series.push(s);
@@ -96,11 +98,13 @@ pub fn builtin_sqrt(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                let sqrt_series = series
-                    .f64()
-                    .unwrap()
-                    .apply(|v| v.map(|v| v.sqrt()))
-                    .into_series();
+                let f64_series = series.f64().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "sqrt() failed to cast series to f64: {}",
+                        e
+                    ))
+                })?;
+                let sqrt_series = f64_series.apply(|v| v.map(|v| v.sqrt())).into_series();
                 Ok(Value::Series(sqrt_series))
             } else {
                 Ok(Value::Series(series.clone()))

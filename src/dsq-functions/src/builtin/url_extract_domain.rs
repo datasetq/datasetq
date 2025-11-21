@@ -38,7 +38,12 @@ pub fn builtin_url_extract_domain(args: &[Value]) -> Result<Value> {
                     if series.dtype() == &DataType::Utf8 {
                         let extracted_series = series
                             .utf8()
-                            .unwrap()
+                            .map_err(|e| {
+                                dsq_shared::error::operation_error(format!(
+                                    "url_extract_domain() failed to cast series to utf8: {}",
+                                    e
+                                ))
+                            })?
                             .apply(|s| {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(url) => url.host_str().map(|h| Cow::Owned(h.to_string())),
@@ -68,7 +73,12 @@ pub fn builtin_url_extract_domain(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let extracted_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_extract_domain() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(url) => url.host_str().map(|h| Cow::Owned(h.to_string())),

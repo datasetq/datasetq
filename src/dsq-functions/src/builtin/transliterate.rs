@@ -58,9 +58,13 @@ pub fn builtin_transliterate(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype() == &DataType::Utf8 {
-                        let transliterate_series = series
-                            .utf8()
-                            .unwrap()
+                        let utf8_series = series.utf8().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "transliterate() failed to cast series to utf8: {}",
+                                e
+                            ))
+                        })?;
+                        let transliterate_series = utf8_series
                             .apply(|s| s.map(|s| Cow::Owned(cyrillic_to_latin(s))))
                             .into_series();
                         let mut s = transliterate_series;
@@ -83,9 +87,13 @@ pub fn builtin_transliterate(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype() == &DataType::Utf8 {
-                let transliterate_series = series
-                    .utf8()
-                    .unwrap()
+                let utf8_series = series.utf8().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "transliterate() failed to cast series to utf8: {}",
+                        e
+                    ))
+                })?;
+                let transliterate_series = utf8_series
                     .apply(|s| s.map(|s| Cow::Owned(cyrillic_to_latin(s))))
                     .into_series();
                 Ok(Value::Series(transliterate_series))

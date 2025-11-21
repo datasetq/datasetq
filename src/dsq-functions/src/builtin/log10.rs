@@ -71,9 +71,13 @@ pub fn builtin_log10(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype().is_numeric() {
-                        let log10_series = series
-                            .f64()
-                            .unwrap()
+                        let f64_series = series.f64().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "log10() failed to cast series to f64: {}",
+                                e
+                            ))
+                        })?;
+                        let log10_series = f64_series
                             .apply(|opt_f| {
                                 opt_f.and_then(|f| if f <= 0.0 { None } else { Some(f.log10()) })
                             })
@@ -98,9 +102,13 @@ pub fn builtin_log10(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                let log10_series = series
-                    .f64()
-                    .unwrap()
+                let f64_series = series.f64().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "log10() failed to cast series to f64: {}",
+                        e
+                    ))
+                })?;
+                let log10_series = f64_series
                     .apply(|opt_f| {
                         opt_f.and_then(|f| if f <= 0.0 { None } else { Some(f.log10()) })
                     })

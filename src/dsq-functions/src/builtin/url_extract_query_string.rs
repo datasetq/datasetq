@@ -40,7 +40,12 @@ pub fn builtin_url_extract_query_string(args: &[Value]) -> Result<Value> {
                     if series.dtype() == &DataType::Utf8 {
                         let extracted_series = series
                             .utf8()
-                            .unwrap()
+                            .map_err(|e| {
+                                dsq_shared::error::operation_error(format!(
+                                    "url_extract_query_string() failed to cast series to utf8: {}",
+                                    e
+                                ))
+                            })?
                             .apply(|s| {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(url) => url.query().map(|q| Cow::Owned(q.to_string())),
@@ -70,7 +75,12 @@ pub fn builtin_url_extract_query_string(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let extracted_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_extract_query_string() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(url) => url.query().map(|q| Cow::Owned(q.to_string())),

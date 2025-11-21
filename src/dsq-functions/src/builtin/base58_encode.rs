@@ -28,9 +28,13 @@ pub fn builtin_base58_encode(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype() == &DataType::Utf8 {
-                        let encoded_series = series
-                            .utf8()
-                            .unwrap()
+                        let utf8_series = series.utf8().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "base58_encode() failed to cast series to utf8: {}",
+                                e
+                            ))
+                        })?;
+                        let encoded_series = utf8_series
                             .apply(|s| s.map(|s| Cow::Owned(s.as_bytes().to_base58())))
                             .into_series();
                         let mut s = encoded_series;
@@ -53,9 +57,13 @@ pub fn builtin_base58_encode(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype() == &DataType::Utf8 {
-                let encoded_series = series
-                    .utf8()
-                    .unwrap()
+                let utf8_series = series.utf8().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "base58_encode() failed to cast series to utf8: {}",
+                        e
+                    ))
+                })?;
+                let encoded_series = utf8_series
                     .apply(|s| s.map(|s| Cow::Owned(s.as_bytes().to_base58())))
                     .into_series();
                 Ok(Value::Series(encoded_series))

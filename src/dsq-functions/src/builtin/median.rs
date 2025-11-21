@@ -23,7 +23,7 @@ pub fn builtin_median(args: &[Value]) -> Result<Value> {
             if values.is_empty() {
                 return Ok(Value::Null);
             }
-            values.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let mid = values.len() / 2;
             if values.len() % 2 == 0 {
                 Ok(Value::Float((values[mid - 1] + values[mid]) / 2.0))

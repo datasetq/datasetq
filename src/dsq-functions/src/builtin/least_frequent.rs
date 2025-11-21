@@ -26,14 +26,14 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
                 let entry = counts.entry(key).or_insert_with(|| (val.clone(), 0));
                 entry.1 += 1;
             }
-            let min_count = counts.values().map(|(_, count)| *count).min().unwrap();
+            let min_count = counts.values().map(|(_, count)| *count).min().unwrap_or(0);
             let least_frequent: Vec<&Value> = counts
                 .values()
                 .filter(|(_, count)| *count == min_count)
                 .map(|(val, _)| val)
                 .collect();
             // Return the first one (arbitrary choice if multiple have same frequency)
-            Ok((*least_frequent.first().unwrap()).clone())
+            Ok(least_frequent.first().map_or(Value::Null, |v| (*v).clone()))
         }
         Value::DataFrame(df) => {
             if df.height() == 0 {

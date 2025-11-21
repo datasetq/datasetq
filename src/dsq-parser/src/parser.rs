@@ -292,7 +292,11 @@ fn parse_pipeline(input: &str) -> IResult<&str, Expr, VerboseError<&str>> {
                 let mut exprs = vec![first];
                 exprs.extend(rest);
                 if exprs.len() == 1 {
-                    exprs.into_iter().next().unwrap()
+                    // Safe: we just pushed `first`, so the vec has at least one element
+                    exprs
+                        .into_iter()
+                        .next()
+                        .expect("pipeline has at least one expression")
                 } else {
                     Expr::Pipeline(exprs)
                 }
@@ -309,7 +313,11 @@ fn parse_pipeline(input: &str) -> IResult<&str, Expr, VerboseError<&str>> {
                 let mut exprs = vec![first];
                 exprs.extend(rest);
                 if exprs.len() == 1 {
-                    exprs.into_iter().next().unwrap()
+                    // Safe: we just pushed `first`, so the vec has at least one element
+                    exprs
+                        .into_iter()
+                        .next()
+                        .expect("pipeline has at least one expression")
                 } else {
                     Expr::Pipeline(exprs)
                 }
@@ -623,7 +631,13 @@ fn parse_postfix_expr(input: &str) -> IResult<&str, Expr, VerboseError<&str>> {
             },
             PostfixOp::FunctionCall(args) => {
                 let name = match &expr {
-                    Expr::FieldAccess { fields, .. } => fields.last().unwrap().clone(),
+                    Expr::FieldAccess { fields, .. } => {
+                        // Safe: FieldAccess is constructed with at least one field
+                        fields
+                            .last()
+                            .expect("field access has at least one field")
+                            .clone()
+                    }
                     Expr::Identifier(name) => name.clone(),
                     Expr::Identity => ".".to_string(),
                     Expr::FunctionCall { name, .. } => name.clone(),

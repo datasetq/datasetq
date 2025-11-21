@@ -41,11 +41,16 @@ pub fn builtin_url_strip_port(args: &[Value]) -> Result<Value> {
                     if series.dtype() == &DataType::Utf8 {
                         let stripped_series = series
                             .utf8()
-                            .unwrap()
+                            .map_err(|e| {
+                                dsq_shared::error::operation_error(format!(
+                                    "url_strip_port() failed to cast series to utf8: {}",
+                                    e
+                                ))
+                            })?
                             .apply(|s| {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(mut url) => {
-                                        url.set_port(None).unwrap();
+                                        url.set_port(None).ok()?;
                                         Some(Cow::Owned(url.to_string()))
                                     }
                                     Err(_) => Some(Cow::Owned(s.to_string())),
@@ -74,7 +79,12 @@ pub fn builtin_url_strip_port(args: &[Value]) -> Result<Value> {
             if series.dtype() == &DataType::Utf8 {
                 let stripped_series = series
                     .utf8()
-                    .unwrap()
+                    .map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "url_strip_port() failed to cast series to utf8: {}",
+                            e
+                        ))
+                    })?
                     .apply(|s| {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(mut url) => {

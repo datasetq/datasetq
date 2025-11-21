@@ -80,9 +80,13 @@ pub fn builtin_url_parse(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype() == &DataType::Utf8 {
-                        let parsed_series = series
-                            .utf8()
-                            .unwrap()
+                        let utf8_series = series.utf8().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "url_parse() failed to cast series to utf8: {}",
+                                e
+                            ))
+                        })?;
+                        let parsed_series = utf8_series
                             .apply(|s| {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(url) => {
@@ -158,9 +162,13 @@ pub fn builtin_url_parse(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype() == &DataType::Utf8 {
-                let parsed_series = series
-                    .utf8()
-                    .unwrap()
+                let utf8_series = series.utf8().map_err(|e| {
+                    dsq_shared::error::operation_error(format!(
+                        "url_parse() failed to cast series to utf8: {}",
+                        e
+                    ))
+                })?;
+                let parsed_series = utf8_series
                     .apply(|s| {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(url) => {
