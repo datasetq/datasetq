@@ -40,7 +40,8 @@
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::module_name_repetitions,
-    clippy::too_many_lines
+    clippy::too_many_lines,
+    clippy::similar_names
 )]
 
 // Re-export shared types

@@ -9,7 +9,7 @@ use nom::{
     character::complete::{alphanumeric1, char, digit1, multispace1},
     combinator::{all_consuming, map, map_res, not, opt, peek, recognize, verify},
     error::{ParseError as NomParseError, VerboseError},
-    multi::{many0, many1, separated_list0, separated_list1},
+    multi::{many0, many1, separated_list0},
     sequence::{delimited, preceded, terminated, tuple},
     IResult,
 };
@@ -259,6 +259,7 @@ fn parse_comma_sequence(input: &str) -> IResult<&str, Expr, VerboseError<&str>> 
 }
 
 /// Parse order by clause
+#[allow(dead_code)]
 fn parse_order_by(input: &str) -> IResult<&str, OrderBy, VerboseError<&str>> {
     map(
         tuple((

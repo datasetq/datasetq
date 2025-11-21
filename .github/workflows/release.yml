@@ -56,7 +56,7 @@ jobs:
             cross: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -115,7 +115,7 @@ jobs:
           "$hash  ${{ env.BINARY_NAME }}-${{ matrix.target }}.zip" | Out-File -FilePath "dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.zip.sha256" -Encoding ascii
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
           path: dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.*
@@ -133,10 +133,10 @@ jobs:
             arch: arm64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
           path: artifacts/
@@ -189,7 +189,7 @@ jobs:
           sha256sum ${PKG_NAME}.deb > ${PKG_NAME}.deb.sha256
 
       - name: Upload DEB
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-deb-${{ matrix.arch }}
           path: "*.deb*"
@@ -207,10 +207,10 @@ jobs:
             arch: aarch64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
           path: artifacts/
@@ -279,7 +279,7 @@ jobs:
           for f in *.rpm; do sha256sum "$f" > "$f.sha256"; done
 
       - name: Upload RPM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-rpm-${{ matrix.arch }}
           path: "*.rpm*"
@@ -297,10 +297,10 @@ jobs:
             arch: aarch64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
           path: artifacts/
@@ -360,7 +360,7 @@ jobs:
             "
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BINARY_NAME }}-apk-${{ matrix.arch }}
           path: "*.apk.tar.gz*"
@@ -370,16 +370,16 @@ jobs:
     needs: build-static
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download Linux amd64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BINARY_NAME }}-x86_64-unknown-linux-musl
           path: artifacts/amd64/
 
       - name: Download Linux arm64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BINARY_NAME }}-aarch64-unknown-linux-musl
           path: artifacts/arm64/
@@ -428,7 +428,7 @@ jobs:
           EOF
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -442,10 +442,10 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: artifacts/
 
@@ -456,7 +456,7 @@ jobs:
           ls -la release/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: release/*
           generate_release_notes: true

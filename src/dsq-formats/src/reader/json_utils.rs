@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 use crate::reader::options::ReadOptions;
-use dsq_shared::value::Value;
 use polars::prelude::*;
 
 /// Helper function to convert JSON value to DataFrame
