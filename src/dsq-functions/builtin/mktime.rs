@@ -1,6 +1,6 @@
 use chrono::{NaiveDateTime, Utc};
-use dsq_shared::value::Value;
 use dsq_shared::Result;
+use dsq_shared::value::Value;
 use inventory;
 
 pub fn builtin_mktime(args: &[Value]) -> Result<Value> {
@@ -15,7 +15,7 @@ pub fn builtin_mktime(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "mktime() argument must be a string",
-                ))
+                ));
             }
         }
     };
@@ -63,10 +63,12 @@ mod tests {
         // Test with invalid format
         let result = builtin_mktime(&[Value::String("2021-01-01".to_string())]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("invalid datetime format"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("invalid datetime format")
+        );
     }
 
     #[test]
@@ -74,10 +76,12 @@ mod tests {
         // Test with non-string argument
         let result = builtin_mktime(&[Value::Int(123)]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("argument must be a string"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("argument must be a string")
+        );
     }
 
     #[test]
@@ -85,10 +89,12 @@ mod tests {
         // Test with no arguments
         let result = builtin_mktime(&[]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("argument must be a string"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("argument must be a string")
+        );
     }
 
     #[test]

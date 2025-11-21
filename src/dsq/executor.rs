@@ -4,11 +4,11 @@
 //! filters on data files through the command-line interface.
 
 use crate::config::Config;
-use dsq_core::error::{Error, Result};
 use dsq_core::Value;
-use polars::prelude::SerWriter;
-use dsq_core::filter::{FilterExecutor as CoreFilterExecutor, FilterCompiler};
+use dsq_core::error::{Error, Result};
+use dsq_core::filter::{FilterCompiler, FilterExecutor as CoreFilterExecutor};
 use dsq_core::io::{read_file, write_file};
+use polars::prelude::SerWriter;
 
 use std::borrow::Cow;
 use std::fmt::Write;
@@ -47,7 +47,8 @@ impl Executor {
             self.read_from_stdin().await?
         };
 
-        self.execute_filter_on_value(filter, input_value, output_path).await
+        self.execute_filter_on_value(filter, input_value, output_path)
+            .await
     }
 
     /// Execute a filter on a value directly
@@ -88,8 +89,22 @@ impl Executor {
 
         // Print execution stats if requested
         if self.config.debug.verbosity > 0 {
-            eprintln!("Execution time: {} ms", result.stats.as_ref().map(|s| s.execution_time.as_millis() as u64).unwrap_or(0));
-            eprintln!("Operations: {}", result.stats.as_ref().map(|s| s.operations_executed).unwrap_or(0));
+            eprintln!(
+                "Execution time: {} ms",
+                result
+                    .stats
+                    .as_ref()
+                    .map(|s| s.execution_time.as_millis() as u64)
+                    .unwrap_or(0)
+            );
+            eprintln!(
+                "Operations: {}",
+                result
+                    .stats
+                    .as_ref()
+                    .map(|s| s.operations_executed)
+                    .unwrap_or(0)
+            );
         }
 
         Ok(())
@@ -102,9 +117,7 @@ impl Executor {
                 let limited = arr.into_iter().take(limit).collect();
                 Ok(Value::Array(limited))
             }
-            Value::DataFrame(df) => {
-                Ok(Value::DataFrame(df.head(Some(limit))))
-            }
+            Value::DataFrame(df) => Ok(Value::DataFrame(df.head(Some(limit)))),
             // For other types, return as-is (limit doesn't apply)
             other => Ok(other),
         }
@@ -196,7 +209,11 @@ impl Executor {
             }
         }
 
-        let output_format = self.config.io.default_output_format.unwrap_or(DataFormat::Csv);
+        let output_format = self
+            .config
+            .io
+            .default_output_format
+            .unwrap_or(DataFormat::Csv);
 
         match output_format {
             DataFormat::Json => {
@@ -208,7 +225,10 @@ impl Executor {
                             serde_json::to_string(&item)
                         } else {
                             serde_json::to_string_pretty(&item)
-                        }.map_err(|e| Error::operation(Cow::Owned(format!("JSON serialization error: {}", e))))?;
+                        }
+                        .map_err(|e| {
+                            Error::operation(Cow::Owned(format!("JSON serialization error: {}", e)))
+                        })?;
                         println!("{}", json_str);
                     }
                 } else {
@@ -216,7 +236,10 @@ impl Executor {
                         serde_json::to_string(&json_value)
                     } else {
                         serde_json::to_string_pretty(&json_value)
-                    }.map_err(|e| Error::operation(Cow::Owned(format!("JSON serialization error: {}", e))))?;
+                    }
+                    .map_err(|e| {
+                        Error::operation(Cow::Owned(format!("JSON serialization error: {}", e)))
+                    })?;
                     println!("{}", json_str);
                 }
             }
@@ -233,15 +256,17 @@ impl Executor {
                 match json_value {
                     serde_json::Value::Array(arr) => {
                         for item in arr {
-                            let json_str = serde_json::to_string(&item)
-                                .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
+                            let json_str = serde_json::to_string(&item).map_err(|e| {
+                                Error::operation(format!("JSON serialization error: {}", e))
+                            })?;
                             println!("{}", json_str);
                         }
                     }
                     _ => {
                         // For non-arrays, output as single line
-                        let json_str = serde_json::to_string(&json_value)
-                            .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
+                        let json_str = serde_json::to_string(&json_value).map_err(|e| {
+                            Error::operation(format!("JSON serialization error: {}", e))
+                        })?;
                         println!("{}", json_str);
                     }
                 }
@@ -264,8 +289,9 @@ impl Executor {
                     _ => {
                         // For non-DataFrame values, fall back to JSON
                         let json_value = value.to_json()?;
-                        let json_str = serde_json::to_string_pretty(&json_value)
-                            .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
+                        let json_str = serde_json::to_string_pretty(&json_value).map_err(|e| {
+                            Error::operation(format!("JSON serialization error: {}", e))
+                        })?;
                         println!("{}", json_str);
                     }
                 }
@@ -275,12 +301,12 @@ impl Executor {
                     Value::DataFrame(df) => {
                         // Write as ADT to stdout
                         use std::io::{self, Write};
-                        
+
                         const FIELD_SEPARATOR: u8 = 31;
                         const RECORD_SEPARATOR: u8 = 30;
-                        
+
                         let mut stdout = io::stdout();
-                        
+
                         // Write header
                         let headers: Vec<&str> = df.get_column_names().iter().copied().collect();
                         for (i, header) in headers.iter().enumerate() {
@@ -290,7 +316,7 @@ impl Executor {
                             stdout.write_all(header.as_bytes())?;
                         }
                         stdout.write_all(&[RECORD_SEPARATOR])?;
-                        
+
                         // Write data rows
                         let height = df.height();
                         let mut value_buffer = String::new(); // Pre-allocated buffer for value formatting
@@ -301,11 +327,22 @@ impl Executor {
                                 }
 
                                 value_buffer.clear(); // Reuse the buffer
-                                match column.get(row_idx).map_err(|e| Error::operation(Cow::Owned(format!("Failed to get column value: {}", e))))? {
+                                match column.get(row_idx).map_err(|e| {
+                                    Error::operation(Cow::Owned(format!(
+                                        "Failed to get column value: {}",
+                                        e
+                                    )))
+                                })? {
                                     polars::prelude::AnyValue::Utf8(s) => value_buffer.push_str(s),
-                                    polars::prelude::AnyValue::Int64(i) => write!(value_buffer, "{}", i).unwrap(),
-                                    polars::prelude::AnyValue::Float64(f) => write!(value_buffer, "{}", f).unwrap(),
-                                    polars::prelude::AnyValue::Boolean(b) => write!(value_buffer, "{}", b).unwrap(),
+                                    polars::prelude::AnyValue::Int64(i) => {
+                                        write!(value_buffer, "{}", i).unwrap()
+                                    }
+                                    polars::prelude::AnyValue::Float64(f) => {
+                                        write!(value_buffer, "{}", f).unwrap()
+                                    }
+                                    polars::prelude::AnyValue::Boolean(b) => {
+                                        write!(value_buffer, "{}", b).unwrap()
+                                    }
                                     polars::prelude::AnyValue::Null => {} // buffer remains empty
                                     other => write!(value_buffer, "{}", other).unwrap(),
                                 };
@@ -323,8 +360,9 @@ impl Executor {
                     _ => {
                         // For non-DataFrame values, fall back to JSON
                         let json_value = value.to_json()?;
-                        let json_str = serde_json::to_string_pretty(&json_value)
-                            .map_err(|e| Error::operation(format!("JSON serialization error: {}", e)))?;
+                        let json_str = serde_json::to_string_pretty(&json_value).map_err(|e| {
+                            Error::operation(format!("JSON serialization error: {}", e))
+                        })?;
                         println!("{}", json_str);
                     }
                 }
@@ -361,7 +399,9 @@ mod tests {
         ]);
 
         // Test identity filter "."
-        let result = executor.execute_filter_on_value(".", input_value.clone(), None).await;
+        let result = executor
+            .execute_filter_on_value(".", input_value.clone(), None)
+            .await;
         assert!(result.is_ok());
         // For now, just check it doesn't error
     }

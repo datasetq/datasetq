@@ -16,7 +16,7 @@ pub fn builtin_transliterate(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "transliterate() second argument must be a string",
-            ))
+            ));
         }
     };
 
@@ -25,7 +25,7 @@ pub fn builtin_transliterate(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "transliterate() third argument must be a string",
-            ))
+            ));
         }
     };
 

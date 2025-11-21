@@ -30,7 +30,7 @@ pub fn builtin_sin(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "sin() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

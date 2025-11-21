@@ -60,7 +60,7 @@ pub fn builtin_acos(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "acos() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

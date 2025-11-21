@@ -16,7 +16,7 @@ pub fn builtin_truncate_date(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "truncate_date() unit must be string",
-            ))
+            ));
         }
     };
 
@@ -54,7 +54,7 @@ pub fn builtin_truncate_date(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "truncate_date() invalid unit",
-            ))
+            ));
         }
     };
     Ok(Value::Int(truncated.timestamp()))

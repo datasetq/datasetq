@@ -30,7 +30,7 @@ pub fn builtin_exp(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "exp() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

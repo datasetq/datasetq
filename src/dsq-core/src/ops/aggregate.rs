@@ -388,7 +388,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                                     operation: "sum".to_string(),
                                     typ: val.type_name().to_string(),
                                 }
-                                .into())
+                                .into());
                             }
                         }
                     }
@@ -425,7 +425,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                                     operation: "mean".to_string(),
                                     typ: val.type_name().to_string(),
                                 }
-                                .into())
+                                .into());
                             }
                         }
                     }
@@ -567,7 +567,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                                     operation: "median".to_string(),
                                     typ: val.type_name().to_string(),
                                 }
-                                .into())
+                                .into());
                             }
                         }
                     }
@@ -604,7 +604,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                                     operation: "std".to_string(),
                                     typ: val.type_name().to_string(),
                                 }
-                                .into())
+                                .into());
                             }
                         }
                     }
@@ -639,7 +639,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                                     operation: "var".to_string(),
                                     typ: val.type_name().to_string(),
                                 }
-                                .into())
+                                .into());
                             }
                         }
                     }
@@ -724,7 +724,7 @@ pub fn pivot(
                     return Err(Error::operation(format!(
                         "Unsupported aggregation function: {}",
                         agg_function.unwrap_or("")
-                    )))
+                    )));
                 }
             };
 
@@ -753,7 +753,7 @@ pub fn pivot(
                     return Err(Error::operation(format!(
                         "Unsupported aggregation function: {}",
                         agg_function.unwrap_or("")
-                    )))
+                    )));
                 }
             };
 

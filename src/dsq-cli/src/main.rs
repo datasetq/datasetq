@@ -912,7 +912,7 @@ async fn merge_files(
                 return Err(anyhow::anyhow!(format!(
                     "Input file {} does not contain tabular data",
                     input.display()
-                )))
+                )));
             }
         };
         dataframes.push(df);

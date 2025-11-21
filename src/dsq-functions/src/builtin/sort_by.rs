@@ -49,7 +49,10 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             // Sort DataFrame by column name
             match df.sort([column.as_str()], false, false) {
                 Ok(sorted_df) => Ok(Value::DataFrame(sorted_df)),
-                Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed: {}", e))),
+                Err(e) => Err(dsq_shared::error::operation_error(format!(
+                    "sort_by() failed: {}",
+                    e
+                ))),
             }
         }
         (Value::DataFrame(df), Value::Array(keys)) if df.height() == keys.len() => {
@@ -60,7 +63,10 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             let indices_ca = UInt32Chunked::from_vec("indices".into(), indices_u32);
             match df.take(&indices_ca) {
                 Ok(sorted_df) => Ok(Value::DataFrame(sorted_df)),
-                Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed: {}", e))),
+                Err(e) => Err(dsq_shared::error::operation_error(format!(
+                    "sort_by() failed: {}",
+                    e
+                ))),
             }
         }
         (Value::DataFrame(df), Value::Series(series)) => {
@@ -71,48 +77,62 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             let mut temp_series = series.clone();
             temp_series.rename(temp_col_name);
             match df_clone.with_column(temp_series) {
-                Ok(df_with_sort) => {
-                    match df_with_sort.sort([temp_col_name], false, false) {
-                        Ok(sorted_df) => {
-                            match sorted_df.drop(temp_col_name) {
-                                Ok(final_df) => Ok(Value::DataFrame(final_df)),
-                                Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed to drop temp column: {}", e))),
-                            }
-                        }
-                        Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed to sort: {}", e))),
-                    }
-                }
-                Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed to add temp column: {}", e))),
+                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], false, false) {
+                    Ok(sorted_df) => match sorted_df.drop(temp_col_name) {
+                        Ok(final_df) => Ok(Value::DataFrame(final_df)),
+                        Err(e) => Err(dsq_shared::error::operation_error(format!(
+                            "sort_by() failed to drop temp column: {}",
+                            e
+                        ))),
+                    },
+                    Err(e) => Err(dsq_shared::error::operation_error(format!(
+                        "sort_by() failed to sort: {}",
+                        e
+                    ))),
+                },
+                Err(e) => Err(dsq_shared::error::operation_error(format!(
+                    "sort_by() failed to add temp column: {}",
+                    e
+                ))),
             }
         }
         (Value::Series(series), Value::Series(key_series)) => {
             // Sort series by key_series
             let temp_col_name = "__sort_by_temp_col";
-            let mut df = DataFrame::new(vec![series.clone()]).map_err(|e| dsq_shared::error::operation_error(format!("sort_by() failed to create df: {}", e)))?;
+            let mut df = DataFrame::new(vec![series.clone()]).map_err(|e| {
+                dsq_shared::error::operation_error(format!("sort_by() failed to create df: {}", e))
+            })?;
             let mut temp_series = key_series.clone();
             temp_series.rename(temp_col_name);
             match df.with_column(temp_series) {
-                Ok(df_with_sort) => {
-                    match df_with_sort.sort([temp_col_name], false, false) {
-                        Ok(sorted_df) => {
-                            match sorted_df.drop(temp_col_name) {
-                                Ok(final_df) => {
-                                    if let Some(sorted_series) = final_df.get_columns().first() {
-                                        Ok(Value::Series(sorted_series.clone()))
-                                    } else {
-                                        Ok(Value::Series(series.clone()))
-                                    }
-                                }
-                                Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed to drop temp column: {}", e))),
+                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], false, false) {
+                    Ok(sorted_df) => match sorted_df.drop(temp_col_name) {
+                        Ok(final_df) => {
+                            if let Some(sorted_series) = final_df.get_columns().first() {
+                                Ok(Value::Series(sorted_series.clone()))
+                            } else {
+                                Ok(Value::Series(series.clone()))
                             }
                         }
-                        Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed to sort: {}", e))),
-                    }
-                }
-                Err(e) => Err(dsq_shared::error::operation_error(format!("sort_by() failed to add temp column: {}", e))),
+                        Err(e) => Err(dsq_shared::error::operation_error(format!(
+                            "sort_by() failed to drop temp column: {}",
+                            e
+                        ))),
+                    },
+                    Err(e) => Err(dsq_shared::error::operation_error(format!(
+                        "sort_by() failed to sort: {}",
+                        e
+                    ))),
+                },
+                Err(e) => Err(dsq_shared::error::operation_error(format!(
+                    "sort_by() failed to add temp column: {}",
+                    e
+                ))),
             }
         }
-        _ => Err(dsq_shared::error::operation_error("sort_by() requires (array, array), (array, string), (dataframe, string/array/series), or (series, series)")),
+        _ => Err(dsq_shared::error::operation_error(
+            "sort_by() requires (array, array), (array, string), (dataframe, string/array/series), or (series, series)",
+        )),
     }
 }
 

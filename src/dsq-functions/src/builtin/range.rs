@@ -15,7 +15,7 @@ pub fn builtin_range(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "range() start must be integer",
-                ))
+                ));
             }
         }
     } else {
@@ -27,7 +27,7 @@ pub fn builtin_range(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "range() end must be integer",
-            ))
+            ));
         }
     };
 
@@ -37,7 +37,7 @@ pub fn builtin_range(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "range() step must be non-zero integer",
-                ))
+                ));
             }
         }
     } else {

@@ -17,7 +17,7 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "start_of_week() second argument must be a string",
-                ))
+                ));
             }
         }
     } else {
@@ -34,7 +34,7 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                 _ => {
                     return Err(dsq_shared::error::operation_error(
                         "start_of_week() start_day must be 'monday' or 'sunday'",
-                    ))
+                    ));
                 }
             };
 
@@ -55,7 +55,7 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                             _ => {
                                 return Err(dsq_shared::error::operation_error(
                                     "start_of_week() start_day must be 'monday' or 'sunday'",
-                                ))
+                                ));
                             }
                         };
 
@@ -88,7 +88,11 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                                         let days_to_subtract = match start_day.as_str() {
                                             "monday" => weekday.num_days_from_monday() as i64,
                                             "sunday" => weekday.num_days_from_sunday() as i64,
-                                            _ => return Err(dsq_shared::error::operation_error("start_of_week() start_day must be 'monday' or 'sunday'")),
+                                            _ => {
+                                                return Err(dsq_shared::error::operation_error(
+                                                    "start_of_week() start_day must be 'monday' or 'sunday'",
+                                                ));
+                                            }
                                         };
 
                                         let week_start_date = dt.date_naive()
@@ -135,9 +139,11 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                                 let days_to_subtract = match start_day.as_str() {
                                     "monday" => weekday.num_days_from_monday() as i64,
                                     "sunday" => weekday.num_days_from_sunday() as i64,
-                                    _ => return Err(dsq_shared::error::operation_error(
-                                        "start_of_week() start_day must be 'monday' or 'sunday'",
-                                    )),
+                                    _ => {
+                                        return Err(dsq_shared::error::operation_error(
+                                            "start_of_week() start_day must be 'monday' or 'sunday'",
+                                        ));
+                                    }
                                 };
 
                                 let week_start_date =

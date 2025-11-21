@@ -109,7 +109,7 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
                 return Err(Error::operation(format!(
                     "Unsupported file format: {}",
                     extension
-                )))
+                )));
             }
         }
     } else {
@@ -223,7 +223,7 @@ pub async fn write_file<P: AsRef<Path>>(
                 return Err(Error::operation(format!(
                     "Unsupported output format: {}",
                     extension
-                )))
+                )));
             }
         }
     } else {
@@ -258,7 +258,7 @@ pub async fn write_file<P: AsRef<Path>>(
             return Err(Error::operation(format!(
                 "Unsupported format: {:?}",
                 format
-            )))
+            )));
         }
     };
 

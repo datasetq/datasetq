@@ -7,11 +7,7 @@ mod output;
 mod repl;
 
 #[cfg(not(target_arch = "wasm32"))]
-use clap::CommandFactory;
-#[cfg(not(target_arch = "wasm32"))]
-use clap_complete::generate;
-#[cfg(not(target_arch = "wasm32"))]
-use crate::cli::{parse_args, CliConfig, Commands, ConfigCommands};
+use crate::cli::{CliConfig, Commands, ConfigCommands, parse_args};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::config::{Config, create_default_config_file, validate_config};
 #[cfg(not(target_arch = "wasm32"))]
@@ -19,11 +15,15 @@ use crate::executor::Executor;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::repl::Repl;
 #[cfg(not(target_arch = "wasm32"))]
-use dsq_core::error::{Error, Result};
+use clap::CommandFactory;
+#[cfg(not(target_arch = "wasm32"))]
+use clap_complete::generate;
 #[cfg(not(target_arch = "wasm32"))]
 use dsq_core::DataFormat;
 #[cfg(not(target_arch = "wasm32"))]
 use dsq_core::Value;
+#[cfg(not(target_arch = "wasm32"))]
+use dsq_core::error::{Error, Result};
 #[cfg(not(target_arch = "wasm32"))]
 use dsq_core::io::{read_file, write_file};
 #[cfg(not(target_arch = "wasm32"))]
@@ -67,7 +67,11 @@ async fn run() -> Result<()> {
 
     // Set default output format based on input format when outputting to stdout
     // ONLY if no explicit output format was specified via CLI
-    if cli_config.output.is_none() && !cli_config.input_files.is_empty() && config.io.default_output_format.is_none() && cli_config.output_format.is_none() {
+    if cli_config.output.is_none()
+        && !cli_config.input_files.is_empty()
+        && config.io.default_output_format.is_none()
+        && cli_config.output_format.is_none()
+    {
         if let Ok(input_format) = DataFormat::from_path(&cli_config.input_files[0]) {
             config.io.default_output_format = Some(input_format);
         }
@@ -75,26 +79,32 @@ async fn run() -> Result<()> {
 
     // Set up logging
     setup_logging(&config);
-    
+
     // Handle subcommands
     if let Some(command) = args.command {
         return handle_command(command, &config).await;
     }
-    
+
     // Handle interactive mode
     if cli_config.interactive {
         return run_interactive(&config).await;
     }
-    
+
     // Handle test mode
     if cli_config.test {
         return test_filter(&cli_config, &config);
     }
-    
+
     // Get the filter
     let filter = if let Some(filter_file) = &cli_config.filter_file {
         fs::read_to_string(filter_file)
-            .map_err(|e| Error::operation(format!("Failed to read filter file {}: {}", filter_file.display(), e)))?
+            .map_err(|e| {
+                Error::operation(format!(
+                    "Failed to read filter file {}: {}",
+                    filter_file.display(),
+                    e
+                ))
+            })?
             .trim()
             .to_string()
     } else {
@@ -131,39 +141,72 @@ async fn run() -> Result<()> {
     let output_path = cli_config.output.as_deref();
 
     let mut executor = Executor::new(config);
-        if input_paths.is_empty() {
-            if cli_config.null_input {
-                executor.execute_filter_on_value(&filter, Value::Null, output_path).await
-            } else {
-                executor.execute_filter(&filter, None, output_path).await
-            }
+    if input_paths.is_empty() {
+        if cli_config.null_input {
+            executor
+                .execute_filter_on_value(&filter, Value::Null, output_path)
+                .await
         } else {
-            // For now, just use the first input path
-            // TODO: handle multiple input files
-            executor.execute_filter(&filter, Some(&input_paths[0]), output_path).await
+            executor.execute_filter(&filter, None, output_path).await
         }
+    } else {
+        // For now, just use the first input path
+        // TODO: handle multiple input files
+        executor
+            .execute_filter(&filter, Some(&input_paths[0]), output_path)
+            .await
+    }
 }
 
 async fn handle_command(command: Commands, config: &Config) -> Result<()> {
     match command {
-        Commands::Convert { input, output, input_format, output_format, overwrite } => {
-            convert_file(&input, &output, input_format, output_format, overwrite, config).await
+        Commands::Convert {
+            input,
+            output,
+            input_format,
+            output_format,
+            overwrite,
+        } => {
+            convert_file(
+                &input,
+                &output,
+                input_format,
+                output_format,
+                overwrite,
+                config,
+            )
+            .await
         }
-        Commands::Inspect { file, schema, sample, stats } => {
-            inspect_file(&file, schema, sample, stats, config).await
+        Commands::Inspect {
+            file,
+            schema,
+            sample,
+            stats,
+        } => inspect_file(&file, schema, sample, stats, config).await,
+        Commands::Validate {
+            files,
+            schema,
+            check_duplicates,
+            check_nulls,
+        } => {
+            validate_files(
+                &files,
+                schema.as_deref(),
+                check_duplicates,
+                check_nulls,
+                config,
+            )
+            .await
         }
-        Commands::Validate { files, schema, check_duplicates, check_nulls } => {
-            validate_files(&files, schema.as_deref(), check_duplicates, check_nulls, config).await
-        }
-        Commands::Merge { inputs, output, method, on, join_type } => {
-            merge_files(&inputs, &output, method, &on, join_type, config).await
-        }
-        Commands::Completions { shell } => {
-            generate_completions(shell)
-        }
-        Commands::Config { command } => {
-            handle_config_command(command, config)
-        }
+        Commands::Merge {
+            inputs,
+            output,
+            method,
+            on,
+            join_type,
+        } => merge_files(&inputs, &output, method, &on, join_type, config).await,
+        Commands::Completions { shell } => generate_completions(shell),
+        Commands::Config { command } => handle_config_command(command, config),
     }
 }
 
@@ -177,7 +220,10 @@ fn handle_config_command(command: ConfigCommands, config: &Config) -> Result<()>
         }
         ConfigCommands::Init { path, force } => {
             if path.exists() && !force {
-                return Err(Error::operation(format!("Config file already exists: {}", path.display())));
+                return Err(Error::operation(format!(
+                    "Config file already exists: {}",
+                    path.display()
+                )));
             }
             create_default_config_file(&path)?;
             println!("Created config file: {}", path.display());
@@ -194,7 +240,11 @@ fn handle_config_command(command: ConfigCommands, config: &Config) -> Result<()>
             println!("{}", value);
             Ok(())
         }
-        ConfigCommands::Set { key, value, config: config_path } => {
+        ConfigCommands::Set {
+            key,
+            value,
+            config: config_path,
+        } => {
             let mut update_config = if let Some(ref path) = config_path {
                 Config::load_from_file(&path)?
             } else {
@@ -208,7 +258,6 @@ fn handle_config_command(command: ConfigCommands, config: &Config) -> Result<()>
         }
     }
 }
-
 
 async fn convert_file(
     input: &Path,
@@ -227,14 +276,17 @@ async fn convert_file(
         .ok_or_else(|| Error::operation("Cannot determine output format"))?;
 
     if output.exists() && !overwrite {
-        return Err(Error::operation(format!("Output file already exists: {}", output.display())));
+        return Err(Error::operation(format!(
+            "Output file already exists: {}",
+            output.display()
+        )));
     }
-    
+
     let read_options = config.to_read_options();
     let data = read_file(input, &read_options).await?;
     let write_options = config.to_write_options();
     write_file(&data, output, &write_options).await?;
-    
+
     println!("Converted {} to {}", input.display(), output.display());
     Ok(())
 }
@@ -248,7 +300,7 @@ async fn inspect_file(
 ) -> Result<()> {
     let format = DataFormat::from_path(file)
         .map_err(|_| Error::operation("Cannot determine file format"))?;
-    
+
     let mut read_options = config.to_read_options();
     read_options.n_rows = sample.map(|n| n.max(100));
     let data = read_file(file, &read_options).await?;
@@ -286,7 +338,7 @@ async fn inspect_file(
             }
         }
     }
-    
+
     Ok(())
 }
 
@@ -302,13 +354,13 @@ async fn validate_files(
     } else {
         None
     };
-    
+
     for file in files {
         println!("Validating: {}", file.display());
-        
+
         let _format = DataFormat::from_path(file)
             .map_err(|_| Error::operation("Cannot determine file format"))?;
-        
+
         let read_options = config.to_read_options();
         let data = read_file(file, &read_options).await?;
 
@@ -325,7 +377,9 @@ async fn validate_files(
                 // Check duplicates
                 if check_duplicates {
                     // Check for duplicate rows
-                    let duplicate_mask = df.is_duplicated().map_err(|e| Error::operation(format!("Failed to check for duplicates: {}", e)))?;
+                    let duplicate_mask = df.is_duplicated().map_err(|e| {
+                        Error::operation(format!("Failed to check for duplicates: {}", e))
+                    })?;
                     let duplicate_count = duplicate_mask.sum().unwrap_or(0);
                     if duplicate_count > 0 {
                         eprintln!("  ⚠️  Found {} duplicate rows", duplicate_count);
@@ -337,7 +391,11 @@ async fn validate_files(
                     for col in df.get_columns() {
                         let null_count = col.null_count();
                         if null_count > 0 {
-                            eprintln!("  ⚠️  Column '{}' has {} null values", col.name(), null_count);
+                            eprintln!(
+                                "  ⚠️  Column '{}' has {} null values",
+                                col.name(),
+                                null_count
+                            );
                         }
                     }
                 }
@@ -352,10 +410,6 @@ async fn validate_files(
 
     Ok(())
 }
-
-
-
-
 
 fn generate_completions(shell: clap_complete::Shell) -> Result<()> {
     let mut cmd = crate::cli::Cli::command();
@@ -373,7 +427,13 @@ fn test_filter(cli_config: &CliConfig, config: &Config) -> Result<()> {
     // Get the filter
     let filter = if let Some(filter_file) = &cli_config.filter_file {
         fs::read_to_string(filter_file)
-            .map_err(|e| Error::operation(format!("Failed to read filter file {}: {}", filter_file.display(), e)))?
+            .map_err(|e| {
+                Error::operation(format!(
+                    "Failed to read filter file {}: {}",
+                    filter_file.display(),
+                    e
+                ))
+            })?
             .trim()
             .to_string()
     } else if let Some(input_path) = cli_config.input_files.first() {
@@ -402,7 +462,7 @@ fn test_filter(cli_config: &CliConfig, config: &Config) -> Result<()> {
     };
 
     let executor = Executor::new(config.clone());
-    
+
     match executor.validate_filter(&filter) {
         Ok(_) => {
             println!("Filter is valid: {}", filter);
@@ -415,8 +475,6 @@ fn test_filter(cli_config: &CliConfig, config: &Config) -> Result<()> {
     }
 }
 
-
-
 fn setup_logging(config: &Config) {
     let log_level = match config.debug.verbosity {
         0 => log::LevelFilter::Warn,
@@ -424,10 +482,8 @@ fn setup_logging(config: &Config) {
         2 => log::LevelFilter::Debug,
         _ => log::LevelFilter::Trace,
     };
-    
-    env_logger::Builder::new()
-        .filter_level(log_level)
-        .init();
+
+    env_logger::Builder::new().filter_level(log_level).init();
 }
 
 fn get_config_value(config: &Config, key: &str) -> Result<String> {
@@ -446,29 +502,36 @@ fn get_config_value(config: &Config, key: &str) -> Result<String> {
 fn set_config_value(config: &mut Config, key: &str, value: &str) -> Result<()> {
     match key {
         "filter.lazy_evaluation" => {
-            config.filter.lazy_evaluation = value.parse()
+            config.filter.lazy_evaluation = value
+                .parse()
                 .map_err(|_| Error::Config("Invalid boolean value".to_string()))?;
         }
         "filter.dataframe_optimizations" => {
-            config.filter.dataframe_optimizations = value.parse()
+            config.filter.dataframe_optimizations = value
+                .parse()
                 .map_err(|_| Error::Config("Invalid boolean value".to_string()))?;
         }
         "performance.batch_size" => {
-            config.performance.batch_size = value.parse()
+            config.performance.batch_size = value
+                .parse()
                 .map_err(|_| Error::Config("Invalid batch size".to_string()))?;
         }
         "performance.threads" => {
-            config.performance.threads = value.parse()
+            config.performance.threads = value
+                .parse()
                 .map_err(|_| Error::Config("Invalid thread count".to_string()))?;
         }
         "formats.csv.separator" => {
             if value.len() != 1 {
-                return Err(Error::Config("CSV separator must be a single character".to_string()));
+                return Err(Error::Config(
+                    "CSV separator must be a single character".to_string(),
+                ));
             }
             config.formats.csv.separator = value.to_string();
         }
         "formats.csv.has_header" => {
-            config.formats.csv.has_header = value.parse()
+            config.formats.csv.has_header = value
+                .parse()
                 .map_err(|_| Error::Config("Invalid boolean value".to_string()))?;
         }
         _ => return Err(Error::Config(format!("Unknown config key: {}", key))),
@@ -482,20 +545,22 @@ fn load_schema(path: &Path) -> Result<polars::prelude::Schema> {
 
     let schema_map: serde_json::Map<String, serde_json::Value> = serde_json::from_str(&content)
         .map_err(|e| Error::operation(format!("Invalid schema JSON: {}", e)))?;
-    
+
     let mut schema = polars::prelude::Schema::new();
     for (name, value) in schema_map {
-        let dtype_str = value.as_str().ok_or_else(|| Error::operation(format!("dtype for {} must be string", name)))?;
+        let dtype_str = value
+            .as_str()
+            .ok_or_else(|| Error::operation(format!("dtype for {} must be string", name)))?;
         let dtype = parse_dtype(dtype_str)?;
         schema.with_column(name.into(), dtype);
     }
-    
+
     Ok(schema)
 }
 
 fn parse_dtype(dtype_str: &str) -> Result<polars::prelude::DataType> {
     use polars::prelude::DataType;
-    
+
     Ok(match dtype_str.to_lowercase().as_str() {
         "bool" | "boolean" => DataType::Boolean,
         "i8" | "int8" => DataType::Int8,
@@ -512,7 +577,12 @@ fn parse_dtype(dtype_str: &str) -> Result<polars::prelude::DataType> {
         "date" => DataType::Date,
         "datetime" => DataType::Datetime(polars::prelude::TimeUnit::Microseconds, None),
         "time" => DataType::Time,
-        _ => return Err(Error::operation(format!("Unknown data type: {}", dtype_str))),
+        _ => {
+            return Err(Error::operation(format!(
+                "Unknown data type: {}",
+                dtype_str
+            )));
+        }
     })
 }
 
@@ -522,7 +592,10 @@ fn handle_example_directory(dir_path: &Path) -> Result<(String, Vec<PathBuf>)> {
     // Check if query.dsq exists
     let query_path = dir_path.join("query.dsq");
     if !query_path.exists() {
-        return Err(Error::operation(format!("query.dsq not found in {}", dir_path.display())));
+        return Err(Error::operation(format!(
+            "query.dsq not found in {}",
+            dir_path.display()
+        )));
     }
 
     // Read the filter from query.dsq
@@ -533,14 +606,26 @@ fn handle_example_directory(dir_path: &Path) -> Result<(String, Vec<PathBuf>)> {
 
     // Find data files (data.json, data.csv, etc.)
     let mut data_files = Vec::new();
-    for entry in fs::read_dir(dir_path)
-        .map_err(|e| Error::operation(format!("Failed to read directory {}: {}", dir_path.display(), e)))?
-    {
-        let entry = entry.map_err(|e| Error::operation(format!("Failed to read directory entry: {}", e)))?;
+    for entry in fs::read_dir(dir_path).map_err(|e| {
+        Error::operation(format!(
+            "Failed to read directory {}: {}",
+            dir_path.display(),
+            e
+        ))
+    })? {
+        let entry = entry
+            .map_err(|e| Error::operation(format!("Failed to read directory entry: {}", e)))?;
         let path = entry.path();
         if path.is_file() {
             if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                if file_name.starts_with("data.") && (file_name.ends_with(".json") || file_name.ends_with(".csv") || file_name.ends_with(".tsv") || file_name.ends_with(".parquet") || file_name.ends_with(".jsonl") || file_name.ends_with(".ndjson")) {
+                if file_name.starts_with("data.")
+                    && (file_name.ends_with(".json")
+                        || file_name.ends_with(".csv")
+                        || file_name.ends_with(".tsv")
+                        || file_name.ends_with(".parquet")
+                        || file_name.ends_with(".jsonl")
+                        || file_name.ends_with(".ndjson"))
+                {
                     data_files.push(path);
                 }
             }
@@ -548,7 +633,10 @@ fn handle_example_directory(dir_path: &Path) -> Result<(String, Vec<PathBuf>)> {
     }
 
     if data_files.is_empty() {
-        return Err(Error::operation(format!("No data files found in {}", dir_path.display())));
+        return Err(Error::operation(format!(
+            "No data files found in {}",
+            dir_path.display()
+        )));
     }
 
     // Sort data files to ensure consistent order
@@ -587,7 +675,9 @@ async fn merge_files(
     }
 
     if inputs.len() == 1 {
-        return Err(Error::operation("At least two input files required for merge"));
+        return Err(Error::operation(
+            "At least two input files required for merge",
+        ));
     }
 
     // Read all input files
@@ -598,8 +688,15 @@ async fn merge_files(
         let value = dsq_core::io::read_file(input, &read_options).await?;
         let df = match value {
             Value::DataFrame(df) => df,
-            Value::LazyFrame(lf) => lf.collect().map_err(|e| Error::operation(format!("Failed to collect lazy frame: {}", e)))?,
-            _ => return Err(Error::operation(format!("Input file {} does not contain tabular data", input.display()))),
+            Value::LazyFrame(lf) => lf
+                .collect()
+                .map_err(|e| Error::operation(format!("Failed to collect lazy frame: {}", e)))?,
+            _ => {
+                return Err(Error::operation(format!(
+                    "Input file {} does not contain tabular data",
+                    input.display()
+                )));
+            }
         };
         dataframes.push(df);
     }
@@ -608,15 +705,18 @@ async fn merge_files(
         cli::MergeMethod::Concat => {
             // Concatenate all dataframes vertically
             let lazy_frames: Vec<_> = dataframes.iter().map(|df| df.clone().lazy()).collect();
-            concat(
-                &lazy_frames,
-                UnionArgs::default()
-            ).map_err(|e| Error::operation(format!("Failed to concatenate dataframes: {}", e)))?
-            .collect().map_err(|e| Error::operation(format!("Failed to collect concatenated result: {}", e)))?
+            concat(&lazy_frames, UnionArgs::default())
+                .map_err(|e| Error::operation(format!("Failed to concatenate dataframes: {}", e)))?
+                .collect()
+                .map_err(|e| {
+                    Error::operation(format!("Failed to collect concatenated result: {}", e))
+                })?
         }
         cli::MergeMethod::Join => {
             if on.is_empty() {
-                return Err(Error::operation("Join method requires 'on' parameter specifying join columns"));
+                return Err(Error::operation(
+                    "Join method requires 'on' parameter specifying join columns",
+                ));
             }
 
             // Start with the first dataframe as Value
@@ -624,7 +724,7 @@ async fn merge_files(
 
             // Join each subsequent dataframe
             for df in dataframes.iter().skip(1) {
-                use dsq_core::ops::join::{join, JoinKeys, JoinOptions, JoinType as CoreJoinType};
+                use dsq_core::ops::join::{JoinKeys, JoinOptions, JoinType as CoreJoinType, join};
 
                 let right = Value::DataFrame(df.clone());
                 let keys = JoinKeys::on(on.to_vec());
@@ -654,7 +754,11 @@ async fn merge_files(
     let write_options = config.to_write_options();
     dsq_core::io::write_file(&Value::DataFrame(result_df), output, &write_options).await?;
 
-    println!("Successfully merged {} files into {}", inputs.len(), output.display());
+    println!(
+        "Successfully merged {} files into {}",
+        inputs.len(),
+        output.display()
+    );
     Ok(())
 }
 
@@ -698,7 +802,12 @@ mod tests {
 
         let result = handle_example_directory(dir_path);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("query.dsq not found"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("query.dsq not found")
+        );
     }
 
     #[test]
@@ -712,7 +821,12 @@ mod tests {
 
         let result = handle_example_directory(dir_path);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("No data files found"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("No data files found")
+        );
     }
 
     #[test]
@@ -727,8 +841,16 @@ mod tests {
         // Create multiple data files
         fs::write(dir_path.join("data.csv"), "id,name\n1,Alice").unwrap();
         fs::write(dir_path.join("data.json"), "{\"id\":1,\"name\":\"Bob\"}").unwrap();
-        fs::write(dir_path.join("data.jsonl"), "{\"id\":2,\"name\":\"Charlie\"}").unwrap();
-        fs::write(dir_path.join("data.ndjson"), "{\"id\":3,\"name\":\"David\"}").unwrap();
+        fs::write(
+            dir_path.join("data.jsonl"),
+            "{\"id\":2,\"name\":\"Charlie\"}",
+        )
+        .unwrap();
+        fs::write(
+            dir_path.join("data.ndjson"),
+            "{\"id\":3,\"name\":\"David\"}",
+        )
+        .unwrap();
         fs::write(dir_path.join("other.csv"), "id,name\n2,Charlie").unwrap(); // Should be ignored
 
         let result = handle_example_directory(dir_path);

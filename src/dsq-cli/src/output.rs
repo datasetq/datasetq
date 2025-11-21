@@ -139,7 +139,7 @@ impl OutputWriter {
                             _ => {
                                 return Err(Error::operation(
                                     "Cannot write non-DataFrame value to CSV/TSV",
-                                ))
+                                ));
                             }
                         }
                     }

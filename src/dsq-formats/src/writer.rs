@@ -233,7 +233,7 @@ pub fn serialize_json5<W: Write>(
         _ => {
             return Err(Error::operation(
                 "Expected DataFrame for JSON5 serialization",
-            ))
+            ));
         }
     };
 
@@ -290,7 +290,7 @@ pub fn serialize_parquet<W: Write>(
         _ => {
             return Err(Error::operation(
                 "Expected DataFrame for Parquet serialization",
-            ))
+            ));
         }
     };
 

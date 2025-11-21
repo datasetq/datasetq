@@ -30,7 +30,7 @@ pub fn builtin_tan(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "tan() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

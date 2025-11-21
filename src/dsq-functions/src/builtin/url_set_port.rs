@@ -20,7 +20,7 @@ pub fn builtin_url_set_port(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "url_set_port() second argument must be an integer or string",
-            ))
+            ));
         }
     };
 

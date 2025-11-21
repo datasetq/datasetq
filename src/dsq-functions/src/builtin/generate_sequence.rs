@@ -22,7 +22,7 @@ pub fn builtin_generate_sequence(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "generate_sequence() start must be a number",
-            ))
+            ));
         }
     };
 
@@ -32,7 +32,7 @@ pub fn builtin_generate_sequence(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "generate_sequence() end must be a number",
-            ))
+            ));
         }
     };
 
@@ -42,7 +42,7 @@ pub fn builtin_generate_sequence(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "generate_sequence() step must be a number",
-            ))
+            ));
         }
     };
 

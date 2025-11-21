@@ -1,12 +1,14 @@
-use dsq_shared::value::{value_from_any_value, Value};
 use dsq_shared::Result;
+use dsq_shared::value::{Value, value_from_any_value};
 use inventory;
 use polars::prelude::*;
 use std::collections::HashMap;
 
 pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
     if args.len() < 4 || args.len() > 5 {
-        return Err(dsq_shared::error::operation_error("pivot() expects 4 or 5 arguments: dataframe, index_columns, pivot_column, value_column, optional agg_function"));
+        return Err(dsq_shared::error::operation_error(
+            "pivot() expects 4 or 5 arguments: dataframe, index_columns, pivot_column, value_column, optional agg_function",
+        ));
     }
 
     let df = match &args[0] {
@@ -14,7 +16,7 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "pivot() first argument must be a DataFrame",
-            ))
+            ));
         }
     };
 
@@ -35,7 +37,7 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "pivot() second argument must be an array of column names",
-            ))
+            ));
         }
     };
 
@@ -44,7 +46,7 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "pivot() third argument must be a string (pivot column name)",
-            ))
+            ));
         }
     };
 
@@ -53,7 +55,7 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "pivot() fourth argument must be a string (value column name)",
-            ))
+            ));
         }
     };
 
@@ -63,7 +65,7 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "pivot() fifth argument must be a string (aggregation function)",
-                ))
+                ));
             }
         }
     } else {

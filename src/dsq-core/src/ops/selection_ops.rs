@@ -51,7 +51,7 @@ impl Operation for SelectConditionOperation {
                         Err(e) => {
                             return Err(Error::Operation(
                                 format!("select() failed to filter DataFrame: {}", e).into(),
-                            ))
+                            ));
                         }
                     }
                 }

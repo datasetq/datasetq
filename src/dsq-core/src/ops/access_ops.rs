@@ -102,7 +102,7 @@ impl Operation for SliceOperation {
                 _ => {
                     return Err(crate::error::Error::operation(
                         "Slice start must be an integer",
-                    ))
+                    ));
                 }
             }
         } else {
@@ -119,7 +119,7 @@ impl Operation for SliceOperation {
                 _ => {
                     return Err(crate::error::Error::operation(
                         "Slice end must be an integer",
-                    ))
+                    ));
                 }
             }
         } else {

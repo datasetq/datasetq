@@ -26,7 +26,7 @@ pub fn builtin_mround(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "mround() first argument must be numeric",
-            ))
+            ));
         }
     };
 
@@ -39,7 +39,7 @@ pub fn builtin_mround(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "mround() second argument must be numeric",
-            ))
+            ));
         }
     };
 

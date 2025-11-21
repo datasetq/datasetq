@@ -30,7 +30,7 @@ pub fn builtin_cos(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "cos() requires numeric values in array",
-                        ))
+                        ));
                     }
                 }
             }

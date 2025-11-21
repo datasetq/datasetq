@@ -27,7 +27,7 @@ pub fn builtin_to_valid_utf8(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "to_valid_utf8() requires string elements in array",
-                        ))
+                        ));
                     }
                 }
             }

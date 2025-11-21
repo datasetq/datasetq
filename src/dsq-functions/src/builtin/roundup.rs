@@ -23,7 +23,7 @@ pub fn builtin_roundup(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "roundup() first argument must be numeric",
-            ))
+            ));
         }
     };
 
@@ -33,7 +33,7 @@ pub fn builtin_roundup(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "roundup() second argument must be an integer",
-                ))
+                ));
             }
         }
     } else {

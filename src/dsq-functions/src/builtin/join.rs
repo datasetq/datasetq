@@ -43,7 +43,7 @@ pub fn builtin_join(args: &[Value]) -> Result<Value> {
             _ => {
                 return Err(dsq_shared::error::operation_error(
                     "join() separator must be string",
-                ))
+                ));
             }
         }
     } else {

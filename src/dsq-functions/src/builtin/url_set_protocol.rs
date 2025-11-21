@@ -17,7 +17,7 @@ pub fn builtin_url_set_protocol(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "url_set_protocol() second argument must be a string",
-            ))
+            ));
         }
     };
 

@@ -14,7 +14,7 @@ pub fn builtin_has(args: &[Value]) -> Result<Value> {
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "has() key must be a string",
-            ))
+            ));
         }
     };
 

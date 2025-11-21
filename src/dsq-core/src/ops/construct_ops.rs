@@ -82,7 +82,7 @@ impl Operation for ObjectConstructOperation {
                 _ => {
                     return Err(crate::error::Error::operation(
                         "Object key must be a string",
-                    ))
+                    ));
                 }
             };
 

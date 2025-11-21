@@ -27,7 +27,7 @@ pub fn builtin_to_ascii(args: &[Value]) -> Result<Value> {
                     _ => {
                         return Err(dsq_shared::error::operation_error(
                             "to_ascii() requires string elements in array",
-                        ))
+                        ));
                     }
                 }
             }
