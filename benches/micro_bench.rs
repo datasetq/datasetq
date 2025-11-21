@@ -121,7 +121,7 @@ fn bench_value_operations(c: &mut Criterion) {
 
     group.bench_function("to_json_conversion", |b| {
         b.iter(|| {
-            let _json = black_box(value.to_json_value());
+            let _json = black_box(value.to_json());
         });
     });
 
