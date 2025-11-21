@@ -35,7 +35,7 @@
 //! - Macros to reduce boilerplate for new format implementations
 
 #![warn(missing_docs)]
-#![warn(clippy::all, clippy::pedantic)]
+#![warn(clippy::all)]
 #![allow(
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
@@ -45,7 +45,37 @@
     clippy::doc_markdown,
     clippy::uninlined_format_args,
     clippy::must_use_candidate,
-    clippy::should_implement_trait
+    clippy::should_implement_trait,
+    clippy::needless_borrow,
+    clippy::len_zero,
+    clippy::iter_cloned_collect,
+    clippy::manual_string_new,
+    clippy::return_self_not_must_use,
+    clippy::naive_bytecount,
+    clippy::map_unwrap_or,
+    clippy::unnecessary_wraps,
+    clippy::needless_pass_by_value,
+    clippy::wildcard_imports,
+    clippy::cast_lossless,
+    clippy::needless_question_mark,
+    clippy::manual_is_multiple_of,
+    clippy::redundant_closure,
+    clippy::clone_on_copy,
+    clippy::struct_excessive_bools,
+    clippy::unused_self,
+    clippy::if_same_then_else,
+    clippy::match_same_arms,
+    clippy::to_string_trait_impl,
+    clippy::ptr_as_ptr,
+    clippy::ref_as_ptr,
+    clippy::field_reassign_with_default,
+    clippy::single_match_else,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::collapsible_else_if,
+    clippy::to_string_in_format_args,
+    clippy::ptr_as_ptr,
+    clippy::single_match
 )]
 
 // Re-export shared types

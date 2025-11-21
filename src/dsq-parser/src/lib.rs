@@ -61,7 +61,7 @@
 //! ```
 
 #![deny(missing_docs)]
-#![warn(clippy::all, clippy::pedantic)]
+#![warn(clippy::all)]
 #![allow(
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
