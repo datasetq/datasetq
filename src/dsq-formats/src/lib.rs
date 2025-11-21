@@ -318,7 +318,7 @@ mod tests {
         let _reader = reader;
 
         let result = to_path("nonexistent.csv");
-        assert!(result.is_err());
+        assert!(result.is_ok()); // Should succeed for valid extension
 
         let result = to_path_with_format("nonexistent.csv", DataFormat::Csv);
         // to_path_with_format returns FileWriter directly, file creation happens on write

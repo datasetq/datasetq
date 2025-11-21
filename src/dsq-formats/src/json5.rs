@@ -576,8 +576,10 @@ impl<W: Write> Json5Writer<W> {
             let row_obj = self.dataframe_row_to_json_object(df, row_idx)?;
 
             let json_str = if self.options.escape_unicode {
-                serde_json::to_string(&row_obj)
-                    .map_err(|e| Error::operation(format!("JSON5 serialization error: {}", e)))?
+                let json_str = serde_json::to_string(&row_obj)
+                    .map_err(|e| Error::operation(format!("JSON5 serialization error: {}", e)))?;
+                // Manually escape unicode characters
+                Self::escape_unicode_chars(&json_str)
             } else {
                 json5::to_string(&row_obj)
                     .map_err(|e| Error::operation(format!("JSON5 serialization error: {}", e)))?
@@ -610,8 +612,12 @@ impl<W: Write> Json5Writer<W> {
             let row_obj = self.dataframe_row_to_json_object(df, row_idx)?;
 
             let json_str = match self.options.escape_unicode {
-                true => serde_json::to_string(&row_obj)
-                    .map_err(|e| Error::operation(format!("JSON5 serialization error: {}", e)))?,
+                true => {
+                    let s = serde_json::to_string(&row_obj).map_err(|e| {
+                        Error::operation(format!("JSON5 serialization error: {}", e))
+                    })?;
+                    Self::escape_unicode_chars(&s)
+                }
                 false => json5::to_string(&row_obj)
                     .map_err(|e| Error::operation(format!("JSON5 serialization error: {}", e)))?,
             }
@@ -670,21 +676,36 @@ impl<W: Write> Json5Writer<W> {
             }
             DataType::Int8 => {
                 let val = series.i8().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Int16 => {
                 let val = series.i16().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Int32 => {
                 let val = series.i32().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Int64 => {
                 let val = series.i64().map_err(Error::from)?.get(index);
@@ -699,27 +720,47 @@ impl<W: Write> Json5Writer<W> {
             }
             DataType::UInt8 => {
                 let val = series.u8().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt16 => {
                 let val = series.u16().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt32 => {
                 let val = series.u32().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt64 => {
                 let val = series.u64().map_err(Error::from)?.get(index);
-                Ok(JsonValue::Number(serde_json::Number::from(
-                    val.unwrap_or(0),
-                )))
+                if val.is_none() {
+                    return if let Some(ref null_str) = self.options.null_value {
+                        Ok(JsonValue::String(null_str.clone()))
+                    } else {
+                        Ok(JsonValue::Null)
+                    };
+                }
+                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Float32 | DataType::Float64 => {
                 let val = series.f64().map_err(Error::from)?.get(index);
@@ -761,6 +802,8 @@ impl<W: Write> Json5Writer<W> {
                 let val = series.date().map_err(Error::from)?.get(index);
                 if let Some(date) = val {
                     Ok(JsonValue::String(date.to_string()))
+                } else if let Some(ref null_str) = self.options.null_value {
+                    Ok(JsonValue::String(null_str.clone()))
                 } else {
                     Ok(JsonValue::Null)
                 }
@@ -769,6 +812,8 @@ impl<W: Write> Json5Writer<W> {
                 let val = series.datetime().map_err(Error::from)?.get(index);
                 if let Some(dt) = val {
                     Ok(JsonValue::String(dt.to_string()))
+                } else if let Some(ref null_str) = self.options.null_value {
+                    Ok(JsonValue::String(null_str.clone()))
                 } else {
                     Ok(JsonValue::Null)
                 }
@@ -807,6 +852,27 @@ impl<W: Write> Json5Writer<W> {
                 Ok(JsonValue::String(format!("{:?}", any_val)))
             }
         }
+    }
+
+    /// Escape unicode characters in a JSON string
+    fn escape_unicode_chars(s: &str) -> String {
+        let mut result = String::new();
+        let mut in_string = false;
+        let mut chars = s.chars().peekable();
+
+        while let Some(ch) = chars.next() {
+            if ch == '"' {
+                result.push(ch);
+                in_string = !in_string;
+            } else if in_string && ch as u32 > 127 {
+                // Escape non-ASCII characters inside strings
+                result.push_str(&format!("\\u{:04x}", ch as u32));
+            } else {
+                result.push(ch);
+            }
+        }
+
+        result
     }
 
     /// Get the number of records written
