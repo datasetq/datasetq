@@ -240,6 +240,9 @@ pub use ops::join::{
 // Re-export transformation operations
 pub use ops::transform::Transform;
 
+// Re-export utility functions
+pub use utils::{array, object};
+
 // Re-export I/O convenience functions
 #[cfg(feature = "io")]
 pub use io::{
