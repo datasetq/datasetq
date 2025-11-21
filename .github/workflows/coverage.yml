@@ -20,7 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -37,7 +37,7 @@ jobs:
         run: cargo tarpaulin --workspace --timeout 300 --out Xml --out Html --output-dir coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage/cobertura.xml
           fail_ci_if_error: false
