@@ -1686,6 +1686,9 @@ batch_size = 7777
             env::remove_var("DSQ_BATCH_SIZE");
         }
         unsafe {
+            env::remove_var("DSQ_LAZY");
+        }
+        unsafe {
             env::remove_var("HOME");
         }
 
