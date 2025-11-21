@@ -7,9 +7,9 @@ mod output;
 mod repl;
 
 #[cfg(not(target_arch = "wasm32"))]
-use crate::cli::{CliConfig, Commands, ConfigCommands, parse_args};
+use crate::cli::{parse_args, CliConfig, Commands, ConfigCommands};
 #[cfg(not(target_arch = "wasm32"))]
-use crate::config::{Config, create_default_config_file, validate_config};
+use crate::config::{create_default_config_file, validate_config, Config};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::executor::Executor;
 #[cfg(not(target_arch = "wasm32"))]
@@ -19,13 +19,13 @@ use clap::CommandFactory;
 #[cfg(not(target_arch = "wasm32"))]
 use clap_complete::generate;
 #[cfg(not(target_arch = "wasm32"))]
-use dsq_core::DataFormat;
-#[cfg(not(target_arch = "wasm32"))]
-use dsq_core::Value;
-#[cfg(not(target_arch = "wasm32"))]
 use dsq_core::error::{Error, Result};
 #[cfg(not(target_arch = "wasm32"))]
 use dsq_core::io::{read_file, write_file};
+#[cfg(not(target_arch = "wasm32"))]
+use dsq_core::DataFormat;
+#[cfg(not(target_arch = "wasm32"))]
+use dsq_core::Value;
 #[cfg(not(target_arch = "wasm32"))]
 use std::fs;
 #[cfg(not(target_arch = "wasm32"))]
@@ -724,7 +724,7 @@ async fn merge_files(
 
             // Join each subsequent dataframe
             for df in dataframes.iter().skip(1) {
-                use dsq_core::ops::join::{JoinKeys, JoinOptions, JoinType as CoreJoinType, join};
+                use dsq_core::ops::join::{join, JoinKeys, JoinOptions, JoinType as CoreJoinType};
 
                 let right = Value::DataFrame(df.clone());
                 let keys = JoinKeys::on(on.to_vec());
@@ -802,12 +802,10 @@ mod tests {
 
         let result = handle_example_directory(dir_path);
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("query.dsq not found")
-        );
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("query.dsq not found"));
     }
 
     #[test]
@@ -821,12 +819,10 @@ mod tests {
 
         let result = handle_example_directory(dir_path);
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("No data files found")
-        );
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("No data files found"));
     }
 
     #[test]

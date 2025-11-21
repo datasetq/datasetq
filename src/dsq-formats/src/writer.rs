@@ -1,6 +1,12 @@
 use crate::error::{Error, FormatError, Result};
 use dsq_shared::value::Value;
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 use polars::prelude::*;
 
 use std::io::Write;
@@ -15,7 +21,13 @@ pub struct WriteOptions {
     /// Compression level (if supported by format)
     pub compression: Option<CompressionLevel>,
     /// Custom schema to enforce
-    #[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+    #[cfg(any(
+        feature = "csv",
+        feature = "json",
+        feature = "json5",
+        feature = "parquet",
+        feature = "avro"
+    ))]
     pub schema: Option<Schema>,
     /// Batch size for streaming writes
     pub batch_size: Option<usize>,
@@ -27,7 +39,13 @@ impl Default for WriteOptions {
             include_header: true,
             overwrite: false,
             compression: None,
-            #[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+            #[cfg(any(
+                feature = "csv",
+                feature = "json",
+                feature = "json5",
+                feature = "parquet",
+                feature = "avro"
+            ))]
             schema: None,
             batch_size: None,
         }
@@ -324,7 +342,13 @@ pub fn serialize_parquet<W: Write>(
 }
 
 /// Serialize ADT (ASCII Delimited Text) data to a writer
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub fn serialize_adt<W: Write>(
     writer: W,
     value: &Value,
@@ -335,7 +359,13 @@ pub fn serialize_adt<W: Write>(
 }
 
 /// Serialize data to a writer based on format
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub fn serialize<W: Write>(
     writer: W,
     value: &Value,
@@ -439,7 +469,13 @@ pub fn serialize<W: Write>(
 pub use crate::format::DataFormat;
 
 /// Trait for writing data to various formats
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub trait DataWriter {
     /// Write a value with options
     fn write(&mut self, value: &Value, options: &WriteOptions) -> Result<()>;
@@ -448,14 +484,26 @@ pub trait DataWriter {
 }
 
 /// File-based data writer
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub struct FileWriter {
     path: String,
     format: DataFormat,
     format_options: FormatWriteOptions,
 }
 
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 impl FileWriter {
     /// Create a new file writer with automatic format detection
     pub fn new<P: AsRef<std::path::Path>>(path: P) -> Result<Self> {
@@ -556,7 +604,13 @@ impl FileWriter {
     }
 }
 
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 impl DataWriter for FileWriter {
     fn write(&mut self, value: &Value, options: &WriteOptions) -> Result<()> {
         use std::fs::File;
@@ -574,14 +628,26 @@ impl DataWriter for FileWriter {
 }
 
 /// Writer for in-memory output
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub struct MemoryWriter {
     buffer: Vec<u8>,
     format: DataFormat,
     format_options: FormatWriteOptions,
 }
 
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 impl MemoryWriter {
     /// Create a new memory writer
     pub fn new(format: DataFormat) -> Self {
@@ -609,7 +675,13 @@ impl MemoryWriter {
     }
 }
 
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 impl DataWriter for MemoryWriter {
     fn write(&mut self, value: &Value, options: &WriteOptions) -> Result<()> {
         use std::io::Cursor;
@@ -623,25 +695,49 @@ impl DataWriter for MemoryWriter {
 }
 
 /// Create a data writer to a file path
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub fn to_path<P: AsRef<std::path::Path>>(path: P) -> Result<FileWriter> {
     FileWriter::new(path)
 }
 
 /// Create a data writer to a file path with format
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub fn to_path_with_format<P: AsRef<std::path::Path>>(path: P, format: DataFormat) -> FileWriter {
     FileWriter::with_format(path, format)
 }
 
 /// Create a data writer to memory
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub fn to_memory(format: DataFormat) -> MemoryWriter {
     MemoryWriter::new(format)
 }
 
 #[cfg(test)]
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 mod tests {
     use super::*;
     use dsq_shared::value::Value;

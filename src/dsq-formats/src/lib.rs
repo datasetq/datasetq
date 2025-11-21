@@ -88,7 +88,13 @@ pub mod error;
 pub mod format;
 
 // Format implementations
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 /// ADT (ASCII Delimited Text) format reading and writing
 pub mod adt;
 #[cfg(feature = "csv")]
@@ -113,15 +119,25 @@ pub mod writer;
 // Re-export main types for convenience
 pub use error::{Error, FormatError, Result};
 pub use format::{detect_format_from_content, DataFormat, FormatOptions};
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub use reader::{
     from_memory, from_path, from_path_with_format, DataReader, FileReader, MemoryReader,
 };
 pub use reader::{FormatReadOptions, ReadOptions};
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
-pub use writer::{
-    to_memory, to_path, to_path_with_format, DataWriter, FileWriter, MemoryWriter,
-};
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
+pub use writer::{to_memory, to_path, to_path_with_format, DataWriter, FileWriter, MemoryWriter};
 pub use writer::{
     AvroCompression, CompressionLevel, CsvEncoding, FormatWriteOptions, OrcCompression,
     WriteOptions,
@@ -131,14 +147,20 @@ pub use writer::{
 pub use writer::ParquetCompression;
 
 // Deserialize/serialize functions
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
-pub use reader::{deserialize, deserialize_adt, from_csv, from_json};
 #[cfg(feature = "csv")]
 pub use reader::deserialize_csv;
 #[cfg(feature = "json")]
 pub use reader::deserialize_json;
 #[cfg(feature = "json5")]
 pub use reader::deserialize_json5;
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
+pub use reader::{deserialize, deserialize_adt, from_csv, from_json};
 
 #[cfg(feature = "parquet")]
 pub use reader::deserialize_parquet;
@@ -149,7 +171,13 @@ pub use writer::serialize_csv;
 pub use writer::serialize_json;
 #[cfg(all(feature = "json5", feature = "json"))]
 pub use writer::serialize_json5;
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub use writer::{serialize, serialize_adt};
 
 #[cfg(feature = "parquet")]
@@ -184,7 +212,13 @@ pub use parquet::{
     ParquetWriter,
 };
 
-#[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+#[cfg(any(
+    feature = "csv",
+    feature = "json",
+    feature = "json5",
+    feature = "parquet",
+    feature = "avro"
+))]
 pub use adt::{detect_adt_format, AdtReadOptions, AdtWriteOptions};
 
 /// Build information for dsq-formats
@@ -268,7 +302,13 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(feature = "csv", feature = "json", feature = "json5", feature = "parquet", feature = "avro"))]
+    #[cfg(any(
+        feature = "csv",
+        feature = "json",
+        feature = "json5",
+        feature = "parquet",
+        feature = "avro"
+    ))]
     fn test_reader_writer_functions_re_export() {
         // Test that reader/writer functions are re-exported
         let reader = from_path("nonexistent.csv");
