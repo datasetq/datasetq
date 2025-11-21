@@ -62,20 +62,24 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
                     let mut max_val = f64::NEG_INFINITY;
                     for i in 0..series.len() {
                         if let Ok(val) = series.get(i) {
-                            match val {
-                                AnyValue::Int64(v) => {
-                                    if v as f64 > max_val {
-                                        max_val = v as f64;
-                                        max_idx = i;
-                                    }
+                            let opt_num: Option<f64> = match val {
+                                AnyValue::Int8(v) => Some(v as f64),
+                                AnyValue::Int16(v) => Some(v as f64),
+                                AnyValue::Int32(v) => Some(v as f64),
+                                AnyValue::Int64(v) => Some(v as f64),
+                                AnyValue::UInt8(v) => Some(v as f64),
+                                AnyValue::UInt16(v) => Some(v as f64),
+                                AnyValue::UInt32(v) => Some(v as f64),
+                                AnyValue::UInt64(v) => Some(v as f64),
+                                AnyValue::Float32(v) => Some(v as f64),
+                                AnyValue::Float64(v) => Some(v),
+                                _ => None,
+                            };
+                            if let Some(v) = opt_num {
+                                if v > max_val {
+                                    max_val = v;
+                                    max_idx = i;
                                 }
-                                AnyValue::Float64(v) => {
-                                    if v > max_val {
-                                        max_val = v;
-                                        max_idx = i;
-                                    }
-                                }
-                                _ => {}
                             }
                         }
                     }
