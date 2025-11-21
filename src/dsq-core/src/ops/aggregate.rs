@@ -1318,10 +1318,8 @@ mod tests {
         }
 
         // Missing column
-        let items_missing = vec![&Value::Object(HashMap::from([(
-            "other".to_string(),
-            Value::Int(1),
-        )]))];
+        let missing_obj = Value::Object(HashMap::from([("other".to_string(), Value::Int(1))]));
+        let items_missing = vec![&missing_obj];
         let result_missing = apply_aggregation_to_group(&list_agg, &items_missing).unwrap();
         match result_missing {
             Value::Array(arr) => {
@@ -1334,15 +1332,14 @@ mod tests {
 
     #[test]
     fn test_count_unique_aggregation() {
-        let items = vec![
-            &Value::Object(HashMap::from([("value".to_string(), Value::Int(1))])),
-            &Value::Object(HashMap::from([("value".to_string(), Value::Int(2))])),
-            &Value::Object(HashMap::from([("value".to_string(), Value::Int(1))])),
-            &Value::Object(HashMap::from([(
-                "value".to_string(),
-                Value::String("test".to_string()),
-            )])),
-        ];
+        let obj1 = Value::Object(HashMap::from([("value".to_string(), Value::Int(1))]));
+        let obj2 = Value::Object(HashMap::from([("value".to_string(), Value::Int(2))]));
+        let obj3 = Value::Object(HashMap::from([("value".to_string(), Value::Int(1))]));
+        let obj4 = Value::Object(HashMap::from([(
+            "value".to_string(),
+            Value::String("test".to_string()),
+        )]));
+        let items = vec![&obj1, &obj2, &obj3, &obj4];
 
         let count_unique_agg = AggregationFunction::CountUnique("value".to_string());
         let result = apply_aggregation_to_group(&count_unique_agg, &items).unwrap();

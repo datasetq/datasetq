@@ -1,0 +1,9 @@
+# Ignore advisories that cannot be fixed due to upstream dependency constraints
+
+[advisories]
+ignore = [
+    # RUSTSEC-2025-0003: fast-float vulnerability
+    # This is a transitive dependency of polars 0.35.4 and there is no fixed version available.
+    # polars pins fast-float 0.2.0 and the fix is not yet released upstream.
+    "RUSTSEC-2025-0003",
+]

@@ -518,6 +518,9 @@ pub mod utils {
 mod tests {
     use super::*;
     use crate::utils::*;
+    use polars::prelude::*;
+    use std::collections::HashMap;
+    #[allow(unused_imports)]
     use std::path::Path;
 
     #[test]

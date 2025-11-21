@@ -1,5 +1,5 @@
-use dsq_core::ops::basic::SortOptions;
 use dsq_core::ops::aggregate::AggregationFunction;
+use dsq_core::ops::basic::SortOptions;
 use dsq_core::ops::pipeline::*;
 use dsq_core::Value;
 use polars::prelude::*;

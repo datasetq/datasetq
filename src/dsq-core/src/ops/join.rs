@@ -112,7 +112,7 @@ impl Default for JoinOptions {
 }
 
 /// Join validation options
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JoinValidation {
     /// No validation
     None,
@@ -1303,8 +1303,8 @@ mod tests {
         };
 
         let result = join(
-            &Value::LazyFrame(left_df.lazy()),
-            &Value::LazyFrame(right_df.lazy()),
+            &Value::LazyFrame(Box::new(left_df.lazy())),
+            &Value::LazyFrame(Box::new(right_df.lazy())),
             &keys,
             &options,
         )
@@ -1332,7 +1332,7 @@ mod tests {
 
         let result = join(
             &Value::DataFrame(left_df),
-            &Value::LazyFrame(right_lf),
+            &Value::LazyFrame(Box::new(right_lf)),
             &keys,
             &options,
         )
