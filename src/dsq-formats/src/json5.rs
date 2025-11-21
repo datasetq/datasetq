@@ -447,18 +447,27 @@ impl<R: BufRead> Json5Reader<R> {
                     for col in &columns {
                         let val = obj.get(col).unwrap_or(&Value::Null).clone();
                         let any_val = self.value_to_any_value(val)?;
-                        series_data.get_mut(col).unwrap().push(any_val);
+                        series_data
+                            .get_mut(col)
+                            .ok_or_else(|| Error::operation("Column not found in series data"))?
+                            .push(any_val);
                     }
                 }
                 _ => {
                     // If we have a non-object value, put it in the first column
                     if let Some(first_col) = columns.first() {
                         let any_val = self.value_to_any_value(value.clone())?;
-                        series_data.get_mut(first_col).unwrap().push(any_val);
+                        series_data
+                            .get_mut(first_col)
+                            .ok_or_else(|| Error::operation("Column not found in series data"))?
+                            .push(any_val);
 
                         // Fill other columns with nulls
                         for col in columns.iter().skip(1) {
-                            series_data.get_mut(col).unwrap().push(AnyValue::Null);
+                            series_data
+                                .get_mut(col)
+                                .ok_or_else(|| Error::operation("Column not found in series data"))?
+                                .push(AnyValue::Null);
                         }
                     }
                 }
@@ -468,7 +477,9 @@ impl<R: BufRead> Json5Reader<R> {
         // Create Series from vectors
         let mut series_vec = Vec::new();
         for col in columns {
-            let values = series_data.remove(&col).unwrap();
+            let values = series_data
+                .remove(&col)
+                .ok_or_else(|| Error::operation("Column not found in series data"))?;
             let series = Series::new(&col, values);
             series_vec.push(series);
         }
@@ -665,126 +676,148 @@ impl<W: Write> Json5Writer<W> {
         match series.dtype() {
             DataType::Boolean => {
                 let val = series.bool().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Bool(v)),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Bool(val.unwrap()))
             }
             DataType::Int8 => {
                 let val = series.i8().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Int16 => {
                 let val = series.i16().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Int32 => {
                 let val = series.i32().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Int64 => {
                 let val = series.i64().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt8 => {
                 let val = series.u8().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt16 => {
                 let val = series.u16().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt32 => {
                 let val = series.u32().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::UInt64 => {
                 let val = series.u64().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => Ok(JsonValue::Number(serde_json::Number::from(v))),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                Ok(JsonValue::Number(serde_json::Number::from(val.unwrap())))
             }
             DataType::Float32 | DataType::Float64 => {
                 let val = series.f64().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
+                match val {
+                    Some(v) => serde_json::Number::from_f64(v)
+                        .map(JsonValue::Number)
+                        .ok_or_else(|| Error::operation("Invalid float value")),
+                    None => {
+                        if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        }
+                    }
                 }
-                serde_json::Number::from_f64(val.unwrap())
-                    .map(JsonValue::Number)
-                    .ok_or_else(|| Error::operation("Invalid float value"))
             }
             DataType::Utf8 => {
                 let val = series.utf8().map_err(Error::from)?.get(index);
-                if val.is_none() {
-                    return if let Some(ref null_str) = self.options.null_value {
-                        Ok(JsonValue::String(null_str.clone()))
-                    } else {
-                        Ok(JsonValue::Null)
-                    };
-                }
-                let string_val = val.unwrap().to_string();
+                let string_val = match val {
+                    Some(v) => v.to_string(),
+                    None => {
+                        return if let Some(ref null_str) = self.options.null_value {
+                            Ok(JsonValue::String(null_str.clone()))
+                        } else {
+                            Ok(JsonValue::Null)
+                        };
+                    }
+                };
 
                 // Try to parse as JSON5 if it looks like JSON5
                 if (string_val.starts_with('{') && string_val.ends_with('}'))
@@ -1298,7 +1331,7 @@ invalid json5 line
         }
 
         let output = String::from_utf8(buffer).unwrap();
-        assert!(output.contains("N/A")); // Should use custom null value
+        assert!(output.contains("N/A") || output.contains("N\\/A")); // Should use custom null value (may be escaped)
     }
 
     #[test]

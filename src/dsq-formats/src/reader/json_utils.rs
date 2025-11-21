@@ -70,7 +70,9 @@ pub fn json_to_dataframe(value: &serde_json::Value, options: &ReadOptions) -> Re
                 obj.keys().collect()
             };
             for key in keys {
-                let val = obj.get(key).unwrap();
+                let val = obj
+                    .get(key)
+                    .ok_or_else(|| Error::operation("Key not found in object"))?;
                 series_vec.push(Series::new(key, vec![json_value_to_anyvalue(val)]));
             }
             DataFrame::new(series_vec).map_err(Error::from)

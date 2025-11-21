@@ -346,7 +346,7 @@ impl<R: Read> CsvReader<R> {
             // Generate default column names
             let peek_df = self.peek(1)?;
             let headers: Vec<String> = (0..peek_df.width())
-                .map(|i| format!("column_{}", i))
+                .map(|i| format!("column_{}", i + 1))
                 .collect();
             self.detected_headers = Some(headers.clone());
             return Ok(headers);
@@ -593,9 +593,11 @@ impl<W: Write> CsvWriter<W> {
                 if let Some(date_val) = val {
                     use chrono::NaiveDate;
                     let days_since_epoch = date_val;
+                    let default_date = NaiveDate::from_ymd_opt(1970, 1, 1)
+                        .ok_or_else(|| Error::operation("Failed to create default date"))?;
                     let naive_date =
                         NaiveDate::from_num_days_from_ce_opt(days_since_epoch + 719163)
-                            .unwrap_or_else(|| NaiveDate::from_ymd_opt(1970, 1, 1).unwrap());
+                            .unwrap_or(default_date);
                     let field_str = if let Some(ref fmt) = self.options.date_format {
                         naive_date.format(fmt).to_string()
                     } else {
@@ -610,11 +612,13 @@ impl<W: Write> CsvWriter<W> {
                 let val = series.datetime().map_err(Error::from)?.get(index);
                 if let Some(dt_val) = val {
                     use chrono::NaiveDateTime;
+                    let default_datetime = NaiveDateTime::from_timestamp_opt(0, 0)
+                        .ok_or_else(|| Error::operation("Failed to create default datetime"))?;
                     let naive_datetime = NaiveDateTime::from_timestamp_opt(
                         dt_val / 1_000_000,
                         ((dt_val % 1_000_000) * 1000) as u32,
                     )
-                    .unwrap_or_else(|| NaiveDateTime::from_timestamp_opt(0, 0).unwrap());
+                    .unwrap_or(default_datetime);
                     let field_str = if let Some(ref fmt) = self.options.datetime_format {
                         naive_datetime.format(fmt).to_string()
                     } else {
@@ -1649,11 +1653,17 @@ mod tests {
     #[test]
     fn test_datetime_formatting() {
         use polars::prelude::*;
-        let datetimes: Vec<NaiveDateTime> = vec![NaiveDateTime::new(
+        let dt = NaiveDateTime::new(
             NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),
             NaiveTime::from_hms_opt(12, 0, 0).unwrap(),
-        )];
-        let df = DataFrame::new(vec![Series::new("datetime_col", datetimes)]).unwrap();
+        );
+        let timestamp_us =
+            dt.and_utc().timestamp() * 1_000_000 + dt.and_utc().timestamp_subsec_micros() as i64;
+        let datetimes: Vec<i64> = vec![timestamp_us];
+        let series = Series::new("datetime_col", datetimes)
+            .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
+            .unwrap();
+        let df = DataFrame::new(vec![series]).unwrap();
 
         let mut buffer = Vec::new();
         {
