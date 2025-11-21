@@ -9,10 +9,12 @@ use crate::error::{Error, Result};
 use crate::Value;
 use dsq_formats::format::detect_format_from_content;
 use dsq_formats::{
-    deserialize_adt, deserialize_csv, deserialize_json, deserialize_json5, deserialize_parquet,
-    serialize_adt, serialize_csv, serialize_json, serialize_parquet, DataFormat, FormatReadOptions,
+    deserialize_adt, deserialize_csv, deserialize_json, deserialize_parquet, serialize_adt,
+    serialize_csv, serialize_json, serialize_parquet, DataFormat, FormatReadOptions,
     FormatWriteOptions, ReadOptions as DsFormatReadOptions,
 };
+#[cfg(feature = "json5")]
+use dsq_formats::deserialize_json5;
 
 use polars::prelude::*;
 use std::io::Cursor;
@@ -146,11 +148,16 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             &format_read_options,
             &format_options,
         )?),
+        #[cfg(feature = "json5")]
         DataFormat::Json5 => Ok(deserialize_json5(
             cursor,
             &format_read_options,
             &format_options,
         )?),
+        #[cfg(not(feature = "json5"))]
+        DataFormat::Json5 => Err(Error::operation(
+            "JSON5 support not enabled. Rebuild with 'json5' feature.",
+        )),
         DataFormat::Parquet => Ok(deserialize_parquet(
             cursor,
             &format_read_options,
