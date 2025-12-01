@@ -38,7 +38,7 @@ tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = "0.9"
-toml = "0.8"
+toml = "0.9"
 dirs = "5.0"
 tempfile = { workspace = true }
 getrandom = "0.3.3"
