@@ -27,7 +27,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 rand = { version = "0.8", optional = true }
-lru = "0.12"
+lru = "0.16"
 
 # Profiling
 coz = { version = "0.1", optional = true }
