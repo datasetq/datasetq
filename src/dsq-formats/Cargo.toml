@@ -52,7 +52,7 @@ polars = { version = "0.35", default-features = false, features = ["lazy", "csv"
 [dev-dependencies]
 tempfile = "3.8"
 criterion = "0.5"
-proptest = "1.4"
+proptest = "1.9"
 
 [features]
 default = ["all-formats"]
