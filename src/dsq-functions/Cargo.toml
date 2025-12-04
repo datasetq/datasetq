@@ -40,7 +40,7 @@ md5 = "0.8"
 sha1 = "0.10"
 unidecode = "0.3"
 num-format = "0.4"
-heck = "0.4"
+heck = "0.5"
 smartstring = "1.0"
 inventory = "0.3"
 
