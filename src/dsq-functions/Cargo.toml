@@ -29,18 +29,18 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 rand = { version = "0.8", optional = true }
-base32 = "0.4"
+base32 = "0.5"
 base58 = "0.2"
 base64 = "0.21"
 url = "2.4"
 sha2 = "0.10"
 uuid = { version = "1.0", features = ["v4", "v7", "js"] }
 chrono = { workspace = true }
-md5 = "0.7"
+md5 = "0.8"
 sha1 = "0.10"
 unidecode = "0.3"
 num-format = "0.4"
-heck = "0.4"
+heck = "0.5"
 smartstring = "1.0"
 inventory = "0.3"
 
