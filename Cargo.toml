@@ -35,7 +35,7 @@ polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "stri
 arrow = "53"
 
 # Parsing
-nom = "7.1"
+nom = "8.0"
 
 # Date/Time
 chrono = { version = "0.4", features = ["serde"] }
