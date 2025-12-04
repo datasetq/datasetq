@@ -34,7 +34,7 @@ base58 = "0.2"
 base64 = "0.21"
 url = "2.4"
 sha2 = "0.10"
-uuid = { version = "1.0", features = ["v4", "v7", "js"] }
+uuid = { version = "1.19", features = ["v4", "v7", "js"] }
 chrono = { workspace = true }
 md5 = "0.8"
 sha1 = "0.10"
