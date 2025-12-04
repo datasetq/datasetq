@@ -26,7 +26,7 @@ thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
-rand = { version = "0.8", optional = true }
+rand = { version = "0.9", optional = true }
 lru = "0.16"
 
 # Profiling
