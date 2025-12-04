@@ -23,7 +23,7 @@ cargo = "warn"
 [workspace.dependencies]
 # Core dependencies shared across workspace
 anyhow = "1.0"
-thiserror = "1.0"
+thiserror = "2.0"
 log = "0.4"
 
 # Serialization
