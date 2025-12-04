@@ -266,7 +266,7 @@ pub fn sample(
     // For now, implement a simple sampling approach
     if let Some(n) = n {
         let total_rows = df.height();
-        let sample_size = n.min(total_rows);
+        let _sample_size = n.min(total_rows);
 
         #[cfg(feature = "rand")]
         {

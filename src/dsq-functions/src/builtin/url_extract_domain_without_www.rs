@@ -26,14 +26,16 @@ pub fn builtin_url_extract_domain_without_www(args: &[Value]) -> Result<Value> {
             Err(_) => Ok(Value::String("".to_string())),
         },
         Value::Array(arr) => {
-            let extracted: Vec<Value> =
-                arr.iter()
-                    .map(|v| match v {
-                        Value::String(_) => builtin_url_extract_domain_without_www(&[v.clone()])
-                            .unwrap_or(Value::Null),
-                        _ => Value::Null,
-                    })
-                    .collect();
+            let extracted: Vec<Value> = arr
+                .iter()
+                .map(|v| match v {
+                    Value::String(_) => {
+                        builtin_url_extract_domain_without_www(std::slice::from_ref(v))
+                            .unwrap_or(Value::Null)
+                    }
+                    _ => Value::Null,
+                })
+                .collect();
             Ok(Value::Array(extracted))
         }
         Value::DataFrame(df) => {

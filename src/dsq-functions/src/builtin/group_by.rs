@@ -41,14 +41,11 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
                     Value::Bool(b) => b.to_string(),
                     _ => "".to_string(),
                 };
-                groups
-                    .entry(key_str)
-                    .or_insert_with(Vec::new)
-                    .push(item.clone());
+                groups.entry(key_str).or_default().push(item.clone());
             }
             let mut result: Vec<Value> = groups
-                .into_iter()
-                .map(|(_, group)| Value::Array(group))
+                .into_values()
+                .map(|group| Value::Array(group))
                 .collect();
             // Sort groups by key
             result.sort_by(|a, b| {
@@ -102,15 +99,12 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
                     } else {
                         "".to_string()
                     };
-                    groups
-                        .entry(key)
-                        .or_insert_with(Vec::new)
-                        .push(item.clone());
+                    groups.entry(key).or_default().push(item.clone());
                 }
             }
             let mut result: Vec<Value> = groups
-                .into_iter()
-                .map(|(_, group)| Value::Array(group))
+                .into_values()
+                .map(|group| Value::Array(group))
                 .collect();
             // Sort groups by first element's field for consistency
             result.sort_by(|a, b| {
@@ -337,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_builtin_group_by_with_dataframe() {
-        let mut df = DataFrame::new(vec![
+        let df = DataFrame::new(vec![
             Series::new("department", &["Engineering", "Sales", "Engineering"]),
             Series::new("salary", &[75000, 82000, 95000]),
         ])
@@ -405,7 +399,7 @@ mod tests {
         }
 
         // Test DataFrame grouping
-        let mut df = DataFrame::new(vec![
+        let df = DataFrame::new(vec![
             Series::new("name", &["Alice", "Bob", "Charlie"]),
             Series::new("group", &["A", "B", "A"]),
         ])
@@ -420,8 +414,7 @@ mod tests {
         }
 
         // Test DataFrame grouping by series
-        let mut df =
-            DataFrame::new(vec![Series::new("name", &["Alice", "Bob", "Charlie"])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("name", &["Alice", "Bob", "Charlie"])]).unwrap();
         let df_val = Value::DataFrame(df);
         let series = Series::new("group", &["A", "B", "A"]);
         let series_val = Value::Series(series);

@@ -86,7 +86,6 @@ pub fn builtin_dos2unix(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     #[test]
     fn test_dos2unix_string() {

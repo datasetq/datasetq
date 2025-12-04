@@ -51,7 +51,7 @@ pub fn builtin_is_valid_utf8(args: &[Value]) -> Result<Value> {
                 DataType::Binary => {
                     // Check if binary data is valid UTF-8
                     let is_valid = series.binary().unwrap().into_iter().all(|opt_bytes| {
-                        opt_bytes.map_or(true, |bytes| std::str::from_utf8(bytes).is_ok())
+                        opt_bytes.is_none_or(|bytes| std::str::from_utf8(bytes).is_ok())
                     });
                     Ok(Value::Bool(is_valid))
                 }
@@ -75,7 +75,6 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     #[test]
     fn test_builtin_is_valid_utf8_string() {

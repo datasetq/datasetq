@@ -611,13 +611,15 @@ impl<W: Write> CsvWriter<W> {
             DataType::Datetime(_, _) => {
                 let val = series.datetime().map_err(Error::from)?.get(index);
                 if let Some(dt_val) = val {
-                    use chrono::NaiveDateTime;
-                    let default_datetime = NaiveDateTime::from_timestamp_opt(0, 0)
-                        .ok_or_else(|| Error::operation("Failed to create default datetime"))?;
-                    let naive_datetime = NaiveDateTime::from_timestamp_opt(
+                    use chrono::DateTime;
+                    let default_datetime = DateTime::from_timestamp(0, 0)
+                        .ok_or_else(|| Error::operation("Failed to create default datetime"))?
+                        .naive_utc();
+                    let naive_datetime = DateTime::from_timestamp(
                         dt_val / 1_000_000,
                         ((dt_val % 1_000_000) * 1000) as u32,
                     )
+                    .map(|dt| dt.naive_utc())
                     .unwrap_or(default_datetime);
                     let field_str = if let Some(ref fmt) = self.options.datetime_format {
                         naive_datetime.format(fmt).to_string()

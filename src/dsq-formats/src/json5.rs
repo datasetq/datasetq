@@ -1,11 +1,9 @@
 use crate::error::{Error, FormatError, Result};
-use crate::format::DataFormat;
 use dsq_shared::value::Value;
-use json5::{Deserializer, Location};
 use polars::prelude::*;
 use serde_json::{Map as JsonMap, Value as JsonValue};
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
 /// JSON5-specific reading options
@@ -82,7 +80,7 @@ pub struct Json5Reader<R> {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Json5Format {
+pub(crate) enum Json5Format {
     Array,
     Object,
     Lines,
@@ -126,7 +124,7 @@ impl<R: BufRead> Json5Reader<R> {
     }
 
     /// Auto-detect JSON5 format from the first few bytes
-    pub fn detect_format(&mut self) -> Result<Json5Format> {
+    pub(crate) fn detect_format(&mut self) -> Result<Json5Format> {
         if let Some(format) = self.detected_format {
             return Ok(format);
         }
@@ -148,7 +146,7 @@ impl<R: BufRead> Json5Reader<R> {
         let trimmed = text.trim_start();
 
         // Skip comments to find the actual JSON5 structure
-        let content_start = trimmed.find(|c: char| c == '[' || c == '{');
+        let content_start = trimmed.find(['[', '{']);
         let content = if let Some(start) = content_start {
             &trimmed[start..]
         } else {
@@ -536,6 +534,7 @@ pub struct Json5Writer<W: Write> {
     writer: BufWriter<W>,
     options: Json5WriteOptions,
     records_written: usize,
+    #[allow(dead_code)]
     first_record: bool,
 }
 
@@ -891,9 +890,9 @@ impl<W: Write> Json5Writer<W> {
     fn escape_unicode_chars(s: &str) -> String {
         let mut result = String::new();
         let mut in_string = false;
-        let mut chars = s.chars().peekable();
+        let chars = s.chars().peekable();
 
-        while let Some(ch) = chars.next() {
+        for ch in chars {
             if ch == '"' {
                 result.push(ch);
                 in_string = !in_string;
@@ -986,7 +985,8 @@ pub fn write_json5l_file<P: AsRef<Path>>(df: &DataFrame, path: P) -> Result<()> 
 }
 
 /// Detect JSON5 format from sample data
-pub fn detect_json5_format<R: BufRead>(mut reader: R) -> Result<Json5Format> {
+#[allow(dead_code)]
+pub(crate) fn detect_json5_format<R: BufRead>(mut reader: R) -> Result<Json5Format> {
     let buffer = reader.fill_buf()?;
 
     if buffer.is_empty() {

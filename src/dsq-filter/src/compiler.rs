@@ -251,6 +251,12 @@ pub struct CompilationContext {
     pub functions: HashMap<String, FunctionDef>,
 }
 
+impl Default for CompilationContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompilationContext {
     /// Create a new compilation context
     pub fn new() -> Self {
@@ -266,7 +272,7 @@ impl CompilationContext {
     pub fn with_max_depth(max_depth: usize) -> Self {
         Self {
             depth: 0,
-            max_depth: max_depth,
+            max_depth,
             variables: HashMap::new(),
             functions: HashMap::new(),
         }
@@ -463,14 +469,14 @@ impl FilterContext {
     /// Call a user-defined function
     fn call_user_function(&mut self, func_def: &FunctionDef, args: &[Value]) -> Result<Value> {
         // Validate argument count (skip for builtins as they handle arguments dynamically)
-        if !matches!(func_def.body, FunctionBody::Builtin(_)) {
-            if args.len() != func_def.parameters.len() {
-                return Err(dsq_shared::error::operation_error(format!(
-                    "Expected {} arguments, got {}",
-                    func_def.parameters.len(),
-                    args.len()
-                )));
-            }
+        if !matches!(func_def.body, FunctionBody::Builtin(_))
+            && args.len() != func_def.parameters.len()
+        {
+            return Err(dsq_shared::error::operation_error(format!(
+                "Expected {} arguments, got {}",
+                func_def.parameters.len(),
+                args.len()
+            )));
         }
 
         // Create new scope for function execution
@@ -1043,7 +1049,7 @@ impl FilterCompiler {
         // Special handling for join function
         if name == "join" && args.len() == 2 {
             if let (
-                Expr::Literal(lit),
+                Expr::Literal(Literal::String(file_path)),
                 Expr::BinaryOp {
                     left,
                     op: BinaryOperator::Eq,
@@ -1051,39 +1057,37 @@ impl FilterCompiler {
                 },
             ) = (&args[0], &args[1])
             {
-                if let Literal::String(file_path) = lit {
-                    // Parse the equality condition like .dept_id == .id
-                    if let (
-                        Expr::FieldAccess {
-                            base: left_base,
-                            fields: left_fields,
-                        },
-                        Expr::FieldAccess {
-                            base: right_base,
-                            fields: right_fields,
-                        },
-                    ) = (&**left, &**right)
+                // Parse the equality condition like .dept_id == .id
+                if let (
+                    Expr::FieldAccess {
+                        base: left_base,
+                        fields: left_fields,
+                    },
+                    Expr::FieldAccess {
+                        base: right_base,
+                        fields: right_fields,
+                    },
+                ) = (&**left, &**right)
+                {
+                    if matches!(**left_base, Expr::Identity)
+                        && matches!(**right_base, Expr::Identity)
+                        && left_fields.len() == 1
+                        && right_fields.len() == 1
                     {
-                        if matches!(**left_base, Expr::Identity)
-                            && matches!(**right_base, Expr::Identity)
-                            && left_fields.len() == 1
-                            && right_fields.len() == 1
-                        {
-                            let left_key = left_fields[0].clone();
-                            let right_key = right_fields[0].clone();
-                            let operation = Box::new(JoinFromFileOperation::new(
-                                file_path.clone(),
-                                left_key,
-                                right_key,
-                            ));
-                            return Ok(CompiledFilter {
-                                operations: vec![operation],
-                                variables: HashMap::new(),
-                                functions: HashMap::new(),
-                                requires_lazy: false,
-                                complexity: 10, // Join is complex
-                            });
-                        }
+                        let left_key = left_fields[0].clone();
+                        let right_key = right_fields[0].clone();
+                        let operation = Box::new(JoinFromFileOperation::new(
+                            file_path.clone(),
+                            left_key,
+                            right_key,
+                        ));
+                        return Ok(CompiledFilter {
+                            operations: vec![operation],
+                            variables: HashMap::new(),
+                            functions: HashMap::new(),
+                            requires_lazy: false,
+                            complexity: 10, // Join is complex
+                        });
                     }
                 }
             }
@@ -1587,13 +1591,9 @@ impl Operation for FunctionCallOperation {
                                 Value::Bool(b) => b.to_string(),
                                 _ => "".to_string(),
                             };
-                            groups
-                                .entry(key)
-                                .or_insert_with(Vec::new)
-                                .push(item.clone());
+                            groups.entry(key).or_default().push(item.clone());
                         }
-                        let result: Vec<Value> =
-                            groups.into_iter().map(|(_k, g)| Value::Array(g)).collect();
+                        let result: Vec<Value> = groups.into_values().map(Value::Array).collect();
                         Ok(Value::Array(result))
                     }
                     Value::DataFrame(df) => {
@@ -1624,7 +1624,7 @@ impl Operation for FunctionCallOperation {
                                 Value::Bool(b) => b.to_string(),
                                 _ => "".to_string(),
                             };
-                            groups.entry(key).or_insert_with(Vec::new).push(i);
+                            groups.entry(key).or_default().push(i);
                         }
                         let mut result = Vec::new();
                         for (_key, indices) in groups {
@@ -1657,7 +1657,8 @@ impl Operation for FunctionCallOperation {
                         "reverse() expects no arguments",
                     ));
                 }
-                self.builtins.call_function("reverse", &[value.clone()])
+                self.builtins
+                    .call_function("reverse", std::slice::from_ref(value))
             }
             "sort_by" => {
                 if self.arg_ops.len() != 1 {
@@ -1966,7 +1967,7 @@ impl Operation for FunctionCallOperation {
                                 e
                             ))
                         })?;
-                        let filtered_df = df.filter(&boolean_chunked).map_err(|e| {
+                        let filtered_df = df.filter(boolean_chunked).map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "Failed to filter DataFrame: {}",
                                 e
@@ -2152,7 +2153,7 @@ impl Operation for FunctionCallOperation {
                                 e
                             ))
                         })?;
-                        let filtered_df = df.filter(&boolean_chunked).map_err(|e| {
+                        let filtered_df = df.filter(boolean_chunked).map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "Failed to filter DataFrame: {}",
                                 e
@@ -2175,7 +2176,8 @@ impl Operation for FunctionCallOperation {
             }
             "ceil" => {
                 if self.arg_ops.is_empty() {
-                    self.builtins.call_function("ceil", &[value.clone()])
+                    self.builtins
+                        .call_function("ceil", std::slice::from_ref(value))
                 } else if self.arg_ops.len() == 1 {
                     let mut arg_val = value.clone();
                     for op in &self.arg_ops[0] {
@@ -2365,7 +2367,7 @@ impl Operation for VariableOperation {
                 if let Some(filter_ctx) = ctx.as_any_mut().downcast_mut::<FilterContext>() {
                     if filter_ctx.has_function(&self.name) {
                         // Call the function with the input value as argument
-                        filter_ctx.call_function(&self.name, &[value.clone()])
+                        filter_ctx.call_function(&self.name, std::slice::from_ref(value))
                     } else {
                         Err(dsq_shared::error::operation_error(format!(
                             "Variable '{}' not found",

@@ -19,8 +19,6 @@ use dsq_formats::{
 use polars::prelude::*;
 use std::io::Cursor;
 use std::path::Path;
-#[cfg(test)]
-use tempfile::NamedTempFile;
 
 #[cfg(not(target_arch = "wasm32"))]
 use once_cell::sync::Lazy;
@@ -624,7 +622,7 @@ mod tests {
         }
 
         // Test writing group_by results back to CSV
-        let mut output_file = NamedTempFile::new().unwrap();
+        let output_file = NamedTempFile::new().unwrap();
         let output_path = output_file.path();
 
         let write_options = WriteOptions::default();
@@ -681,7 +679,7 @@ mod tests {
         }
 
         // Test writing group_by results (simulated as array of objects) to JSON
-        let mut output_file = NamedTempFile::new().unwrap();
+        let output_file = NamedTempFile::new().unwrap();
         let output_path = output_file.path();
 
         let write_options = WriteOptions::default();
@@ -714,7 +712,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
         // Write to Parquet
@@ -767,7 +765,7 @@ mod tests {
         }
 
         // Test writing back to TSV
-        let mut output_file = NamedTempFile::new().unwrap();
+        let output_file = NamedTempFile::new().unwrap();
         let output_path = output_file.path();
 
         let write_options = WriteOptions::default();
@@ -794,7 +792,7 @@ mod tests {
         let csv_result = read_file_sync(csv_path, &read_options).unwrap();
 
         // Write to JSON
-        let mut json_file = NamedTempFile::new().unwrap();
+        let json_file = NamedTempFile::new().unwrap();
         let json_path = json_file.path();
 
         let write_options = WriteOptions::default();
@@ -907,7 +905,7 @@ mod tests {
         );
 
         // Test unsupported format (if we try to write unsupported type)
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
         let unsupported_value = Value::String("unsupported".to_string());
         let write_result2 = write_file_sync(&unsupported_value, path, &write_options);
@@ -926,7 +924,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let ndjson_path = temp_file.path().with_extension("ndjson");
 
         let write_options = WriteOptions::default();
@@ -962,7 +960,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let jsonl_path = temp_file.path().with_extension("jsonl");
 
         let write_options = WriteOptions::default();
@@ -994,7 +992,7 @@ mod tests {
         let empty_df = DataFrame::empty();
         let empty_value = Value::DataFrame(empty_df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let ndjson_path = temp_file.path().with_extension("ndjson");
 
         let write_options = WriteOptions::default();
@@ -1020,7 +1018,7 @@ mod tests {
         .unwrap();
         let nulls_value = Value::DataFrame(df_with_nulls);
 
-        let mut temp_file2 = NamedTempFile::new().unwrap();
+        let temp_file2 = NamedTempFile::new().unwrap();
         let ndjson_path2 = temp_file2.path().with_extension("ndjson");
 
         let write_result2 = write_file_sync(&nulls_value, &ndjson_path2, &write_options);
@@ -1096,7 +1094,7 @@ mod tests {
         ])
         .unwrap();
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
 
         // Write to Parquet first
@@ -1149,7 +1147,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let json_path = temp_file.path().with_extension("json");
 
         let write_options = WriteOptions::default();
@@ -1183,7 +1181,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let json5_path = temp_file.path().with_extension("json5");
 
         let write_options = WriteOptions::default();
@@ -1209,7 +1207,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let adt_path = temp_file.path().with_extension("adt");
 
         let write_options = WriteOptions::default();
@@ -1282,7 +1280,7 @@ mod tests {
         .unwrap();
         let df_value = Value::DataFrame(df);
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         let csv_path = temp_file.path().with_extension("csv");
 
         let write_options = WriteOptions {
@@ -1330,7 +1328,7 @@ mod tests {
         csv_file.write_all(csv_data.as_bytes()).unwrap();
         let csv_path = csv_file.path();
 
-        let mut json_file = NamedTempFile::new().unwrap();
+        let json_file = NamedTempFile::new().unwrap();
         let json_path = json_file.path().with_extension("json");
 
         let read_options = ReadOptions::default();

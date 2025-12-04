@@ -271,8 +271,6 @@ fn builtin_add_multiple(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
-    use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {
         let names = Series::new("name", &["Alice", "Bob", "Charlie"]);
@@ -283,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_builtin_add_with_dataframe() {
-        let mut df = DataFrame::new(vec![Series::new("value", &[10.0, 20.0, 30.0])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("value", &[10.0, 20.0, 30.0])]).unwrap();
         let df_value = Value::DataFrame(df);
         let result = builtin_add(&[df_value]).unwrap();
         assert_eq!(result, Value::Float(60.0));

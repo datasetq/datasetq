@@ -74,7 +74,6 @@
     clippy::cast_possible_wrap,
     clippy::collapsible_else_if,
     clippy::to_string_in_format_args,
-    clippy::ptr_as_ptr,
     clippy::single_match
 )]
 

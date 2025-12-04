@@ -110,7 +110,6 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     #[test]
     fn test_builtin_array_push_array() {

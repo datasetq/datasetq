@@ -41,7 +41,6 @@
     clippy::if_same_then_else,
     clippy::assign_op_pattern,
     clippy::manual_strip,
-    clippy::from_over_into_for_ref,
     clippy::option_map_unit_fn,
     clippy::bind_instead_of_map
 )]
@@ -3253,7 +3252,7 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Create a simple DataFrame
-        let mut df = DataFrame::new(vec![
+        let df = DataFrame::new(vec![
             Series::new("col1", &[1.0, 2.0, 3.0]),
             Series::new("col2", &[4.0, 5.0, 6.0]),
         ])
@@ -3392,7 +3391,7 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Create a simple DataFrame
-        let mut df = DataFrame::new(vec![
+        let df = DataFrame::new(vec![
             Series::new("col1", &[1.0, 2.0, 3.0]),
             Series::new("col2", &[4.0, 5.0, 6.0]),
         ])
@@ -4473,7 +4472,7 @@ mod tests {
             .contains("url_set_port() expects 2 arguments"));
 
         // Test with DataFrame
-        let mut df = DataFrame::new(vec![Series::new(
+        let df = DataFrame::new(vec![Series::new(
             "urls",
             &["http://example.com/", "https://test.com/path"],
         )])

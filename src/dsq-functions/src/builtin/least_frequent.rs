@@ -46,7 +46,7 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
             }
 
             let series = df.column(col_names[0]).map_err(|e| {
-                dsq_shared::error::operation_error(&format!("Failed to get first column: {}", e))
+                dsq_shared::error::operation_error(format!("Failed to get first column: {}", e))
             })?;
 
             // Track counts and maintain insertion order
@@ -59,10 +59,10 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
                     let value = value_from_any_value(val).unwrap_or(Value::Null);
                     let key = serde_json::to_string(&value).unwrap_or_default();
                     *counts.entry(key.clone()).or_insert(0) += 1;
-                    if !seen.contains_key(&key) {
+                    seen.entry(key).or_insert_with(|| {
                         value_order.push(value);
-                        seen.insert(key, true);
-                    }
+                        true
+                    });
                 }
             }
 

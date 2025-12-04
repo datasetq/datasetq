@@ -85,7 +85,6 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     #[test]
     fn test_builtin_snake_case_string() {
@@ -120,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_builtin_snake_case_dataframe() {
-        let mut df = DataFrame::new(vec![
+        let df = DataFrame::new(vec![
             Series::new("col1", &["CamelCase", "XMLHttpRequest"]),
             Series::new("col2", &[1, 2]),
         ])

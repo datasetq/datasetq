@@ -83,7 +83,6 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
 
     fn create_test_dataframe() -> DataFrame {
         let s1 = Series::new("name", &["Alice", "Bob", "Charlie"]);

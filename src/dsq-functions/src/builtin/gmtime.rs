@@ -34,7 +34,7 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
                 .iter()
                 .map(|v| {
                     if matches!(v, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                        builtin_gmtime(&[v.clone()])
+                        builtin_gmtime(std::slice::from_ref(v))
                     } else {
                         Ok(Value::Null)
                     }

@@ -959,7 +959,7 @@ pub fn cumulative_agg(value: &Value, _column: &str, function: WindowFunction) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::{BTreeMap, HashMap};
+    use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {
         df! {

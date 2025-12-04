@@ -80,7 +80,7 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::*;
+
     use std::collections::HashMap;
 
     #[test]
