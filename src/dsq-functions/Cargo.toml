@@ -28,7 +28,7 @@ thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
-rand = { version = "0.8", optional = true }
+rand = { version = "0.9", optional = true }
 base32 = "0.5"
 base58 = "0.2"
 base64 = "0.21"

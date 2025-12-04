@@ -26,7 +26,7 @@ thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
-rand = { version = "0.8", optional = true }
+rand = { version = "0.9", optional = true }
 lru = "0.16"
 
 # Profiling
@@ -35,7 +35,7 @@ coz = { version = "0.1", optional = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 dsq-functions = { path = "../dsq-functions", features = ["rand"] }
-rand = "0.8"
+rand = "0.9"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }

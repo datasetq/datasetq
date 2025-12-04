@@ -1,0 +1,1018 @@
+warning: unused import: `crate::format::DataFormat`
+ --> src/dsq-formats/src/json5.rs:2:5
+  |
+2 | use crate::format::DataFormat;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Deserializer` and `Location`
+ --> src/dsq-formats/src/json5.rs:4:13
+  |
+4 | use json5::{Deserializer, Location};
+  |             ^^^^^^^^^^^^  ^^^^^^^^
+
+warning: unused import: `Read`
+ --> src/dsq-formats/src/json5.rs:8:46
+  |
+8 | use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+  |                                              ^^^^
+
+warning: type `Json5Format` is more private than the item `Json5Reader::<R>::detect_format`
+   --> src/dsq-formats/src/json5.rs:129:5
+    |
+129 |     pub fn detect_format(&mut self) -> Result<Json5Format> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method `Json5Reader::<R>::detect_format` is reachable at visibility `pub`
+    |
+note: but type `Json5Format` is only usable at visibility `pub(self)`
+   --> src/dsq-formats/src/json5.rs:85:1
+    |
+ 85 | enum Json5Format {
+    | ^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `Json5Format` is more private than the item `detect_json5_format`
+   --> src/dsq-formats/src/json5.rs:890:1
+    |
+890 | pub fn detect_json5_format<R: BufRead>(mut reader: R) -> Result<Json5Format> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `detect_json5_format` is reachable at visibility `pub`
+    |
+note: but type `Json5Format` is only usable at visibility `pub(self)`
+   --> src/dsq-formats/src/json5.rs:85:1
+    |
+ 85 | enum Json5Format {
+    | ^^^^^^^^^^^^^^^^
+
+warning: field `first_record` is never read
+   --> src/dsq-formats/src/json5.rs:528:5
+    |
+524 | pub struct Json5Writer<W: Write> {
+    |            ----------- field in this struct
+...
+528 |     first_record: bool,
+    |     ^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `dsq-formats` (lib) generated 6 warnings (run `cargo fix --lib -p dsq-formats` to apply 2 suggestions)
+warning: unused variable: `sample_size`
+   --> src/dsq-core/src/ops/basic.rs:269:13
+    |
+269 |         let sample_size = n.min(total_rows);
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_sample_size`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling dsq-core v0.1.0 (/mnt/storage/projects/durable/durable-data-suite/apps/datasetq/src/dsq-core)
+warning: unused import: `std::io::Write`
+    --> src/dsq-formats/src/json5.rs:1262:13
+     |
+1262 |         use std::io::Write;
+     |             ^^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Cursor`
+   --> src/dsq-formats/src/parquet.rs:292:9
+    |
+292 |     use std::io::Cursor;
+    |         ^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-formats/src/writer.rs:744:9
+    |
+744 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Cursor`
+   --> src/dsq-formats/src/lib.rs:286:13
+    |
+286 |         use std::io::Cursor;
+    |             ^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+    --> src/dsq-formats/src/json5.rs:1271:13
+     |
+1271 |         let mut temp_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: type `json5::Json5Format` is more private than the item `json5::Json5Reader::<R>::detect_format`
+   --> src/dsq-formats/src/json5.rs:129:5
+    |
+129 |     pub fn detect_format(&mut self) -> Result<Json5Format> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method `json5::Json5Reader::<R>::detect_format` is reachable at visibility `pub`
+    |
+note: but type `json5::Json5Format` is only usable at visibility `pub(self)`
+   --> src/dsq-formats/src/json5.rs:85:1
+    |
+ 85 | enum Json5Format {
+    | ^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `json5::Json5Format` is more private than the item `json5::detect_json5_format`
+   --> src/dsq-formats/src/json5.rs:890:1
+    |
+890 | pub fn detect_json5_format<R: BufRead>(mut reader: R) -> Result<Json5Format> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `json5::detect_json5_format` is reachable at visibility `pub`
+    |
+note: but type `json5::Json5Format` is only usable at visibility `pub(self)`
+   --> src/dsq-formats/src/json5.rs:85:1
+    |
+ 85 | enum Json5Format {
+    | ^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-shared/src/value.rs:967:9
+    |
+967 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/add.rs:274:9
+    |
+274 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::collections::HashMap`
+   --> src/dsq-functions/src/builtin/add.rs:275:9
+    |
+275 |     use std::collections::HashMap;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/array_pop.rs:88:9
+   |
+88 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/array_push.rs:113:9
+    |
+113 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/camel_case.rs:88:9
+   |
+88 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/cut.rs:86:9
+   |
+86 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/dos2unix.rs:89:9
+   |
+89 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/filter.rs:83:9
+   |
+83 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/generate_uuidv7.rs:82:9
+   |
+82 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/is_valid_utf8.rs:78:9
+   |
+78 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/join.rs:85:9
+   |
+85 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/percentile.rs:94:9
+   |
+94 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/quartile.rs:108:9
+    |
+108 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/snake_case.rs:88:9
+   |
+88 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/sort_by.rs:143:9
+    |
+143 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/strftime.rs:272:9
+    |
+272 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/sum.rs:154:9
+    |
+154 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/systime.rs:59:9
+   |
+59 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/systime_int.rs:60:9
+   |
+60 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/titlecase.rs:84:9
+   |
+84 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+  --> src/dsq-functions/src/builtin/url_extract_path.rs:98:9
+   |
+98 |     use polars::prelude::*;
+   |         ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-functions/src/builtin/url_extract_port.rs:101:9
+    |
+101 |     use polars::prelude::*;
+    |         ^^^^^^^^^^^^^^^^^^
+
+warning: duplicated attribute
+    --> src/dsq-functions/src/lib.rs:2606:5
+     |
+2606 |     #[test]
+     |     ^^^^^^^
+     |
+     = note: `#[warn(duplicate_macro_attributes)]` on by default
+
+warning: variable does not need to be mutable
+   --> src/dsq-functions/src/builtin/add.rs:286:13
+    |
+286 |         let mut df = DataFrame::new(vec![Series::new("value", &[10.0, 20.0, 30.0])]).unwrap();
+    |             ----^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/dsq-functions/src/builtin/camel_case.rs:124:13
+    |
+124 |         let mut df = DataFrame::new(vec![
+    |             ----^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-functions/src/builtin/group_by.rs:340:13
+    |
+340 |         let mut df = DataFrame::new(vec![
+    |             ----^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-functions/src/builtin/group_by.rs:408:13
+    |
+408 |         let mut df = DataFrame::new(vec![
+    |             ----^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-functions/src/builtin/group_by.rs:423:13
+    |
+423 |         let mut df =
+    |             ----^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-functions/src/builtin/snake_case.rs:123:13
+    |
+123 |         let mut df = DataFrame::new(vec![
+    |             ----^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-functions/src/lib.rs:3256:13
+     |
+3256 |         let mut df = DataFrame::new(vec![
+     |             ----^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-functions/src/lib.rs:3395:13
+     |
+3395 |         let mut df = DataFrame::new(vec![
+     |             ----^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-functions/src/lib.rs:4476:13
+     |
+4476 |         let mut df = DataFrame::new(vec![Series::new(
+     |             ----^^
+     |             |
+     |             help: remove this `mut`
+
+warning: function `create_test_dataframe` is never used
+   --> src/dsq-functions/src/builtin/add.rs:277:8
+    |
+277 |     fn create_test_dataframe() -> DataFrame {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::io::Write`
+   --> src/dsq-io/src/lib.rs:200:9
+    |
+200 |     use std::io::Write;
+    |         ^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `dsq-core` (lib) generated 1 warning
+warning: `dsq-formats` (lib test) generated 11 warnings (4 duplicates) (run `cargo fix --lib -p dsq-formats --tests` to apply 5 suggestions)
+warning: `dsq-shared` (lib test) generated 1 warning (run `cargo fix --lib -p dsq-shared --tests` to apply 1 suggestion)
+warning: `dsq-functions` (lib test) generated 33 warnings (run `cargo fix --lib -p dsq-functions --tests` to apply 31 suggestions)
+warning: `dsq-io` (lib test) generated 1 warning (run `cargo fix --lib -p dsq-io --tests` to apply 1 suggestion)
+warning: unused import: `dsq_shared::value::Value`
+  --> src/dsq-cli/src/config.rs:15:5
+   |
+15 | use dsq_shared::value::Value;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `anyhow::Error`
+  --> src/dsq-cli/src/main.rs:18:5
+   |
+18 | use anyhow::Error;
+   |     ^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> src/dsq-cli/src/main.rs:87:9
+   |
+87 |     let mut features: Vec<&str> = vec![];
+   |         ----^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: `dsq-cli` (bin "dsq" test) generated 3 warnings (run `cargo fix --bin "dsq" --tests` to apply 3 suggestions)
+warning: unused import: `BTreeMap`
+   --> src/dsq-core/src/ops/aggregate.rs:962:28
+    |
+962 |     use std::collections::{BTreeMap, HashMap};
+    |                            ^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `tempfile::NamedTempFile`
+  --> src/dsq-core/src/io.rs:23:5
+   |
+23 | use tempfile::NamedTempFile;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::filter`
+   --> src/dsq-core/src/lib.rs:754:13
+    |
+754 |         use crate::filter;
+    |             ^^^^^^^^^^^^^
+
+warning: unused import: `polars::prelude::*`
+   --> src/dsq-core/src/lib.rs:756:13
+    |
+756 |         use polars::prelude::*;
+    |             ^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `items_even`
+    --> src/dsq-core/src/ops/aggregate.rs:1281:13
+     |
+1281 |         let items_even = vec![&obj4, &obj5, &obj6, &obj7];
+     |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_items_even`
+     |
+     = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `dept`
+    --> src/dsq-core/src/ops/aggregate.rs:1454:29
+     |
+1454 |                         let dept = obj.get("dept").unwrap();
+     |                             ^^^^ help: if this is intentional, prefix it with an underscore: `_dept`
+
+warning: unused variable: `expr`
+    --> src/dsq-core/src/ops/aggregate.rs:1608:13
+     |
+1608 |         let expr = sum_agg.to_polars_expr().unwrap();
+     |             ^^^^ help: if this is intentional, prefix it with an underscore: `_expr`
+
+warning: unused variable: `expr_count`
+    --> src/dsq-core/src/ops/aggregate.rs:1612:13
+     |
+1612 |         let expr_count = count_agg.to_polars_expr().unwrap();
+     |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expr_count`
+
+warning: unused variable: `expr_concat`
+    --> src/dsq-core/src/ops/aggregate.rs:1616:13
+     |
+1616 |         let expr_concat = string_concat_agg.to_polars_expr().unwrap();
+     |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_expr_concat`
+
+warning: unused variable: `sample_size`
+   --> src/dsq-core/src/ops/basic.rs:269:13
+    |
+269 |         let sample_size = n.min(total_rows);
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_sample_size`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:627:13
+    |
+627 |         let mut output_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:684:13
+    |
+684 |         let mut output_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:717:13
+    |
+717 |         let mut temp_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:770:13
+    |
+770 |         let mut output_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:797:13
+    |
+797 |         let mut json_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: unused variable: `write_result2`
+   --> src/dsq-core/src/io.rs:913:13
+    |
+913 |         let write_result2 = write_file_sync(&unsupported_value, path, &write_options);
+    |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_write_result2`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:910:13
+    |
+910 |         let mut temp_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:929:13
+    |
+929 |         let mut temp_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:965:13
+    |
+965 |         let mut temp_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src/dsq-core/src/io.rs:997:13
+    |
+997 |         let mut temp_file = NamedTempFile::new().unwrap();
+    |             ----^^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1023:13
+     |
+1023 |         let mut temp_file2 = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1099:13
+     |
+1099 |         let mut temp_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1152:13
+     |
+1152 |         let mut temp_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1186:13
+     |
+1186 |         let mut temp_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1212:13
+     |
+1212 |         let mut temp_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1285:13
+     |
+1285 |         let mut temp_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> src/dsq-core/src/io.rs:1333:13
+     |
+1333 |         let mut json_file = NamedTempFile::new().unwrap();
+     |             ----^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: unused variable: `result3`
+    --> src/dsq-core/src/io.rs:1375:13
+     |
+1375 |         let result3 = read_file_sync(path, &options);
+     |             ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_result3`
+
+warning: unused variable: `result`
+    --> src/dsq-core/src/io.rs:1409:13
+     |
+1409 |         let result = read_file_sync(path, &options);
+     |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+
+warning: unused variable: `dept`
+    --> src/dsq-core/src/lib.rs:1092:56
+     |
+1092 | ...                   Some(Value::String(dept)),
+     |                                          ^^^^ help: if this is intentional, prefix it with an underscore: `_dept`
+
+warning: `dsq-core` (lib test) generated 30 warnings (run `cargo fix --lib -p dsq-core --tests` to apply 20 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.51s
+     Running unittests src/lib.rs (target/debug/deps/dsq-59449bc0a01d98b7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/dsq-c9c9685556361e13)
+
+running 112 tests
+test cli::tests::test_get_output_format ... ok
+test cli::tests::test_is_conversion ... ok
+test cli::tests::test_filter_file_option ... ok
+test cli::tests::test_basic_parsing ... ok
+test cli::tests::test_format_options ... ok
+test cli::tests::test_convert_subcommand ... ok
+test cli::tests::test_csv_options ... ok
+test cli::tests::test_cli_config_conversion ... ok
+test cli::tests::test_csv_options_comprehensive ... ok
+test cli::tests::test_debug_options ... ok
+test cli::tests::test_is_stdin_stdout ... ok
+test cli::tests::test_input_options ... ok
+test cli::tests::test_other_options ... ok
+test cli::tests::test_should_show_progress ... ok
+test cli::tests::test_inspect_subcommand ... ok
+test config::tests::test_all_default_implementations ... ok
+test cli::tests::test_interactive_mode ... ok
+test cli::tests::test_merge_subcommand ... ok
+test config::tests::test_cli_override_comprehensive ... ok
+test cli::tests::test_output_formatting_options ... ok
+test cli::tests::test_performance_options ... ok
+test cli::tests::test_performance_options_comprehensive ... ok
+test cli::tests::test_variables ... ok
+test cli::tests::test_processing_options ... ok
+test cli::tests::test_validate_subcommand ... ok
+test cli::tests::test_variable_options ... ok
+test config::tests::test_config_validation ... ok
+test config::tests::test_config_new ... ok
+test config::tests::test_config_load ... ok
+test config::tests::test_merge_env ... ok
+test config::tests::test_find_config_file ... ok
+test config::tests::test_config_load_from_file ... ok
+test cli::tests::test_variables_invalid_json ... ok
+test config::tests::test_merge_env_invalid_values ... ok
+test config::tests::test_format_options_expanded ... ok
+test config::tests::test_create_default_config_file ... ok
+test config::tests::test_default_config ... ok
+test config::tests::test_parse_memory_limit ... ok
+test config::tests::test_should_use_color ... ok
+test config::tests::test_to_read_options ... ok
+test config::tests::test_to_write_options ... ok
+test config::tests::test_to_executor_config ... ok
+test config::tests::test_merge_file_errors ... ok
+test config::tests::test_save_errors ... ok
+test cli::tests::test_edge_cases ... ok
+test config::tests::test_thread_count ... ok
+test cli::tests::test_should_use_color ... ok
+test config::tests::test_variables_conversion ... ok
+test output::tests::test_output_writer_new ... ok
+test config::tests::test_merge_file_yaml ... ok
+test config::tests::test_merge_file_toml ... ok
+test executor::tests::test_executor_new ... ok
+test cli::tests::test_subcommand_edge_cases ... ok
+name,age
+test cli::tests::test_config_subcommands ... ok
+test executor::tests::test_explain_filter ... ok
+test output::tests::test_write_to_stdout_json_serialization_error ... ok
+name,age
+test config::tests::test_save_yaml ... ok
+test output::tests::test_write_to_stdout_array ... ok
+name,age
+test output::tests::test_write_to_stdout_object ... ok
+test config::tests::test_save_toml ... ok
+test output::tests::test_write_with_options_csv_non_dataframe_error ... ok
+test output::tests::test_write_to_stdout_simple_values ... ok
+test output::tests::test_write_with_options_json_compact ... ok
+test executor::tests::test_execute_filter_on_value_identity ... ok
+test output::tests::test_write_formatted ... ok
+test output::tests::test_write_with_options_json_pretty ... ok
+test output::tests::test_write_with_options_jsonlines_array ... ok
+test output::tests::test_write_with_options_unsupported_format ... ok
+test output::tests::test_write_with_options_jsonlines_single ... ok
+test repl::tests::test_execute_filter_no_data ... ok
+Alice,30
+Bob,25
+test repl::tests::test_explain_filter ... ok
+Alice,30
+Bob,25
+Alice,30
+Bob,25
+test repl::tests::test_load_file_nonexistent ... ok
+test output::tests::test_write_to_stdout_lazyframe ... ok
+test output::tests::test_write_to_stdout_lazyframe_error ... ok
+test output::tests::test_write_with_options_tsv ... ok
+test output::tests::test_write_with_options_csv ... ok
+test executor::tests::test_validate_filter ... ok
+test output::tests::test_write_to_stdout_dataframe ... ok
+test repl::tests::test_execute_filter_invalid ... ok
+test repl::tests::test_execute_filter_with_data ... ok
+test repl::tests::test_process_command_execute_filter_no_data ... ok
+test repl::tests::test_process_command_explain_multi_word ... ok
+test repl::tests::test_process_command_explain ... ok
+test repl::tests::test_process_command_empty ... ok
+test repl::tests::test_process_command_clear ... ok
+test repl::tests::test_process_command_explain_no_filter ... ok
+test repl::tests::test_process_command_history ... ok
+test repl::tests::test_process_command_help ... ok
+test repl::tests::test_process_command_invalid ... ok
+test repl::tests::test_process_command_load_no_path ... ok
+test repl::tests::test_process_command_load_invalid_file ... ok
+test repl::tests::test_process_command_show ... ok
+test repl::tests::test_process_command_quit ... ok
+test output::tests::test_write_to_file ... ok
+test repl::tests::test_repl_new ... ok
+test repl::tests::test_show_current_data_some ... ok
+test repl::tests::test_show_current_data_none ... ok
+test repl::tests::test_process_command_validate_no_filter ... ok
+test repl::tests::test_show_help ... ok
+test tests::test_handle_example_directory_multiple_data_files ... ok
+test tests::test_handle_example_directory_no_data_files ... ok
+test repl::tests::test_load_file_valid_json ... ok
+test tests::test_handle_example_directory_no_query ... ok
+test tests::test_handle_example_directory_success ... ok
+test repl::tests::test_process_command_load_valid_file ... ok
+test repl::tests::test_show_history_empty ... ok
+test repl::tests::test_show_history_with_commands ... ok
+test repl::tests::test_process_command_validate ... ok
+test repl::tests::test_process_command_execute_filter ... ok
+test repl::tests::test_validate_filter ... ok
+test repl::tests::test_process_command_validate_multi_word ... ok
+test repl::tests::test_process_command_multi_word_filter ... ok
+
+test result: ok. 112 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/dsq_core-b41b9095e9115b20)
+
+running 189 tests
+test error::tests::test_error_conversion ... ok
+test error::tests::test_error_display ... ok
+test error::tests::test_multiple_errors ... ok
+test filter::tests::test_explain_filter_identity ... ok
+test filter::tests::test_explain_filter_with_complex_filter ... ok
+test filter::tests::test_execute_filter_with_config_error_handling ... ok
+test filter::tests::test_execute_filter_error_handling ... ok
+test filter::tests::test_execute_filter_basic ... ok
+test filter::tests::test_execute_filter_null_handling ... ok
+test filter::tests::test_execute_filter_identity ... ok
+test filter::tests::test_execute_filter_with_config_custom ... ok
+test filter::tests::test_execute_filter_with_config_basic ... ok
+test io::tests::test_group_by_io_tsv ... ignored, TSV format not fully supported
+test io::tests::test_empty_file_handling ... ok
+test io::tests::test_error_cases ... ok
+test io::tests::test_read_adt ... ignored, ADT format detection not working without extension hint
+test filter::tests::test_execute_filter_boolean_operations ... ok
+test filter::tests::test_execute_filter_object_access ... ok
+test io::tests::test_read_json5 ... ignored, JSON5 format detection not working without extension hint
+test filter::tests::test_execute_filter_arithmetic ... ok
+test io::tests::test_read_json_array ... ok
+test io::tests::test_read_json_object ... ok
+test io::tests::test_read_jsonlines ... ignored, JsonLines format not fully supported
+test io::tests::test_group_by_io_error_handling ... ok
+test io::tests::test_write_adt ... ok
+test io::tests::test_write_json ... ok
+test io::tests::test_write_json5 ... ignored, JSON5 format not fully supported
+test io::tests::test_write_jsonl ... ignored, JSONL format not fully supported
+test io::tests::test_write_ndjson ... ignored, NDJSON/JsonLines format not fully supported
+test io::tests::test_write_ndjson_edge_cases ... ignored, NDJSON format not fully supported
+test io::tests::test_write_options_include_header ... ok
+test ops::aggregate::tests::test_aggregation_function_names ... ok
+test ops::aggregate::tests::test_aggregation_function_to_polars_expr ... ok
+test ops::aggregate::tests::test_aggregation_functions ... ok
+test ops::aggregate::tests::test_array_aggregation ... ok
+test ops::aggregate::tests::test_compare_values_for_ordering ... ok
+test filter::tests::test_execute_filter_array_indexing ... ok
+test ops::aggregate::tests::test_count_unique_aggregation ... ok
+test ops::aggregate::tests::test_error_conditions ... ok
+test ops::aggregate::tests::test_cumulative_agg_not_implemented ... ok
+test ops::aggregate::tests::test_group_by ... ok
+test ops::aggregate::tests::test_group_by_multiple_columns ... FAILED
+test ops::aggregate::tests::test_group_by_with_map_and_aggregation ... ok
+test ops::aggregate::tests::test_list_aggregation ... ok
+test ops::aggregate::tests::test_median_aggregation ... ok
+test ops::aggregate::tests::test_min_max_with_different_types ... ok
+test ops::aggregate::tests::test_pivot_current_behavior ... FAILED
+test filter::tests::test_execute_filter_complex_operations ... ok
+test ops::aggregate::tests::test_group_by_agg ... ok
+test ops::aggregate::tests::test_string_concatenation ... ok
+test io::tests::test_read_csv ... ok
+test io::tests::test_read_options_n_rows ... ok
+test io::tests::test_group_by_io_parquet ... ok
+test io::tests::test_group_by_io_json ... ok
+test io::tests::test_lazy_reading ... ok
+test ops::aggregate::tests::test_rolling_agg_not_implemented ... FAILED
+test io::tests::test_read_options_skip_rows ... ok
+test io::tests::test_read_parquet ... ok
+test ops::basic::tests::test_rename ... ok
+test io::tests::test_inspect_file ... ok
+test ops::basic::tests::test_select ... ok
+test ops::aggregate::tests::test_sum_mean_with_nulls_and_mixed_types ... ok
+test ops::aggregate::tests::test_pivot_unpivot ... ok
+test ops::join::tests::test_anti_join ... ok
+test ops::join::tests::test_array_join ... ok
+test ops::join::tests::test_cross_join ... ok
+test ops::join::tests::test_join_empty_arrays ... ok
+test io::tests::test_convert_file ... ok
+test ops::basic::tests::test_filter ... ok
+test ops::aggregate::tests::test_unpivot ... ok
+test ops::join::tests::test_join_invalid_keys ... ok
+test ops::join::tests::test_join_keys ... ok
+test ops::join::tests::test_join_keys_methods ... ok
+test ops::join::tests::test_join_options_default ... ok
+test ops::join::tests::test_join_validation ... ok
+test ops::join::tests::test_join_with_suffix ... ok
+test ops::join::tests::test_join_lazy_frames ... ok
+test io::tests::test_group_by_io_mixed_formats ... ok
+test ops::join::tests::test_join_types ... ok
+test io::tests::test_group_by_io_csv ... ok
+test ops::join::tests::test_join_type_parsing ... ok
+test ops::tests::test_add_operation ... ok
+test ops::join::tests::test_semi_join ... ok
+test ops::join::tests::test_right_join ... FAILED
+test ops::tests::test_assign_update_operation_description ... ok
+test ops::tests::test_assign_update_operation_non_object ... ok
+test ops::tests::test_assign_update_operation_nested_field ... ok
+test ops::tests::test_and_operation ... ok
+test ops::tests::test_array_construct_operation ... ok
+test ops::tests::test_assign_add_operation ... ok
+test ops::tests::test_assign_update_operation_object_field ... ok
+test ops::tests::test_assign_update_operation_string_field ... ok
+test ops::basic::tests::test_sort ... ok
+test ops::tests::test_div_operation ... ok
+test filter::tests::test_execute_filter_object_transformation ... ok
+test ops::tests::test_assign_update_operation_with_expression ... ok
+test ops::tests::test_field_access_operation ... ok
+test ops::tests::test_filter_operation ... FAILED
+test ops::tests::test_eq_operation ... ok
+test ops::tests::test_ge_operation ... ok
+test ops::tests::test_gt_operation ... ok
+test ops::tests::test_negation_operation ... ok
+test ops::tests::test_iterate_operation ... ok
+test ops::tests::test_object_construct_operation ... FAILED
+test ops::tests::test_le_operation ... ok
+test ops::tests::test_lt_operation ... ok
+test ops::tests::test_mul_operation ... ok
+test ops::tests::test_or_operation ... ok
+test ops::tests::test_ne_operation ... ok
+test ops::tests::test_pipeline_filter_method ... FAILED
+test ops::tests::test_pipeline_group_by_method ... FAILED
+test ops::join::tests::test_inner_join ... ok
+test ops::join::tests::test_left_join ... ok
+test ops::tests::test_operation_pipeline ... ok
+test ops::tests::test_pipeline_description ... ok
+test ops::join::tests::test_join_mixed_types ... ok
+test ops::join::tests::test_outer_join ... ok
+test ops::tests::test_pipeline_head_tail_methods ... ok
+test ops::join::tests::test_join_with_options ... ok
+test ops::tests::test_pipeline_aggregate_method ... ok
+test ops::tests::test_pipeline_with_aggregation ... ok
+test ops::tests::test_select_condition_operation ... ok
+test ops::tests::test_slice_operation_array ... ok
+test ops::tests::test_sub_operation ... ok
+test ops::tests::test_variable_operation ... ok
+test ops::tests::test_slice_operation_dataframe ... ok
+test ops::transform::tests::test_column_datatype_from_str ... ok
+test ops::tests::test_supports_operation ... ok
+test ops::transform::tests::test_column_datatype_to_polars_dtype ... ok
+test ops::transform::tests::test_cast ... ok
+test ops::transform::tests::test_cast_column ... ok
+test ops::transform::tests::test_drop ... ok
+test ops::join::tests::test_join_multiple ... ok
+test ops::transform::tests::test_fill_null ... ok
+test ops::transform::tests::test_cast_lazy ... ok
+test ops::transform::tests::test_cast_column_invalid_type ... ok
+test ops::transform::tests::test_drop_lazy ... ok
+test ops::transform::tests::test_drop_nulls ... ok
+test ops::transform::tests::test_fill_null_lazy ... ok
+test ops::transform::tests::test_limit_and_skip ... ok
+test ops::transform::tests::test_limit_lazy ... ok
+test ops::transform::tests::test_rename ... ok
+test ops::transform::tests::test_explode_lazy ... FAILED
+test ops::transform::tests::test_explode ... FAILED
+test ops::transform::tests::test_filter ... ok
+test ops::transform::tests::test_filter_lazy ... ok
+test ops::transform::tests::test_melt ... ok
+test ops::transform::tests::test_sample ... ok
+test ops::transform::tests::test_reverse ... ok
+test ops::transform::tests::test_drop_nulls_lazy ... ok
+test ops::transform::tests::test_select ... ok
+test ops::transform::tests::test_slice ... ok
+test io::tests::test_convert_formats_to_parquet ... ok
+test ops::transform::tests::test_rename_lazy ... ok
+test ops::transform::tests::test_skip_lazy ... ok
+test ops::transform::tests::test_select_lazy ... ok
+test ops::transform::tests::test_sort ... ok
+test tests::filter_tests::test_example_002_query_from_file ... ok
+test ops::transform::tests::test_reverse_lazy ... ok
+test ops::transform::tests::test_with_column ... ok
+test ops::transform::tests::test_sort_lazy ... ok
+test ops::transform::tests::test_slice_lazy ... ok
+test ops::transform::tests::test_map_columns ... ok
+test ops::transform::tests::test_with_column_lazy ... ok
+test ops::transform::tests::test_unique_lazy ... ok
+test tests::filter_tests::test_example_085_query_from_file ... ok
+test tests::test_extract_dataframe ... ok
+test ops::transform::tests::test_melt_lazy ... ok
+test tests::test_to_dataframe_conversion ... ok
+test tests::test_utils_object ... ok
+test tests::test_utils_array ... ok
+test tests::test_value_len_and_empty ... ok
+test tests::test_value_from_json ... ok
+test tests::test_value_stats ... ok
+test tests::test_value_to_json ... ok
+test tests::test_value_index ... ok
+test tests::test_value_type_name ... ok
+test tests::test_value_type_checks ... ok
+test tests::test_value_field ... ok
+test tests::test_version_info ... ok
+test ops::transform::tests::test_unique ... ok
+test tests::filter_tests::test_csv_with_spaces_in_field_names ... FAILED
+test tests::filter_tests::test_example_075_query_on_csv ... ok
+test ops::tests::test_recommended_batch_size ... ok
+test tests::filter_tests::test_example_002_query_on_csv ... ok
+test tests::filter_tests::test_example_085_query_on_csv ... ok
+test tests::filter_tests::test_example_002_query_on_tsv ... ok
+test tests::filter_tests::test_example_002_query_on_parquet ... ok
+test tests::filter_tests::test_example_002_query_on_json ... ok
+
+failures:
+
+---- ops::aggregate::tests::test_group_by_multiple_columns stdout ----
+
+thread 'ops::aggregate::tests::test_group_by_multiple_columns' (739073) panicked at src/dsq-core/src/ops/aggregate.rs:1472:17:
+assertion `left == right` failed
+  left: 0
+ right: 110000
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- ops::aggregate::tests::test_pivot_current_behavior stdout ----
+
+thread 'ops::aggregate::tests::test_pivot_current_behavior' (739078) panicked at src/dsq-core/src/ops/aggregate.rs:1540:17:
+assertion failed: df.get_column_names().contains(&"value_sum")
+
+---- ops::aggregate::tests::test_rolling_agg_not_implemented stdout ----
+
+thread 'ops::aggregate::tests::test_rolling_agg_not_implemented' (739080) panicked at src/dsq-core/src/ops/aggregate.rs:1585:9:
+assertion failed: result.unwrap_err().to_string().contains("not yet implemented")
+
+---- ops::join::tests::test_right_join stdout ----
+
+thread 'ops::join::tests::test_right_join' (739107) panicked at src/dsq-core/src/ops/join.rs:991:10:
+called `Result::unwrap()` on an `Err` value: Operation("Right join not supported in this Polars version, so cannot convert to Polars")
+
+---- ops::tests::test_filter_operation stdout ----
+
+thread 'ops::tests::test_filter_operation' (739122) panicked at src/dsq-core/src/ops/tests.rs:148:42:
+called `Result::unwrap()` on an `Err` value: Operation("Failed to get int: data types don't match: invalid series dtype: expected `Int64`, got `i32`")
+
+---- ops::tests::test_object_construct_operation stdout ----
+
+thread 'ops::tests::test_object_construct_operation' (739131) panicked at src/dsq-core/src/ops/tests.rs:670:14:
+Expected Object
+
+---- ops::tests::test_pipeline_filter_method stdout ----
+
+thread 'ops::tests::test_pipeline_filter_method' (739136) panicked at src/dsq-core/src/ops/tests.rs:821:10:
+called `Result::unwrap()` on an `Err` value: Operation("Failed to get int: data types don't match: invalid series dtype: expected `Int64`, got `i32`")
+
+---- ops::tests::test_pipeline_group_by_method stdout ----
+
+thread 'ops::tests::test_pipeline_group_by_method' (739137) panicked at src/dsq-core/src/ops/tests.rs:849:14:
+Expected DataFrame
+
+---- ops::transform::tests::test_explode_lazy stdout ----
+
+thread 'ops::transform::tests::test_explode_lazy' (739158) panicked at src/dsq-core/src/ops/transform.rs:991:42:
+called `Result::unwrap()` on an `Err` value: InvalidOperation(ErrString("`explode` operation not supported for dtype `binary`"))
+
+---- ops::transform::tests::test_explode stdout ----
+
+thread 'ops::transform::tests::test_explode' (739157) panicked at src/dsq-core/src/ops/transform.rs:980:73:
+called `Result::unwrap()` on an `Err` value: Operation("Failed to explode columns: invalid operation: `explode` operation not supported for dtype `binary`")
+
+---- tests::filter_tests::test_csv_with_spaces_in_field_names stdout ----
+
+thread 'tests::filter_tests::test_csv_with_spaces_in_field_names' (739184) panicked at src/dsq-core/src/lib.rs:1162:21:
+Failed to access field with spaces: Some(Filter(Runtime("Operation error: Invalid syntax at position 0: Parse error: Nom(Eof)")))
+
+
+failures:
+    ops::aggregate::tests::test_group_by_multiple_columns
+    ops::aggregate::tests::test_pivot_current_behavior
+    ops::aggregate::tests::test_rolling_agg_not_implemented
+    ops::join::tests::test_right_join
+    ops::tests::test_filter_operation
+    ops::tests::test_object_construct_operation
+    ops::tests::test_pipeline_filter_method
+    ops::tests::test_pipeline_group_by_method
+    ops::transform::tests::test_explode
+    ops::transform::tests::test_explode_lazy
+    tests::filter_tests::test_csv_with_spaces_in_field_names
+
+test result: FAILED. 170 passed; 11 failed; 8 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `-p dsq-core --lib`
