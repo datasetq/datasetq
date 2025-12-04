@@ -38,18 +38,6 @@ jobs:
           - target: armv7-unknown-linux-musleabihf
             os: ubuntu-latest
             cross: true
-          # macOS x86_64
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            cross: false
-          # macOS aarch64 (Apple Silicon)
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            cross: false
-          # Windows x86_64
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            cross: false
           # WebAssembly
           - target: wasm32-wasip1
             os: ubuntu-latest

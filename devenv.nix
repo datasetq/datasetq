@@ -11,6 +11,7 @@
     enable = true;
     channel = "stable";
     mold.enable = true;
+    targets = [ "x86_64-unknown-linux-musl" ];
   };
 
   languages.ruby.enable = true;

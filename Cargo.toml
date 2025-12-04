@@ -1,6 +1,6 @@
 [package]
 name = "datasetq"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Durable Programming LLC"]
 description = "A data processing tool with a jq-like syntax for structured data formats, including CSV, JSON, Parquet, Avro, and more."
@@ -67,7 +67,8 @@ pretty_assertions = "1.4"
 
 [lib]
 name = "dsq"
-crate-type = ["cdylib"]
+# Default: rlib for musl static binaries and general compatibility
+crate-type = ["rlib", "cdylib"]
 
 
 
