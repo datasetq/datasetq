@@ -150,28 +150,3 @@ impl From<nom::Err<nom::error::Error<&str>>> for ParseError {
         }
     }
 }
-
-impl From<nom::Err<nom::error::VerboseError<&str>>> for ParseError {
-    fn from(err: nom::Err<nom::error::VerboseError<&str>>) -> Self {
-        match err {
-            nom::Err::Error(e) | nom::Err::Failure(e) => {
-                let errors = e.errors;
-                if let Some((_input, error_kind)) = errors.first() {
-                    // Position calculation is not accurate without original input length
-                    let position = 0;
-                    ParseError::InvalidSyntax {
-                        message: format!("Parse error: {:?}", error_kind),
-                        position,
-                    }
-                } else {
-                    ParseError::General {
-                        message: "Unknown parse error".to_string(),
-                    }
-                }
-            }
-            nom::Err::Incomplete(_) => ParseError::General {
-                message: "Incomplete input".to_string(),
-            },
-        }
-    }
-}

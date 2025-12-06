@@ -25,8 +25,8 @@ pub fn builtin_rand(args: &[Value]) -> Result<Value> {
         ));
     }
 
-    let mut rng = rand::thread_rng();
-    Ok(Value::Float(rng.gen()))
+    let mut rng = rand::rng();
+    Ok(Value::Float(rng.random()))
 }
 
 #[cfg(target_arch = "wasm32")]

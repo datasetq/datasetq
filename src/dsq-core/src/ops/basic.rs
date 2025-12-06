@@ -299,7 +299,7 @@ pub fn sample(
         let mut rng = if let Some(seed) = seed {
             StdRng::seed_from_u64(seed)
         } else {
-            StdRng::from_entropy()
+            StdRng::from_os_rng()
         };
 
         let mut indices: Vec<u32> = (0..total_rows as u32).collect();

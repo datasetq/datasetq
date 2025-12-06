@@ -49,8 +49,8 @@ pub fn builtin_randbetween(args: &[Value]) -> Result<Value> {
         ));
     }
 
-    let mut rng = rand::thread_rng();
-    let random = rng.gen_range(min..=max);
+    let mut rng = rand::rng();
+    let random = rng.random_range(min..=max);
     Ok(Value::Int(random))
 }
 

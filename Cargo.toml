@@ -108,7 +108,7 @@ thiserror = { workspace = true }
 dirs = { version = "5.0", optional = true }
 tempfile = { version = "3.8", optional = true }
 inventory = "0.3.21"
-rand = "0.9"
+rand = { version = "0.9", features = ["std_rng"] }
 coz = "0.1"
 
 
@@ -186,5 +186,35 @@ harness = false
 [[bench]]
 name = "json_reading_bench"
 harness = false
+
+[package.metadata.deb]
+maintainer = "Durable Programming LLC <contact@durableprogramming.com>"
+copyright = "2025, Durable Programming LLC"
+license-file = ["LICENSE-MIT", "4"]
+extended-description = """\
+DatasetQ (dsq) is a data processing tool with a jq-like syntax for structured data formats, \
+including CSV, JSON, Parquet, Avro, and more.
+
+Features:
+- jq-like syntax for data processing
+- Support for multiple formats: CSV, JSON, Parquet, Avro, Arrow
+- Fast and efficient data processing
+- Command-line interface for easy integration
+
+DatasetQ is designed to make working with structured data simple and efficient."""
+section = "utils"
+priority = "optional"
+assets = [
+    ["target/release/dsq", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/datasetq/", "644"],
+    ["LICENSE-MIT", "usr/share/doc/datasetq/", "644"],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/dsq", dest = "/usr/bin/dsq", mode = "755" },
+    { source = "README.md", dest = "/usr/share/doc/datasetq/README.md", mode = "644" },
+    { source = "LICENSE-MIT", dest = "/usr/share/doc/datasetq/LICENSE-MIT", mode = "644" },
+]
 
 

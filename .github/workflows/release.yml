@@ -1,458 +1,355 @@
 name: Release
 
 on:
+  release:
+    types: [published]
   push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag (e.g., v0.1.0)'
-        required: true
+    tags: ['v*']
 
 env:
   CARGO_TERM_COLOR: always
-  BINARY_NAME: dsq
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  build-static:
-    name: Build Static - ${{ matrix.target }}
+  # Build standalone binaries for all platforms (Tier 1 requirement)
+  build-binaries:
+    strategy:
+      matrix:
+        include:
+          # Linux builds (statically linked with musl)
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: dsq-linux-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            artifact_name: dsq-linux-arm64
+
+          # macOS builds
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: dsq-macos-intel
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: dsq-macos-arm64
+
+          # Windows builds
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: dsq-windows-x64.exe
+
     runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Linux x86_64 (musl for static linking)
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-            cross: true
-          # Linux aarch64
-          - target: aarch64-unknown-linux-musl
-            os: ubuntu-latest
-            cross: true
-          # Linux armv7
-          - target: armv7-unknown-linux-musleabihf
-            os: ubuntu-latest
-            cross: true
-          # WebAssembly
-          - target: wasm32-wasip1
-            os: ubuntu-latest
-            cross: false
 
     steps:
-      - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
 
-      - name: Install clang
-        if: matrix.cross
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang
+    - name: Install Zig
+      if: matrix.os == 'ubuntu-latest'
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.13.0
 
-      - name: Install cross
-        if: matrix.cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+    - name: Install cargo-zigbuild
+      if: matrix.os == 'ubuntu-latest'
+      run: cargo install --locked cargo-zigbuild
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-${{ matrix.target }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build (cross)
-        if: matrix.cross
-        run: cross build --release --target ${{ matrix.target }}
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-${{ matrix.target }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build (native)
-        if: "!matrix.cross"
-        run: cargo build --release --target ${{ matrix.target }}
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-${{ matrix.target }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Prepare artifacts (Unix)
-        if: runner.os != 'Windows' && !contains(matrix.target, 'wasm')
-        run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }} dist/
-          cd dist
-          tar -czvf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz ${{ env.BINARY_NAME }}
-          sha256sum ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz > ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz.sha256
+    - name: Build release binary
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          cargo zigbuild --release --target ${{ matrix.target }}
+        else
+          cargo build --release --target ${{ matrix.target }}
+        fi
+      shell: bash
 
-      - name: Prepare artifacts (WASM)
-        if: contains(matrix.target, 'wasm')
-        run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}.wasm dist/
-          cd dist
-          tar -czvf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz ${{ env.BINARY_NAME }}.wasm
-          sha256sum ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz > ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz.sha256
+    - name: Package binaries
+      run: |
+        mkdir -p release
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          cp target/${{ matrix.target }}/release/dsq.exe release/${{ matrix.artifact_name }}
+        else
+          cp target/${{ matrix.target }}/release/dsq release/${{ matrix.artifact_name }}
+          chmod +x release/*
+        fi
+      shell: bash
 
-      - name: Prepare artifacts (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path dist
-          Copy-Item "target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}.exe" dist/
-          Compress-Archive -Path "dist/${{ env.BINARY_NAME }}.exe" -DestinationPath "dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.zip"
-          $hash = (Get-FileHash "dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.zip" -Algorithm SHA256).Hash.ToLower()
-          "$hash  ${{ env.BINARY_NAME }}-${{ matrix.target }}.zip" | Out-File -FilePath "dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.zip.sha256" -Encoding ascii
+    - name: Generate checksums
+      run: |
+        cd release
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          certutil -hashfile ${{ matrix.artifact_name }} SHA256 > ${{ matrix.artifact_name }}.sha256
+        else
+          shasum -a 256 ${{ matrix.artifact_name }} > ${{ matrix.artifact_name }}.sha256
+        fi
+      shell: bash
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
-          path: dist/${{ env.BINARY_NAME }}-${{ matrix.target }}.*
+    - name: Upload binary artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binary-${{ matrix.target }}
+        path: release/*
 
-  package-deb:
-    name: Package DEB
-    needs: build-static
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            arch: amd64
-          - target: aarch64-unknown-linux-musl
-            arch: arm64
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Download artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
-          path: artifacts/
-
-      - name: Extract binary
-        run: |
-          cd artifacts
-          tar -xzf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-            VERSION="${VERSION#v}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Build DEB package
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          ARCH=${{ matrix.arch }}
-          PKG_NAME=${{ env.BINARY_NAME }}_${VERSION}_${ARCH}
-
-          mkdir -p ${PKG_NAME}/DEBIAN
-          mkdir -p ${PKG_NAME}/usr/bin
-          mkdir -p ${PKG_NAME}/usr/share/doc/${{ env.BINARY_NAME }}
-
-          cp artifacts/${{ env.BINARY_NAME }} ${PKG_NAME}/usr/bin/
-          chmod 755 ${PKG_NAME}/usr/bin/${{ env.BINARY_NAME }}
-
-          cat > ${PKG_NAME}/DEBIAN/control << EOF
-          Package: ${{ env.BINARY_NAME }}
-          Version: ${VERSION}
-          Section: utils
-          Priority: optional
-          Architecture: ${ARCH}
-          Maintainer: Durable Programming LLC
-          Description: A data processing tool with jq-like syntax
-           A data processing tool with a jq-like syntax for structured data
-           formats, including CSV, JSON, Parquet, Avro, and more.
-          Homepage: https://datasetq.com
-          EOF
-
-          cp README.md ${PKG_NAME}/usr/share/doc/${{ env.BINARY_NAME }}/ 2>/dev/null || true
-          cp LICENSE-MIT ${PKG_NAME}/usr/share/doc/${{ env.BINARY_NAME }}/copyright 2>/dev/null || true
-
-          dpkg-deb --build ${PKG_NAME}
-          sha256sum ${PKG_NAME}.deb > ${PKG_NAME}.deb.sha256
-
-      - name: Upload DEB
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.BINARY_NAME }}-deb-${{ matrix.arch }}
-          path: "*.deb*"
-
-  package-rpm:
-    name: Package RPM
-    needs: build-static
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            arch: x86_64
-          - target: aarch64-unknown-linux-musl
-            arch: aarch64
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Download artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
-          path: artifacts/
-
-      - name: Extract binary
-        run: |
-          cd artifacts
-          tar -xzf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-            VERSION="${VERSION#v}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Install RPM tools
-        run: sudo apt-get update && sudo apt-get install -y rpm
-
-      - name: Build RPM package
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          ARCH=${{ matrix.arch }}
-
-          mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          mkdir -p rpmbuild/SOURCES/${{ env.BINARY_NAME }}-${VERSION}
-          cp artifacts/${{ env.BINARY_NAME }} rpmbuild/SOURCES/${{ env.BINARY_NAME }}-${VERSION}/
-
-          cd rpmbuild/SOURCES
-          tar -czvf ${{ env.BINARY_NAME }}-${VERSION}.tar.gz ${{ env.BINARY_NAME }}-${VERSION}
-          cd ../..
-
-          cat > rpmbuild/SPECS/${{ env.BINARY_NAME }}.spec << EOF
-          Name:           ${{ env.BINARY_NAME }}
-          Version:        ${VERSION}
-          Release:        1%{?dist}
-          Summary:        A data processing tool with jq-like syntax
-          License:        MIT OR Apache-2.0
-          URL:            https://datasetq.com
-          Source0:        %{name}-%{version}.tar.gz
-
-          %description
-          A data processing tool with a jq-like syntax for structured data
-          formats, including CSV, JSON, Parquet, Avro, and more.
-
-          %prep
-          %setup -q
-
-          %install
-          mkdir -p %{buildroot}%{_bindir}
-          install -m 755 ${{ env.BINARY_NAME }} %{buildroot}%{_bindir}/
-
-          %files
-          %{_bindir}/${{ env.BINARY_NAME }}
-          EOF
-
-          rpmbuild --define "_topdir $(pwd)/rpmbuild" \
-                   --define "_arch ${ARCH}" \
-                   --target ${ARCH} \
-                   -bb rpmbuild/SPECS/${{ env.BINARY_NAME }}.spec
-
-          find rpmbuild/RPMS -name "*.rpm" -exec cp {} . \;
-          for f in *.rpm; do sha256sum "$f" > "$f.sha256"; done
-
-      - name: Upload RPM
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.BINARY_NAME }}-rpm-${{ matrix.arch }}
-          path: "*.rpm*"
-
-  package-apk:
-    name: Package APK (Alpine)
-    needs: build-static
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-musl
-            arch: x86_64
-          - target: aarch64-unknown-linux-musl
-            arch: aarch64
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Download artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
-          path: artifacts/
-
-      - name: Extract binary
-        run: |
-          cd artifacts
-          tar -xzf ${{ env.BINARY_NAME }}-${{ matrix.target }}.tar.gz
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-            VERSION="${VERSION#v}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Build APK package
-        uses: docker://alpine:latest
-        with:
-          entrypoint: /bin/sh
-          args: |
-            -c "
-            apk add --no-cache alpine-sdk sudo
-
-            VERSION=${{ steps.version.outputs.version }}
-            ARCH=${{ matrix.arch }}
-
-            # Create package directory structure
-            mkdir -p pkg/usr/bin
-            cp artifacts/${{ env.BINARY_NAME }} pkg/usr/bin/
-            chmod 755 pkg/usr/bin/${{ env.BINARY_NAME }}
-
-            # Create APKBUILD
-            cat > APKBUILD << 'APKEOF'
-            pkgname=${{ env.BINARY_NAME }}
-            pkgver=${{ steps.version.outputs.version }}
-            pkgrel=0
-            pkgdesc=\"A data processing tool with jq-like syntax\"
-            url=\"https://datasetq.com\"
-            arch=\"${{ matrix.arch }}\"
-            license=\"MIT OR Apache-2.0\"
-
-            package() {
-              mkdir -p \"\$pkgdir\"/usr/bin
-              install -m755 \"\$srcdir\"/../artifacts/${{ env.BINARY_NAME }} \"\$pkgdir\"/usr/bin/
-            }
-            APKEOF
-
-            # Create a simple tarball package (APK format)
-            cd pkg
-            tar -czvf ../${{ env.BINARY_NAME }}-${VERSION}-${ARCH}.apk.tar.gz .
-            cd ..
-            sha256sum ${{ env.BINARY_NAME }}-${VERSION}-${ARCH}.apk.tar.gz > ${{ env.BINARY_NAME }}-${VERSION}-${ARCH}.apk.tar.gz.sha256
-            "
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ env.BINARY_NAME }}-apk-${{ matrix.arch }}
-          path: "*.apk.tar.gz*"
-
-  docker:
-    name: Docker Image
-    needs: build-static
+  # Build Linux distribution packages
+  build-deb:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
-      - name: Download Linux amd64 artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.BINARY_NAME }}-x86_64-unknown-linux-musl
-          path: artifacts/amd64/
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-musl
 
-      - name: Download Linux arm64 artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: ${{ env.BINARY_NAME }}-aarch64-unknown-linux-musl
-          path: artifacts/arm64/
+    - name: Install Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.13.0
 
-      - name: Extract binaries
-        run: |
-          cd artifacts/amd64 && tar -xzf ${{ env.BINARY_NAME }}-x86_64-unknown-linux-musl.tar.gz
-          cd ../arm64 && tar -xzf ${{ env.BINARY_NAME }}-aarch64-unknown-linux-musl.tar.gz
+    - name: Install cargo-zigbuild
+      run: cargo install --locked cargo-zigbuild
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+    - name: Install cargo-deb
+      run: cargo install cargo-deb
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Get metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-musl-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Create Dockerfile
-        run: |
-          cat > Dockerfile << 'EOF'
-          FROM alpine:3.19 AS base
-          RUN apk add --no-cache ca-certificates
+    - name: Build static binary with musl
+      run: cargo zigbuild --release --target x86_64-unknown-linux-musl
 
-          FROM scratch
-          COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-          ARG TARGETARCH
-          COPY artifacts/${TARGETARCH}/dsq /usr/local/bin/dsq
-          ENTRYPOINT ["/usr/local/bin/dsq"]
-          EOF
+    - name: Build deb package
+      run: cargo deb --target x86_64-unknown-linux-musl --no-build
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+    - name: Upload deb artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deb-package
+        path: target/x86_64-unknown-linux-musl/debian/*.deb
 
+  build-rpm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-musl
+
+    - name: Install Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.13.0
+
+    - name: Install cargo-zigbuild
+      run: cargo install --locked cargo-zigbuild
+
+    - name: Install cargo-generate-rpm
+      run: cargo install cargo-generate-rpm
+
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-musl-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build static binary with musl
+      run: cargo zigbuild --release --target x86_64-unknown-linux-musl
+
+    - name: Build rpm package
+      run: cargo generate-rpm --target x86_64-unknown-linux-musl
+
+    - name: Upload rpm artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rpm-package
+        path: target/x86_64-unknown-linux-musl/generate-rpm/*.rpm
+
+  # Publish to crates.io (Tier 1 language-specific package manager)
+  publish-crates:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Publish to crates.io
+      run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      continue-on-error: true  # May already be published
+
+  # Create GitHub Release with all artifacts
   release:
-    name: Create Release
-    needs: [build-static, package-deb, package-rpm, package-apk, docker]
+    needs: [build-binaries, build-deb, build-rpm, publish-crates]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v6
-        with:
-          path: artifacts/
+    - name: Download all binary artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: binary-*
+        path: artifacts/binaries
+        merge-multiple: true
 
-      - name: Prepare release assets
-        run: |
-          mkdir -p release
-          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.deb" -o -name "*.rpm" -o -name "*.sha256" \) -exec cp {} release/ \;
-          ls -la release/
+    - name: Download deb artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: deb-package
+        path: artifacts/
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/*
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+    - name: Download rpm artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: rpm-package
+        path: artifacts/
+
+    - name: Create consolidated checksums
+      run: |
+        cd artifacts
+        find . -type f \( -name "dsq-*" -o -name "*.deb" -o -name "*.rpm" \) -not -name "*.sha256" -exec shasum -a 256 {} \; > SHA256SUMS
+        cat SHA256SUMS
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/binaries/*
+          artifacts/*.deb
+          artifacts/*.rpm
+          artifacts/SHA256SUMS
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## Installation
+
+          ### Quick Start
+
+          **macOS/Linux (Homebrew)** - *Coming soon in Tier 2*
+          ```bash
+          brew install dsq
+          ```
+
+          **Windows (winget)** - *Coming soon in Tier 2*
+          ```bash
+          winget install dsq
+          ```
+
+          ### Standalone Binaries
+
+          Download the appropriate binary for your platform from the Assets below:
+          - **Linux x64**: `dsq-linux-x64`
+          - **Linux ARM64**: `dsq-linux-arm64`
+          - **macOS Intel**: `dsq-macos-intel`
+          - **macOS Apple Silicon**: `dsq-macos-arm64`
+          - **Windows x64**: `dsq-windows-x64.exe`
+
+          **Installation**:
+          ```bash
+          # Linux/macOS
+          chmod +x dsq-*
+          sudo mv dsq-* /usr/local/bin/dsq
+
+          # Windows: Move dsq-windows-x64.exe to a directory in your PATH
+          ```
+
+          **Verification**:
+          ```bash
+          dsq --version
+          ```
+
+          ### Package Managers
+
+          **Rust/Cargo**:
+          ```bash
+          cargo install datasetq
+          ```
+
+          **Debian/Ubuntu**:
+          ```bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/datasetq_*.deb
+          sudo dpkg -i datasetq_*.deb
+          ```
+
+          **Fedora/RHEL**:
+          ```bash
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/datasetq-*.rpm
+          sudo rpm -i datasetq-*.rpm
+          ```
+
+          ### Checksums
+
+          Verify your download integrity using `SHA256SUMS`.
+
+          ---
+
+          📦 **Distribution Tier**: Currently at **Tier 1** (Launch Phase)
+          - ✅ Standalone binaries for all major platforms
+          - ✅ Cargo/crates.io package manager
+          - ✅ Debian/Ubuntu packages
+          - ✅ Fedora/RHEL packages
+
+          🚀 **Coming in Tier 2** (Growth Phase):
+          - Docker multi-arch images
+          - Homebrew formula (macOS/Linux)
+          - winget package (Windows)
+          - Self-update mechanism
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

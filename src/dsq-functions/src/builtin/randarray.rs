@@ -34,10 +34,10 @@ pub fn builtin_randarray(args: &[Value]) -> Result<Value> {
         }
     };
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut result = Vec::with_capacity(size);
     for _ in 0..size {
-        result.push(Value::Float(rng.gen()));
+        result.push(Value::Float(rng.random()));
     }
     Ok(Value::Array(result))
 }

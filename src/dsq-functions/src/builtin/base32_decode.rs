@@ -9,7 +9,7 @@ pub fn builtin_base32_decode(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
-        Value::String(s) => match base32::decode(base32::Alphabet::RFC4648 { padding: false }, s) {
+        Value::String(s) => match base32::decode(base32::Alphabet::Rfc4648 { padding: false }, s) {
             Some(bytes) => match String::from_utf8(bytes) {
                 Ok(decoded) => Ok(Value::String(decoded)),
                 Err(_) => Err(dsq_shared::error::operation_error(

@@ -11,7 +11,7 @@ pub fn builtin_base32_encode(args: &[Value]) -> Result<Value> {
     match &args[0] {
         Value::String(s) => {
             let encoded =
-                base32::encode(base32::Alphabet::RFC4648 { padding: false }, s.as_bytes());
+                base32::encode(base32::Alphabet::Rfc4648 { padding: false }, s.as_bytes());
             Ok(Value::String(encoded))
         }
         _ => Err(dsq_shared::error::operation_error(
