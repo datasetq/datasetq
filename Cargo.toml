@@ -1,6 +1,6 @@
 [package]
 name = "datasetq"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Durable Programming LLC"]
 description = "A data processing tool with a jq-like syntax for structured data formats, including CSV, JSON, Parquet, Avro, and more."
