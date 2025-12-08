@@ -111,7 +111,7 @@ jobs:
       shell: bash
 
     - name: Upload binary artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: binary-${{ matrix.target }}
         path: release/*
@@ -163,7 +163,7 @@ jobs:
       run: cargo deb --target x86_64-unknown-linux-musl --no-build
 
     - name: Upload deb artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: deb-package
         path: target/x86_64-unknown-linux-musl/debian/*.deb
@@ -214,7 +214,7 @@ jobs:
       run: cargo generate-rpm --target x86_64-unknown-linux-musl
 
     - name: Upload rpm artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: rpm-package
         path: target/x86_64-unknown-linux-musl/generate-rpm/*.rpm
