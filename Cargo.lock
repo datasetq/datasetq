@@ -1196,7 +1196,7 @@ dependencies = [
  "anyhow",
  "base32",
  "base58",
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "dsq-shared",
  "heck 0.5.0",
