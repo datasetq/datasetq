@@ -82,6 +82,7 @@ impl OutputWriter {
     }
 
     /// Write formatted output with color and styling
+    #[allow(dead_code)]
     pub async fn write_formatted(&self, value: &Value, output_path: Option<&Path>) -> Result<()> {
         // For now, just delegate to regular write
         // In the future, this could add color coding, syntax highlighting, etc.
@@ -89,6 +90,7 @@ impl OutputWriter {
     }
 
     /// Write with custom formatting options
+    #[allow(dead_code)]
     pub async fn write_with_options(
         &self,
         value: &Value,
@@ -189,6 +191,7 @@ impl OutputWriter {
         }
     }
 
+    #[allow(dead_code)]
     fn write_dataframe_to_file(&self, df: &DataFrame, path: &Path, separator: u8) -> Result<()> {
         use polars::io::csv::CsvWriter;
         let mut file = std::fs::File::create(path)?;
@@ -199,6 +202,7 @@ impl OutputWriter {
         Ok(())
     }
 
+    #[allow(dead_code)]
     async fn write_csv_to_file(&self, value: &Value, path: &Path) -> Result<()> {
         match value {
             Value::DataFrame(df) => self.write_dataframe_to_file(df, path, b','),
@@ -210,6 +214,7 @@ impl OutputWriter {
         }
     }
 
+    #[allow(dead_code)]
     async fn write_tsv_to_file(&self, value: &Value, path: &Path) -> Result<()> {
         match value {
             Value::DataFrame(df) => self.write_dataframe_to_file(df, path, b'\t'),
@@ -221,6 +226,7 @@ impl OutputWriter {
         }
     }
 
+    #[allow(dead_code)]
     async fn write_json_to_file(&self, value: &Value, path: &Path, pretty: bool) -> Result<()> {
         let json_value = value.to_json()?;
         let json_str = if pretty {
@@ -232,6 +238,7 @@ impl OutputWriter {
         Ok(())
     }
 
+    #[allow(dead_code)]
     async fn write_jsonlines_to_file(&self, value: &Value, path: &Path) -> Result<()> {
         let json_value = value.to_json()?;
         let mut content = String::new();

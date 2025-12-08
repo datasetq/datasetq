@@ -264,53 +264,61 @@ pub fn pivot(
 }
 
 /// Sample rows from `DataFrame`
+#[allow(unused_variables)]
 pub fn sample(
     df: &DataFrame,
     n: Option<usize>,
     frac: Option<f64>,
     _with_replacement: bool,
-    _seed: Option<u64>,
+    seed: Option<u64>,
 ) -> Result<DataFrame> {
     // For now, implement a simple sampling approach
     if let Some(n) = n {
         let total_rows = df.height();
-        let _sample_size = n.min(total_rows);
+        let sample_size = n.min(total_rows);
 
         #[cfg(feature = "rand")]
         {
             use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
-            let mut rng = if let Some(seed) = _seed {
+            let mut rng = if let Some(seed) = seed {
                 StdRng::seed_from_u64(seed)
             } else {
                 StdRng::from_os_rng()
             };
 
+            #[allow(clippy::cast_possible_truncation)]
             let mut indices: Vec<u32> = (0..total_rows as u32).collect();
             indices.shuffle(&mut rng);
-            indices.truncate(_sample_size);
+            indices.truncate(sample_size);
 
             let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
             let sampled = df
                 .take(&idx_ca)
-                .map_err(|e| Error::operation(format!("Failed to sample: {}", e)))?;
+                .map_err(|e| Error::operation(format!("Failed to sample: {e}")))?;
             Ok(sampled)
         }
         #[cfg(not(feature = "rand"))]
         {
             Err(Error::operation("Sampling requires rand feature"))
         }
-    } else if let Some(_frac) = frac {
+    } else if let Some(frac_value) = frac {
         #[cfg(feature = "rand")]
         {
             let total_rows = df.height();
-            let sample_size = ((total_rows as f64) * _frac).round() as usize;
+            #[allow(
+                clippy::cast_precision_loss,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
+            let sample_size = ((total_rows as f64) * frac_value).round() as usize;
 
-            let mut rng = if let Some(seed) = _seed {
+            let mut rng = if let Some(seed) = seed {
                 StdRng::seed_from_u64(seed)
             } else {
                 StdRng::from_os_rng()
             };
 
+            #[allow(clippy::cast_possible_truncation)]
             let mut indices: Vec<u32> = (0..total_rows as u32).collect();
             indices.shuffle(&mut rng);
             indices.truncate(sample_size);

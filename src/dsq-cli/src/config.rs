@@ -388,6 +388,7 @@ impl Config {
     }
 
     /// Find configuration file in standard locations
+    #[allow(dead_code)]
     pub(crate) fn find_config_file(current_dir: Option<&Path>) -> Option<PathBuf> {
         let home = std::env::var("HOME").ok();
         Self::find_config_file_with_home(current_dir, home.as_deref())
@@ -465,6 +466,7 @@ impl Config {
     }
 
     /// Merge configuration from environment variables
+    #[allow(dead_code)]
     fn merge_env(&mut self) -> Result<()> {
         self.merge_env_with_reader(|key| std::env::var(key).ok())
     }
@@ -858,6 +860,7 @@ impl Config {
     }
 
     /// Get format-specific read options
+    #[allow(dead_code)]
     pub fn get_format_read_options(&self, format: DataFormat) -> ReadOptions {
         let mut options = ReadOptions {
             infer_schema: true,
@@ -889,6 +892,7 @@ impl Config {
     }
 
     /// Get format-specific write options
+    #[allow(dead_code)]
     pub fn get_format_write_options(&self, format: DataFormat) -> WriteOptions {
         let mut options = WriteOptions {
             include_header: true,
@@ -917,6 +921,7 @@ impl Config {
     }
 
     /// Check if color output should be enabled
+    #[allow(dead_code)]
     pub fn should_use_color(&self) -> bool {
         match self.display.color.enabled {
             Some(enabled) => enabled,
@@ -930,6 +935,7 @@ impl Config {
     }
 
     /// Get the number of threads to use
+    #[allow(dead_code)]
     pub fn get_thread_count(&self) -> usize {
         if self.performance.threads == 0 {
             num_cpus::get()
@@ -939,6 +945,7 @@ impl Config {
     }
 
     /// Get variables as dsq_core::Value map for filter execution
+    #[allow(dead_code)]
     pub fn get_variables_as_value(&self) -> std::collections::HashMap<String, dsq_core::Value> {
         self.variables
             .iter()
@@ -1006,6 +1013,7 @@ fn parse_memory_limit(limit: &str) -> Result<usize> {
 }
 
 /// Create a default config file template
+#[allow(dead_code)]
 pub fn create_default_config_file(path: &Path) -> Result<()> {
     let config = Config::default();
     config.save(path)?;
@@ -1013,6 +1021,7 @@ pub fn create_default_config_file(path: &Path) -> Result<()> {
 }
 
 /// Validate configuration
+#[allow(dead_code)]
 pub fn validate_config(config: &Config) -> Result<()> {
     // Validate performance settings
     if config.performance.batch_size == 0 {

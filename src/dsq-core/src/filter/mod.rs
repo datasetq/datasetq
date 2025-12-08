@@ -3,8 +3,6 @@
 //! This module provides a thin wrapper around the dsq-filter crate,
 //! maintaining backward compatibility with the existing dsq-core API.
 
-use std::collections::HashMap;
-
 pub use dsq_filter::{
     compile_filter, ErrorMode, ExecutionMode, ExecutionResult, ExecutionStats, ExecutorConfig,
     FilterCompiler, FilterExecutor, OptimizationLevel,

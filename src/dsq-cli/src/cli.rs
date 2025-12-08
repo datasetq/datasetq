@@ -429,6 +429,7 @@ pub enum JoinType {
 
 /// CLI configuration derived from parsed arguments
 #[derive(Debug, Clone, Default)]
+#[allow(dead_code)]
 pub struct CliConfig {
     // Core options
     pub filter: Option<String>,
@@ -671,11 +672,13 @@ impl CliConfig {
     }
 
     /// Check if we should show progress
+    #[allow(dead_code)]
     pub fn should_show_progress(&self) -> bool {
         !self.quiet && self.verbose > 0 && atty::is(atty::Stream::Stderr)
     }
 
     /// Get the effective output format
+    #[allow(dead_code)]
     pub fn get_output_format(&self) -> Option<DataFormat> {
         self.output_format
             .or_else(|| {
@@ -688,22 +691,26 @@ impl CliConfig {
     }
 
     /// Check if this is a simple conversion operation
+    #[allow(dead_code)]
     pub fn is_conversion(&self) -> bool {
         self.filter.is_none() && self.input_format.is_some() && self.output_format.is_some()
     }
 
     /// Check if we're reading from stdin
+    #[allow(dead_code)]
     pub fn is_stdin(&self) -> bool {
         self.input_files.is_empty()
     }
 
     /// Check if we're writing to stdout
+    #[allow(dead_code)]
     pub fn is_stdout(&self) -> bool {
         self.output.is_none()
     }
 }
 
 /// Parse command-line arguments
+#[allow(dead_code)]
 pub fn parse_args() -> Cli {
     Cli::parse()
 }
