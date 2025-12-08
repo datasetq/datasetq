@@ -61,7 +61,7 @@ rayon = "1.10"
 
 # Testing
 tempfile = "3.8"
-criterion = "0.5"
+criterion = "0.8"
 proptest = "1.4"
 pretty_assertions = "1.4"
 
