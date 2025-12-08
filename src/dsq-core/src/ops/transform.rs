@@ -1,10 +1,11 @@
-use crate::error::{Error, Result};
-use crate::Value;
-use polars::prelude::*;
-
 use std::collections::HashMap;
 
-/// Data type for columns in DataFrames
+use polars::prelude::*;
+
+use crate::error::{Error, Result};
+use crate::Value;
+
+/// Data type for columns in `DataFrames`
 #[derive(Debug, Clone, PartialEq)]
 pub enum ColumnDataType {
     /// 32-bit signed integer
@@ -26,7 +27,8 @@ pub enum ColumnDataType {
 }
 
 impl ColumnDataType {
-    /// Create a ColumnDataType from a string representation
+    /// Create a `ColumnDataType` from a string representation
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "int32" | "i32" => Ok(ColumnDataType::Int32),
@@ -37,11 +39,12 @@ impl ColumnDataType {
             "bool" | "boolean" => Ok(ColumnDataType::Boolean),
             "date" => Ok(ColumnDataType::Date),
             "datetime" => Ok(ColumnDataType::DateTime),
-            _ => Err(Error::operation(format!("Unknown data type: {}", s))),
+            _ => Err(Error::operation(format!("Unknown data type: {s}"))),
         }
     }
 
-    /// Convert to Polars DataType
+    /// Convert to Polars `DataType`
+    #[must_use]
     pub fn to_polars_dtype(&self) -> DataType {
         match self {
             ColumnDataType::Int32 => DataType::Int32,
@@ -58,23 +61,23 @@ impl ColumnDataType {
     }
 }
 
-/// Transform operations for DataFrames
+/// Transform operations for `DataFrames`
 pub struct Transform;
 
 impl Transform {
-    /// Select specific columns from a DataFrame
+    /// Select specific columns from a `DataFrame`
     pub fn select(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
         df.select(columns)
-            .map_err(|e| Error::operation(format!("Failed to select columns: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to select columns: {e}")))
     }
 
-    /// Select specific columns from a LazyFrame
+    /// Select specific columns from a `LazyFrame`
     pub fn select_lazy(lf: LazyFrame, columns: &[String]) -> Result<LazyFrame> {
         let cols: Vec<Expr> = columns.iter().map(|name| col(name)).collect();
         Ok(lf.select(&cols))
     }
 
-    /// Filter DataFrame based on a condition
+    /// Filter `DataFrame` based on a condition
     pub fn filter(df: &DataFrame, mask: &Series) -> Result<DataFrame> {
         if mask.dtype() != &DataType::Boolean {
             return Err(Error::operation("Filter mask must be boolean".to_string()));
@@ -82,47 +85,47 @@ impl Transform {
 
         let mask = mask
             .bool()
-            .map_err(|e| Error::operation(format!("Failed to cast mask to boolean: {}", e)))?;
+            .map_err(|e| Error::operation(format!("Failed to cast mask to boolean: {e}")))?;
 
         df.filter(mask)
-            .map_err(|e| Error::operation(format!("Failed to filter DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to filter DataFrame: {e}")))
     }
 
-    /// Filter LazyFrame based on an expression
+    /// Filter `LazyFrame` based on an expression
     pub fn filter_lazy(lf: LazyFrame, predicate: Expr) -> Result<LazyFrame> {
         Ok(lf.filter(predicate))
     }
 
-    /// Sort DataFrame by columns
+    /// Sort `DataFrame` by columns
     pub fn sort(df: &DataFrame, by_columns: &[String], descending: Vec<bool>) -> Result<DataFrame> {
         df.sort(by_columns, descending, false)
-            .map_err(|e| Error::operation(format!("Failed to sort DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to sort DataFrame: {e}")))
     }
 
-    /// Sort LazyFrame by columns
+    /// Sort `LazyFrame` by columns
     pub fn sort_lazy(
         lf: LazyFrame,
         by_columns: &[String],
-        descending: Vec<bool>,
+        descending: &[bool],
     ) -> Result<LazyFrame> {
         let exprs: Vec<Expr> = by_columns.iter().map(|name| col(name)).collect();
-        Ok(lf.sort_by_exprs(&exprs, &descending, false, false))
+        Ok(lf.sort_by_exprs(&exprs, descending, false, false))
     }
 
-    /// Rename columns in a DataFrame
+    /// Rename columns in a `DataFrame`
     pub fn rename(df: &DataFrame, mapping: &HashMap<String, String>) -> Result<DataFrame> {
         let mut result = df.clone();
 
         for (old_name, new_name) in mapping {
             result.rename(old_name, new_name).map_err(|e| {
-                Error::operation(format!("Failed to rename column '{}': {}", old_name, e))
+                Error::operation(format!("Failed to rename column '{old_name}': {e}"))
             })?;
         }
 
         Ok(result)
     }
 
-    /// Rename columns in a LazyFrame
+    /// Rename columns in a `LazyFrame`
     pub fn rename_lazy(lf: LazyFrame, mapping: &HashMap<String, String>) -> Result<LazyFrame> {
         let mut result = lf;
 
@@ -133,53 +136,53 @@ impl Transform {
         Ok(result)
     }
 
-    /// Add a new column to a DataFrame
+    /// Add a new column to a `DataFrame`
     pub fn with_column(df: &DataFrame, name: &str, series: Series) -> Result<DataFrame> {
         let mut result = df.clone();
         result
             .with_column(series.with_name(name))
-            .map_err(|e| Error::operation(format!("Failed to add column '{}': {}", name, e)))?;
+            .map_err(|e| Error::operation(format!("Failed to add column '{name}': {e}")))?;
         Ok(result)
     }
 
-    /// Add a new column expression to a LazyFrame
+    /// Add a new column expression to a `LazyFrame`
     pub fn with_column_lazy(lf: LazyFrame, expr: Expr) -> Result<LazyFrame> {
         Ok(lf.with_column(expr))
     }
 
-    /// Drop columns from a DataFrame
+    /// Drop columns from a `DataFrame`
     pub fn drop(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
         let mut result = df.clone();
         for column in columns {
-            result = result.drop(column).map_err(|e| {
-                Error::operation(format!("Failed to drop column '{}': {}", column, e))
-            })?;
+            result = result
+                .drop(column)
+                .map_err(|e| Error::operation(format!("Failed to drop column '{column}': {e}")))?;
         }
         Ok(result)
     }
 
-    /// Drop columns from a LazyFrame
+    /// Drop columns from a `LazyFrame`
     pub fn drop_lazy(lf: LazyFrame, columns: &[String]) -> Result<LazyFrame> {
         Ok(lf.drop_columns(columns))
     }
 
-    /// Get unique values in a DataFrame
+    /// Get unique values in a `DataFrame`
     pub fn unique(
         df: &DataFrame,
         subset: Option<&[String]>,
         keep: UniqueKeepStrategy,
     ) -> Result<DataFrame> {
         df.unique(subset, keep, None)
-            .map_err(|e| Error::operation(format!("Failed to get unique values: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to get unique values: {e}")))
     }
 
-    /// Get unique values in a LazyFrame
+    /// Get unique values in a `LazyFrame`
     pub fn unique_lazy(
         lf: LazyFrame,
         subset: Option<&[String]>,
         keep: UniqueKeepStrategy,
     ) -> Result<LazyFrame> {
-        let subset_vec = subset.map(|s| s.to_vec());
+        let subset_vec = subset.map(<[std::string::String]>::to_vec);
         Ok(lf.unique(subset_vec, keep))
     }
 
@@ -188,56 +191,61 @@ impl Transform {
         Ok(df.head(Some(n)))
     }
 
-    /// Limit the number of rows in a LazyFrame
+    /// Limit the number of rows in a `LazyFrame`
     pub fn limit_lazy(lf: LazyFrame, n: u32) -> Result<LazyFrame> {
         Ok(lf.limit(n))
     }
 
     /// Skip the first n rows
     pub fn skip(df: &DataFrame, n: usize) -> Result<DataFrame> {
-        Ok(df.slice(n as i64, df.height().saturating_sub(n)))
+        #[allow(clippy::cast_possible_wrap)]
+        {
+            Ok(df.slice(n as i64, df.height().saturating_sub(n)))
+        }
     }
 
-    /// Skip the first n rows in a LazyFrame
+    /// Skip the first n rows in a `LazyFrame`
     pub fn skip_lazy(lf: LazyFrame, n: u32) -> Result<LazyFrame> {
-        Ok(lf.slice(n as i64, u32::MAX))
+        Ok(lf.slice(i64::from(n), u32::MAX))
     }
 
-    /// Slice a DataFrame
+    /// Slice a `DataFrame`
     pub fn slice(df: &DataFrame, offset: i64, length: usize) -> Result<DataFrame> {
         Ok(df.slice(offset, length))
     }
 
-    /// Slice a LazyFrame
+    /// Slice a `LazyFrame`
     pub fn slice_lazy(lf: LazyFrame, offset: i64, length: u32) -> Result<LazyFrame> {
         Ok(lf.slice(offset, length))
     }
 
     /// Reverse the order of rows
     pub fn reverse(df: &DataFrame) -> Result<DataFrame> {
+        #[allow(clippy::cast_possible_truncation)]
         let indices: Vec<IdxSize> = (0..df.height() as IdxSize).rev().collect();
         let ca = IdxCa::from_vec("", indices);
 
         df.take(&ca)
-            .map_err(|e| Error::operation(format!("Failed to reverse DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to reverse DataFrame: {e}")))
     }
 
-    /// Reverse the order of rows in a LazyFrame
+    /// Reverse the order of rows in a `LazyFrame`
     pub fn reverse_lazy(lf: LazyFrame) -> Result<LazyFrame> {
         Ok(lf.reverse())
     }
 
-    /// Sample rows from a DataFrame
+    /// Sample rows from a `DataFrame`
     pub fn sample(
         df: &DataFrame,
         n: usize,
         with_replacement: bool,
         seed: Option<u64>,
     ) -> Result<DataFrame> {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
         let n_values = vec![n as u32];
         let n_series = Series::new("n", n_values);
         df.sample_n(&n_series, with_replacement, true, seed)
-            .map_err(|e| Error::operation(format!("Failed to sample DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to sample DataFrame: {e}")))
     }
 
     /// Fill null values
@@ -247,20 +255,21 @@ impl Transform {
             .iter()
             .map(|s| {
                 s.fill_null(value)
-                    .map_err(|e| Error::operation(format!("Failed to fill null values: {}", e)))
+                    .map_err(|e| Error::operation(format!("Failed to fill null values: {e}")))
             })
             .collect::<Result<Vec<_>>>()?;
 
         DataFrame::new(columns).map_err(|e| {
-            Error::operation(format!("Failed to create DataFrame after fill_null: {}", e))
+            Error::operation(format!("Failed to create DataFrame after fill_null: {e}"))
         })
     }
 
-    /// Fill null values in a LazyFrame
+    /// Fill null values in a `LazyFrame`
+    #[allow(clippy::needless_pass_by_value)]
     pub fn fill_null_lazy(lf: LazyFrame, value: Expr) -> Result<LazyFrame> {
         let columns = lf
             .schema()
-            .map_err(|e| Error::operation(format!("Failed to get schema: {}", e)))?
+            .map_err(|e| Error::operation(format!("Failed to get schema: {e}")))?
             .iter()
             .map(|(name, _)| col(name).fill_null(value.clone()))
             .collect::<Vec<_>>();
@@ -271,10 +280,10 @@ impl Transform {
     /// Drop rows with null values
     pub fn drop_nulls(df: &DataFrame, subset: Option<&[String]>) -> Result<DataFrame> {
         df.drop_nulls(subset)
-            .map_err(|e| Error::operation(format!("Failed to drop null values: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to drop null values: {e}")))
     }
 
-    /// Drop rows with null values in a LazyFrame
+    /// Drop rows with null values in a `LazyFrame`
     pub fn drop_nulls_lazy(lf: LazyFrame, subset: Option<Vec<Expr>>) -> Result<LazyFrame> {
         Ok(lf.drop_nulls(subset))
     }
@@ -284,18 +293,18 @@ impl Transform {
         let mut result = df.clone();
         let series = result
             .column(column)
-            .map_err(|e| Error::operation(format!("Column '{}' not found: {}", column, e)))?
+            .map_err(|e| Error::operation(format!("Column '{column}' not found: {e}")))?
             .cast(dtype)
-            .map_err(|e| Error::operation(format!("Failed to cast column '{}': {}", column, e)))?;
+            .map_err(|e| Error::operation(format!("Failed to cast column '{column}': {e}")))?;
 
         result
             .with_column(series)
-            .map_err(|e| Error::operation(format!("Failed to update column: {}", e)))?;
+            .map_err(|e| Error::operation(format!("Failed to update column: {e}")))?;
 
         Ok(result)
     }
 
-    /// Cast column types in a LazyFrame
+    /// Cast column types in a `LazyFrame`
     pub fn cast_lazy(lf: LazyFrame, column: &str, dtype: DataType) -> Result<LazyFrame> {
         Ok(lf.with_column(col(column).cast(dtype)))
     }
@@ -303,16 +312,16 @@ impl Transform {
     /// Explode list columns
     pub fn explode(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
         df.explode(columns)
-            .map_err(|e| Error::operation(format!("Failed to explode columns: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to explode columns: {e}")))
     }
 
-    /// Explode list columns in a LazyFrame
+    /// Explode list columns in a `LazyFrame`
     pub fn explode_lazy(lf: LazyFrame, columns: &[String]) -> Result<LazyFrame> {
         let cols: Vec<Expr> = columns.iter().map(|name| col(name)).collect();
         Ok(lf.explode(&cols))
     }
 
-    /// Melt DataFrame from wide to long format
+    /// Melt `DataFrame` from wide to long format
     pub fn melt(
         df: &DataFrame,
         id_vars: &[String],
@@ -323,16 +332,16 @@ impl Transform {
         let args = MeltArgs {
             id_vars: id_vars.iter().map(|s| s.as_str().into()).collect(),
             value_vars: value_vars.iter().map(|s| s.as_str().into()).collect(),
-            variable_name: variable_name.map(|s| s.into()),
-            value_name: value_name.map(|s| s.into()),
+            variable_name: variable_name.map(std::convert::Into::into),
+            value_name: value_name.map(std::convert::Into::into),
             streamable: false,
         };
 
         df.melt2(args)
-            .map_err(|e| Error::operation(format!("Failed to melt DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to melt DataFrame: {e}")))
     }
 
-    /// Melt LazyFrame from wide to long format
+    /// Melt `LazyFrame` from wide to long format
     pub fn melt_lazy(
         lf: LazyFrame,
         id_vars: &[String],
@@ -343,15 +352,15 @@ impl Transform {
         let args = MeltArgs {
             id_vars: id_vars.iter().map(|s| s.as_str().into()).collect(),
             value_vars: value_vars.iter().map(|s| s.as_str().into()).collect(),
-            variable_name: variable_name.map(|s| s.into()),
-            value_name: value_name.map(|s| s.into()),
+            variable_name: variable_name.map(std::convert::Into::into),
+            value_name: value_name.map(std::convert::Into::into),
             streamable: false,
         };
 
         Ok(lf.melt(args))
     }
 
-    /// Pivot DataFrame from long to wide format
+    /// Pivot `DataFrame` from long to wide format
     pub fn pivot(
         df: &DataFrame,
         values: &[String],
@@ -378,7 +387,7 @@ impl Transform {
             .group_by(index_expr)
             .agg([agg_expr])
             .collect()
-            .map_err(|e| Error::operation(format!("Failed to pivot DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to pivot DataFrame: {e}")))
     }
 
     /// Apply a function to each row
@@ -393,6 +402,7 @@ impl Transform {
     }
 
     /// Apply a transformation expression to all columns
+    #[allow(clippy::needless_pass_by_value)]
     pub fn map_columns(df: &DataFrame, expr: Expr) -> Result<DataFrame> {
         let columns = df
             .get_columns()
@@ -400,27 +410,27 @@ impl Transform {
             .map(|s| {
                 let lazy_df = DataFrame::new(vec![s.clone()])
                     .map_err(|e| {
-                        Error::operation(format!("Failed to create temporary DataFrame: {}", e))
+                        Error::operation(format!("Failed to create temporary DataFrame: {e}"))
                     })?
                     .lazy();
 
                 let result = lazy_df
                     .select(&[expr.clone().alias(s.name())])
                     .collect()
-                    .map_err(|e| Error::operation(format!("Failed to apply expression: {}", e)))?;
+                    .map_err(|e| Error::operation(format!("Failed to apply expression: {e}")))?;
 
                 result
                     .column(s.name())
-                    .map_err(|e| Error::operation(format!("Failed to get result column: {}", e)))
-                    .map(|s| s.clone())
+                    .map_err(|e| Error::operation(format!("Failed to get result column: {e}")))
+                    .cloned()
             })
             .collect::<Result<Vec<_>>>()?;
 
         DataFrame::new(columns)
-            .map_err(|e| Error::operation(format!("Failed to create result DataFrame: {}", e)))
+            .map_err(|e| Error::operation(format!("Failed to create result DataFrame: {e}")))
     }
 
-    /// Transpose a DataFrame
+    /// Transpose a `DataFrame`
     pub fn transpose(_df: &DataFrame, _keep_names_as: Option<&str>) -> Result<DataFrame> {
         // TODO: Implement transpose
         Err(Error::operation("Transpose not implemented yet"))
@@ -428,6 +438,7 @@ impl Transform {
 }
 
 /// Cast a column to a specific data type
+#[allow(clippy::needless_pass_by_value)]
 pub fn cast_column(value: &Value, column: &str, target_type: ColumnDataType) -> Result<Value> {
     match value {
         Value::DataFrame(df) => {
@@ -435,15 +446,13 @@ pub fn cast_column(value: &Value, column: &str, target_type: ColumnDataType) -> 
             let mut result = df.clone();
             let series = result
                 .column(column)
-                .map_err(|e| Error::operation(format!("Column '{}' not found: {}", column, e)))?
+                .map_err(|e| Error::operation(format!("Column '{column}' not found: {e}")))?
                 .cast(&dtype)
-                .map_err(|e| {
-                    Error::operation(format!("Failed to cast column '{}': {}", column, e))
-                })?;
+                .map_err(|e| Error::operation(format!("Failed to cast column '{column}': {e}")))?;
 
             result
                 .with_column(series)
-                .map_err(|e| Error::operation(format!("Failed to update column: {}", e)))?;
+                .map_err(|e| Error::operation(format!("Failed to update column: {e}")))?;
 
             Ok(Value::DataFrame(result))
         }
@@ -455,10 +464,11 @@ pub fn cast_column(value: &Value, column: &str, target_type: ColumnDataType) -> 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use polars::prelude::{
         col, lit, DataFrame, DataType, FillNullStrategy, Series, UniqueKeepStrategy,
     };
+
+    use super::*;
 
     #[test]
     fn test_select() {
@@ -698,7 +708,7 @@ mod tests {
         .unwrap();
         let lf = df.lazy();
 
-        let result = Transform::sort_lazy(lf, &["a".to_string()], vec![false]).unwrap();
+        let result = Transform::sort_lazy(lf, &["a".to_string()], &[false]).unwrap();
         let collected = result.collect().unwrap();
 
         let col_a = collected.column("a").unwrap().i32().unwrap();

@@ -4,11 +4,12 @@
 //! for dsq. It uses clap to define the command-line interface and provides
 //! a configuration structure that can be used throughout the application.
 
-use atty;
-use clap::{Parser, Subcommand, ValueEnum};
-use dsq_core::DataFormat;
 use std::collections::HashMap;
 use std::path::PathBuf;
+
+use clap::{Parser, Subcommand, ValueEnum};
+
+use dsq_core::DataFormat;
 
 /// dsq - A data processing tool for structured data formats with jq-like syntax
 ///
@@ -592,7 +593,7 @@ impl CliConfig {
         }
 
         // Warn about format-specific options without matching format
-        if !self.csv_separator.is_none() && !self.is_likely_csv() {
+        if self.csv_separator.is_some() && !self.is_likely_csv() {
             eprintln!("Warning: --csv-separator specified but input may not be CSV");
         }
     }

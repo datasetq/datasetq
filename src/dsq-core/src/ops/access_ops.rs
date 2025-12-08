@@ -1,6 +1,7 @@
-use super::Operation;
 use crate::error::Result;
 use crate::Value;
+
+use super::Operation;
 
 /// Identity operation - returns input unchanged
 pub struct IdentityOperation;
@@ -21,12 +22,14 @@ pub struct FieldAccessOperation {
 }
 
 impl FieldAccessOperation {
+    #[must_use]
     pub fn new(field: String) -> Self {
         Self {
             fields: vec![field],
         }
     }
 
+    #[must_use]
     pub fn with_fields(fields: Vec<String>) -> Self {
         Self { fields }
     }
@@ -52,6 +55,7 @@ pub struct IndexOperation {
 }
 
 impl IndexOperation {
+    #[must_use]
     pub fn new(index_ops: Vec<Box<dyn Operation + Send + Sync>>) -> Self {
         Self { index_ops }
     }
@@ -82,6 +86,7 @@ pub struct SliceOperation {
 }
 
 impl SliceOperation {
+    #[must_use]
     pub fn new(
         start_ops: Option<Vec<Box<dyn Operation + Send + Sync>>>,
         end_ops: Option<Vec<Box<dyn Operation + Send + Sync>>>,
@@ -98,7 +103,9 @@ impl Operation for SliceOperation {
                 start_val = op.apply(&start_val)?;
             }
             match start_val {
-                Value::Int(i) => Some(i as usize),
+                Value::Int(i) => Some(usize::try_from(i).map_err(|_| {
+                    crate::error::Error::operation("Slice start index out of range")
+                })?),
                 _ => {
                     return Err(crate::error::Error::operation(
                         "Slice start must be an integer",
@@ -109,22 +116,25 @@ impl Operation for SliceOperation {
             None
         };
 
-        let end = if let Some(ref ops) = self.end_ops {
-            let mut end_val = value.clone();
-            for op in ops {
-                end_val = op.apply(&end_val)?;
-            }
-            match end_val {
-                Value::Int(i) => Some(i as usize),
-                _ => {
-                    return Err(crate::error::Error::operation(
-                        "Slice end must be an integer",
-                    ));
+        let end =
+            if let Some(ref ops) = self.end_ops {
+                let mut end_val = value.clone();
+                for op in ops {
+                    end_val = op.apply(&end_val)?;
                 }
-            }
-        } else {
-            None
-        };
+                match end_val {
+                    Value::Int(i) => Some(usize::try_from(i).map_err(|_| {
+                        crate::error::Error::operation("Slice end index out of range")
+                    })?),
+                    _ => {
+                        return Err(crate::error::Error::operation(
+                            "Slice end must be an integer",
+                        ));
+                    }
+                }
+            } else {
+                None
+            };
 
         match value {
             Value::Array(arr) => {
@@ -133,9 +143,15 @@ impl Operation for SliceOperation {
                 Ok(Value::Array(arr[start_idx..end_idx].to_vec()))
             }
             Value::DataFrame(df) => {
-                let start_idx = start.unwrap_or(0) as i64;
+                let start_idx = i64::try_from(start.unwrap_or(0)).map_err(|_| {
+                    crate::error::Error::operation("Start index out of range for i64")
+                })?;
                 let end_idx = end.unwrap_or(df.height());
-                let length = (end_idx as i64 - start_idx) as usize;
+                let end_idx_i64 = i64::try_from(end_idx).map_err(|_| {
+                    crate::error::Error::operation("End index out of range for i64")
+                })?;
+                let length = usize::try_from(end_idx_i64 - start_idx)
+                    .map_err(|_| crate::error::Error::operation("Slice length out of range"))?;
                 Ok(Value::DataFrame(df.slice(start_idx, length)))
             }
             _ => Err(crate::error::Error::operation(
@@ -167,7 +183,7 @@ impl Operation for IterateOperation {
                     let mut row_obj = std::collections::HashMap::new();
                     for col_name in df.get_column_names() {
                         if let Ok(series) = df.column(col_name) {
-                            if let Some(val) = series.get(i).ok() {
+                            if let Ok(val) = series.get(i) {
                                 let value = match val {
                                     polars::prelude::AnyValue::Int64(i) => Value::Int(i),
                                     polars::prelude::AnyValue::Float64(f) => Value::Float(f),

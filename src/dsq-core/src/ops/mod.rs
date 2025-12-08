@@ -2,12 +2,12 @@
 
 //! Operations module for dsq
 //!
-//! This module provides core operations for manipulating DataFrames and other data structures
+//! This module provides core operations for manipulating `DataFrames` and other data structures
 //! in dsq. It includes basic operations like selection and filtering, aggregation operations
 //! like group by and statistical functions, join operations for combining datasets, and
 //! transformation operations for reshaping and converting data.
 //!
-//! The operations are designed to work with both Polars DataFrames and jq-style arrays
+//! The operations are designed to work with both Polars `DataFrames` and jq-style arrays
 //! and objects, providing a unified interface that bridges the gap between structured
 //! and semi-structured data processing.
 //!
@@ -72,7 +72,7 @@
 //! - [`transform`] - Data transformation and reshaping operations
 //!
 //! Each operation is designed to work with the [`Value`] enum, which can represent
-//! DataFrames, LazyFrames, arrays, objects, or scalar values. This unified approach
+//! `DataFrames`, `LazyFrames`, arrays, objects, or scalar values. This unified approach
 //! allows operations to work seamlessly across different data representations.
 //!
 //! # Error Handling
@@ -92,12 +92,12 @@
 //!
 //! Operations are optimized for different data representations:
 //!
-//! - **DataFrame operations** leverage Polars' optimized columnar processing
-//! - **LazyFrame operations** benefit from query optimization and lazy evaluation
+//! - **`DataFrame` operations** leverage Polars' optimized columnar processing
+//! - **`LazyFrame` operations** benefit from query optimization and lazy evaluation
 //! - **Array operations** use efficient in-memory processing for jq-style data
 //! - **Mixed operations** automatically convert between representations as needed
 //!
-//! For large datasets, prefer using LazyFrame operations when possible to take
+//! For large datasets, prefer using `LazyFrame` operations when possible to take
 //! advantage of query optimization and memory-efficient processing.
 
 pub mod access_ops;
@@ -162,12 +162,8 @@ pub use assignment_ops::{AssignAddOperation, AssignUpdateOperation};
 
 pub use selection_ops::SelectConditionOperation;
 
-// Re-export submodules for specialized operations (if they exist)
-// pub use transform::{string, datetime, math};
-
 use crate::error::Result;
 use crate::Value;
-// use polars::prelude::*; // Not used
 
 /// Trait for operations that can be applied to values
 ///

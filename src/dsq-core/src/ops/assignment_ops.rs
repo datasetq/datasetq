@@ -1,6 +1,7 @@
-use super::Operation;
 use crate::error::{Error, Result};
 use crate::Value;
+
+use super::Operation;
 
 pub struct AssignAddOperation {
     pub target_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -8,6 +9,7 @@ pub struct AssignAddOperation {
 }
 
 impl AssignAddOperation {
+    #[must_use]
     pub fn new(
         target_ops: Vec<Box<dyn Operation + Send + Sync>>,
         value_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -20,21 +22,17 @@ impl AssignAddOperation {
 
     fn get_target_field(&self) -> Option<String> {
         // Check if the last operation is FieldAccessOperation
-        if let Some(last_op) = self.target_ops.last() {
+        self.target_ops.last().and_then(|last_op| {
             // This is a bit hacky, but we can downcast to FieldAccessOperation
             // For now, assume it's FieldAccessOperation and get the field
             // Since we can't downcast easily, let's check the description
             let desc = last_op.description();
-            if desc.starts_with("field access: ") {
-                Some(desc[14..].to_string()) // Remove "field access: "
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+            desc.strip_prefix("field access: ")
+                .map(std::string::ToString::to_string)
+        })
     }
 
+    #[allow(clippy::unused_self)]
     fn apply_to_dataframe(
         &self,
         df: &polars::prelude::DataFrame,
@@ -44,7 +42,7 @@ impl AssignAddOperation {
         // Get the current column
         let current_series = df
             .column(field_name)
-            .map_err(|_| Error::operation(format!("Field '{}' not found", field_name)))?;
+            .map_err(|_| Error::operation(format!("Field '{field_name}' not found")))?;
 
         // Add the value to the series
         let new_series = match add_val {
@@ -57,7 +55,7 @@ impl AssignAddOperation {
         let mut new_df = df.clone();
         new_df
             .replace(field_name, new_series)
-            .map_err(|e| Error::operation(format!("Failed to replace column: {}", e)))?;
+            .map_err(|e| Error::operation(format!("Failed to replace column: {e}")))?;
 
         Ok(Value::DataFrame(new_df))
     }
@@ -65,36 +63,33 @@ impl AssignAddOperation {
 
 impl Operation for AssignAddOperation {
     fn apply(&self, value: &Value) -> Result<Value> {
-        match value {
-            Value::DataFrame(df) => {
-                // For DataFrame, find the field name from target_ops
-                if let Some(field_name) = self.get_target_field() {
-                    // Get the value to add
-                    let mut add_val = value.clone();
-                    for op in &self.value_ops {
-                        add_val = op.apply(&add_val)?;
-                    }
-
-                    // Modify the DataFrame
-                    self.apply_to_dataframe(df, &field_name, &add_val)
-                } else {
-                    Err(Error::operation("Assignment target must be a field access"))
-                }
-            }
-            _ => {
-                // For other values, apply as before (though this may not work well)
-                let mut target_val = value.clone();
-                for op in &self.target_ops {
-                    target_val = op.apply(&target_val)?;
-                }
-
+        if let Value::DataFrame(df) = value {
+            // For DataFrame, find the field name from target_ops
+            if let Some(field_name) = self.get_target_field() {
+                // Get the value to add
                 let mut add_val = value.clone();
                 for op in &self.value_ops {
                     add_val = op.apply(&add_val)?;
                 }
 
-                Ok(dsq_shared::ops::add_values(&target_val, &add_val)?)
+                // Modify the DataFrame
+                self.apply_to_dataframe(df, &field_name, &add_val)
+            } else {
+                Err(Error::operation("Assignment target must be a field access"))
             }
+        } else {
+            // For other values, apply as before (though this may not work well)
+            let mut target_val = value.clone();
+            for op in &self.target_ops {
+                target_val = op.apply(&target_val)?;
+            }
+
+            let mut add_val = value.clone();
+            for op in &self.value_ops {
+                add_val = op.apply(&add_val)?;
+            }
+
+            Ok(dsq_shared::ops::add_values(&target_val, &add_val)?)
         }
     }
 
@@ -109,6 +104,7 @@ pub struct AssignUpdateOperation {
 }
 
 impl AssignUpdateOperation {
+    #[must_use]
     pub fn new(
         target_ops: Vec<Box<dyn Operation + Send + Sync>>,
         value_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -143,14 +139,12 @@ impl AssignUpdateOperation {
                 }
                 Some(_) => {
                     return Err(crate::error::Error::operation(format!(
-                        "Field '{}' is not an object",
-                        field
+                        "Field '{field}' is not an object"
                     )));
                 }
                 None => {
                     return Err(crate::error::Error::operation(format!(
-                        "Field '{}' not found",
-                        field
+                        "Field '{field}' not found"
                     )));
                 }
             }
@@ -173,8 +167,8 @@ impl Operation for AssignUpdateOperation {
                     // Check if it's a FieldAccessOperation by trying to downcast
                     // For now, check description for field access
                     let desc = field_op.description();
-                    if desc.starts_with("field access: ") {
-                        let field_path = &desc[14..]; // Remove "field access: "
+                    if let Some(field_path) = desc.strip_prefix("field access: ") {
+                        // Remove "field access: "
                         let fields: Vec<&str> = field_path.split('.').collect();
 
                         // Evaluate the value

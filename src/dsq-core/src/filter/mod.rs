@@ -3,6 +3,8 @@
 //! This module provides a thin wrapper around the dsq-filter crate,
 //! maintaining backward compatibility with the existing dsq-core API.
 
+use std::collections::HashMap;
+
 pub use dsq_filter::{
     compile_filter, ErrorMode, ExecutionMode, ExecutionResult, ExecutionStats, ExecutorConfig,
     FilterCompiler, FilterExecutor, OptimizationLevel,
@@ -38,15 +40,17 @@ pub fn explain_filter(filter: &str) -> dsq_shared::Result<String> {
     // Basic implementation - just return a simple description
     match filter.trim() {
         "." => Ok("Identity filter - returns the input unchanged".to_string()),
-        _ => Ok(format!("Filter: {}", filter)),
+        _ => Ok(format!("Filter: {filter}")),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::Value;
     use std::collections::HashMap;
+
+    use crate::Value;
+
+    use super::*;
 
     #[test]
     fn test_execute_filter_basic() {

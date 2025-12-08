@@ -3,17 +3,18 @@
 //! This module provides the main execution logic for running jq-compatible
 //! filters on data files through the command-line interface.
 
+use std::borrow::Cow;
+use std::fmt::Write;
+use std::io::{self, Read};
+use std::path::Path;
+
+use polars::prelude::SerWriter;
+
 use crate::config::Config;
 use dsq_core::error::{Error, Result};
 use dsq_core::filter::{FilterCompiler, FilterExecutor as CoreFilterExecutor};
 use dsq_core::io::{read_file, write_file};
 use dsq_core::Value;
-use polars::prelude::SerWriter;
-
-use std::borrow::Cow;
-use std::fmt::Write;
-use std::io::{self, Read};
-use std::path::Path;
 
 /// Main executor for dsq operations
 pub struct Executor {
@@ -311,7 +312,7 @@ impl Executor {
                         let mut stdout = BufWriter::with_capacity(65536, stdout_handle.lock());
 
                         // Write header
-                        let headers: Vec<&str> = df.get_column_names().iter().copied().collect();
+                        let headers: Vec<&str> = df.get_column_names().to_vec();
                         for (i, header) in headers.iter().enumerate() {
                             if i > 0 {
                                 stdout.write_all(&[FIELD_SEPARATOR])?;

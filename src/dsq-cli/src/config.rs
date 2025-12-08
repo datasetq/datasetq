@@ -5,6 +5,11 @@
 //! and configuration files. It provides a unified configuration structure that
 //! can be used throughout the application.
 
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Serialize};
+
 #[cfg(feature = "cli")]
 use crate::cli::CliConfig;
 use dsq_core::{
@@ -13,16 +18,11 @@ use dsq_core::{
     io::{ReadOptions, WriteOptions},
     DataFormat,
 };
-use dsq_shared::value::Value;
-
-use serde::{Deserialize, Serialize};
-
-use std::fs;
-use std::path::{Path, PathBuf};
 
 /// Main configuration structure for dsq runtime
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct Config {
     /// Input/output configuration
     pub io: IoConfig,
@@ -84,6 +84,7 @@ pub struct FilterConfig {
 /// Format-specific configurations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct FormatConfigs {
     /// CSV configuration
     pub csv: CsvConfig,
@@ -142,7 +143,7 @@ pub struct ParquetConfig {
 }
 
 /// Display and output configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DisplayConfig {
     /// Whether to use colored output
     pub color: ColorConfig,
@@ -212,7 +213,7 @@ pub struct PerformanceConfig {
 }
 
 /// Module and library configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ModuleConfig {
     /// Library search paths
     pub library_paths: Vec<PathBuf>,
@@ -225,6 +226,7 @@ pub struct ModuleConfig {
 /// Debug and diagnostic configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct DebugConfig {
     /// Verbosity level
     pub verbosity: u8,
@@ -236,21 +238,6 @@ pub struct DebugConfig {
     pub debug_mode: bool,
     /// Log file path
     pub log_file: Option<PathBuf>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            io: IoConfig::default(),
-            filter: FilterConfig::default(),
-            formats: FormatConfigs::default(),
-            display: DisplayConfig::default(),
-            performance: PerformanceConfig::default(),
-            modules: ModuleConfig::default(),
-            debug: DebugConfig::default(),
-            variables: std::collections::HashMap::new(),
-        }
-    }
 }
 
 impl Default for IoConfig {
@@ -277,16 +264,6 @@ impl Default for FilterConfig {
             max_execution_time: Some(300), // 5 minutes
             collect_stats: false,
             error_mode: "strict".to_string(),
-        }
-    }
-}
-
-impl Default for FormatConfigs {
-    fn default() -> Self {
-        Self {
-            csv: CsvConfig::default(),
-            json: JsonConfig::default(),
-            parquet: ParquetConfig::default(),
         }
     }
 }
@@ -324,20 +301,6 @@ impl Default for ParquetConfig {
             write_statistics: true,
             row_group_size: 1024 * 1024,
             data_page_size: 1024 * 1024,
-        }
-    }
-}
-
-impl Default for DisplayConfig {
-    fn default() -> Self {
-        Self {
-            color: ColorConfig::default(),
-            compact: false,
-            sort_keys: false,
-            raw_output: false,
-            exit_status: false,
-            number_format: NumberFormatConfig::default(),
-            datetime_format: DateTimeFormatConfig::default(),
         }
     }
 }
@@ -381,28 +344,6 @@ impl Default for PerformanceConfig {
             threads: 0, // Auto-detect
             parallel: true,
             cache_size: 100,
-        }
-    }
-}
-
-impl Default for ModuleConfig {
-    fn default() -> Self {
-        Self {
-            library_paths: vec![],
-            auto_load: vec![],
-            cache_dir: None,
-        }
-    }
-}
-
-impl Default for DebugConfig {
-    fn default() -> Self {
-        Self {
-            verbosity: 0,
-            show_plans: false,
-            show_timing: false,
-            debug_mode: false,
-            log_file: None,
         }
     }
 }
@@ -905,7 +846,7 @@ impl Config {
         };
 
         ExecutorConfig {
-            timeout_ms: self.filter.max_execution_time.map(|s| s as u64 * 1000), // convert seconds to ms
+            timeout_ms: self.filter.max_execution_time.map(|s| s * 1000), // convert seconds to ms
             error_mode,
             collect_stats: self.filter.collect_stats,
             max_recursion_depth: self.filter.max_recursion_depth,
@@ -1110,9 +1051,11 @@ pub fn validate_config(config: &Config) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_default_config() {

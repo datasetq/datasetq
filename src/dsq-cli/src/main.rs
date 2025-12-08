@@ -8,6 +8,25 @@ mod output;
 mod repl;
 
 #[cfg(not(target_arch = "wasm32"))]
+use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
+use std::io;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::{Path, PathBuf};
+#[cfg(not(target_arch = "wasm32"))]
+use std::process;
+
+#[cfg(not(target_arch = "wasm32"))]
+use clap::CommandFactory;
+#[cfg(not(target_arch = "wasm32"))]
+use clap_complete::generate;
+#[cfg(not(target_arch = "wasm32"))]
+use dsq_formats::DataFormat;
+#[cfg(not(target_arch = "wasm32"))]
+use dsq_shared::value::Value;
+use dsq_shared::Result;
+
+#[cfg(not(target_arch = "wasm32"))]
 use crate::cli::{parse_args, CliConfig, Commands, ConfigCommands};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::config::{create_default_config_file, validate_config, Config};
@@ -16,27 +35,7 @@ use crate::executor::Executor;
 #[cfg(all(not(target_arch = "wasm32"), feature = "cli"))]
 use crate::repl::Repl;
 #[cfg(not(target_arch = "wasm32"))]
-use anyhow::Error;
-#[cfg(not(target_arch = "wasm32"))]
-use clap::CommandFactory;
-#[cfg(not(target_arch = "wasm32"))]
-use clap_complete::generate;
-#[cfg(not(target_arch = "wasm32"))]
 use dsq_core::io::{read_file, write_file};
-#[cfg(not(target_arch = "wasm32"))]
-use dsq_formats::DataFormat;
-#[cfg(not(target_arch = "wasm32"))]
-use dsq_shared::value::Value;
-use dsq_shared::Result;
-#[cfg(not(target_arch = "wasm32"))]
-use std::fs;
-#[cfg(not(target_arch = "wasm32"))]
-use std::io;
-#[cfg(not(target_arch = "wasm32"))]
-use std::path::{Path, PathBuf};
-#[cfg(not(target_arch = "wasm32"))]
-#[cfg(not(target_arch = "wasm32"))]
-use std::process;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "cli"))]
 #[tokio::main]
@@ -85,7 +84,7 @@ fn print_version() {
     println!("Rustc: {}", rustc_version);
 
     // Show enabled features
-    let mut features: Vec<&str> = vec![];
+    let features: Vec<&str> = vec![];
     #[cfg(feature = "csv")]
     features.push("csv");
     #[cfg(feature = "json")]
@@ -346,7 +345,7 @@ fn handle_config_command(command: ConfigCommands, config: &Config) -> Result<()>
                 })?;
 
             if !status.success() {
-                return Err(anyhow::anyhow!("Editor exited with error").into());
+                return Err(anyhow::anyhow!("Editor exited with error"));
             }
 
             // Validate the edited config
@@ -371,8 +370,7 @@ fn handle_config_command(command: ConfigCommands, config: &Config) -> Result<()>
                     dsq config init {} --force",
                     path.display(),
                     path.display()
-                ))
-                .into());
+                )));
             }
             create_default_config_file(&path)?;
             println!("Created config file: {}", path.display());
@@ -441,8 +439,7 @@ fn handle_config_command(command: ConfigCommands, config: &Config) -> Result<()>
                     Create one with:\n  \
                     dsq config init",
                     path.display()
-                ))
-                .into());
+                )));
             }
 
             let mut update_config = Config::load_from_file(&path)?;
@@ -501,8 +498,7 @@ async fn convert_file(
             output.display(),
             input.display(),
             output.display()
-        ))
-        .into());
+        )));
     }
 
     let read_options = config.to_read_options();
@@ -717,7 +713,7 @@ fn get_config_value(config: &Config, key: &str) -> Result<String> {
         "performance.threads" => config.performance.threads.to_string(),
         "formats.csv.separator" => config.formats.csv.separator.clone(),
         "formats.csv.has_header" => config.formats.csv.has_header.to_string(),
-        _ => return Err(anyhow::anyhow!(format!("Unknown config key: {}", key)).into()),
+        _ => return Err(anyhow::anyhow!(format!("Unknown config key: {}", key))),
     };
     Ok(value)
 }
@@ -982,9 +978,11 @@ async fn merge_files(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs;
+
     use tempfile::TempDir;
+
+    use super::*;
 
     #[test]
     fn test_handle_example_directory_success() {

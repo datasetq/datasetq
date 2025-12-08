@@ -4,12 +4,14 @@
 //! mapping, and basic transformations that form the building blocks of
 //! more complex data processing pipelines.
 
-use crate::{
-    error::{Error, Result},
-    Value,
-};
-use polars::prelude::*;
 use std::collections::HashMap;
+
+use polars::prelude::*;
+#[cfg(feature = "rand")]
+use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
+
+use crate::error::{Error, Result};
+use crate::Value;
 
 /// Sort options for specifying column and direction
 #[derive(Debug, Clone, PartialEq)]
@@ -22,6 +24,7 @@ pub struct SortOptions {
 
 impl SortOptions {
     /// Create ascending sort options for a column
+    #[must_use]
     pub fn asc(column: String) -> Self {
         Self {
             column,
@@ -30,6 +33,7 @@ impl SortOptions {
     }
 
     /// Create descending sort options for a column
+    #[must_use]
     pub fn desc(column: String) -> Self {
         Self {
             column,
@@ -38,11 +42,11 @@ impl SortOptions {
     }
 }
 
-/// Select specific columns from a DataFrame
+/// Select specific columns from a `DataFrame`
 pub fn select(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
     let selected = df
         .select(columns)
-        .map_err(|e| Error::operation(format!("Failed to select columns: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to select columns: {e}")))?;
     Ok(selected)
 }
 
@@ -50,7 +54,7 @@ pub fn select(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
 pub fn select_by_index(df: &DataFrame, indices: &[usize]) -> Result<DataFrame> {
     let column_names: Vec<String> = indices
         .iter()
-        .filter_map(|&idx| df.get_column_names().get(idx).map(|s| s.to_string()))
+        .filter_map(|&idx| df.get_column_names().get(idx).map(|s| (*s).to_string()))
         .collect();
 
     if column_names.len() != indices.len() {
@@ -68,38 +72,41 @@ pub fn filter(df: &DataFrame, mask: &Series) -> Result<DataFrame> {
 
     let boolean_mask = mask
         .bool()
-        .map_err(|e| Error::operation(format!("Failed to convert mask to boolean: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to convert mask to boolean: {e}")))?;
 
     let filtered = df
         .filter(boolean_mask)
-        .map_err(|e| Error::operation(format!("Failed to filter: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to filter: {e}")))?;
     Ok(filtered)
 }
 
-/// Get the first n rows from a DataFrame
+/// Get the first n rows from a `DataFrame`
+#[must_use]
 pub fn head_df(df: &DataFrame, n: usize) -> DataFrame {
     df.head(Some(n))
 }
 
-/// Get the last n rows from a DataFrame
+/// Get the last n rows from a `DataFrame`
+#[must_use]
 pub fn tail_df(df: &DataFrame, n: usize) -> DataFrame {
     df.tail(Some(n))
 }
 
-/// Get a slice of rows from a DataFrame
+/// Get a slice of rows from a `DataFrame`
+#[must_use]
 pub fn slice_df(df: &DataFrame, offset: i64, length: usize) -> DataFrame {
     df.slice(offset, length)
 }
 
-/// Sort DataFrame by columns
+/// Sort `DataFrame` by columns
 pub fn sort(df: &DataFrame, by: &[String], descending: Vec<bool>) -> Result<DataFrame> {
     let sorted = df
         .sort(by, descending, false)
-        .map_err(|e| Error::operation(format!("Failed to sort: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to sort: {e}")))?;
     Ok(sorted)
 }
 
-/// Get unique rows from DataFrame
+/// Get unique rows from `DataFrame`
 pub fn unique_df(
     df: &DataFrame,
     subset: Option<&[String]>,
@@ -107,7 +114,7 @@ pub fn unique_df(
 ) -> Result<DataFrame> {
     let unique_df = df
         .unique(subset, keep, None)
-        .map_err(|e| Error::operation(format!("Failed to get unique rows: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to get unique rows: {e}")))?;
     Ok(unique_df)
 }
 
@@ -115,7 +122,7 @@ pub fn unique_df(
 pub fn drop_nulls(df: &DataFrame, subset: Option<&[String]>) -> Result<DataFrame> {
     let result = df
         .drop_nulls(subset)
-        .map_err(|e| Error::operation(format!("Failed to drop nulls: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to drop nulls: {e}")))?;
     Ok(result)
 }
 
@@ -126,17 +133,17 @@ pub fn fill_null(df: &DataFrame, _value: &Value) -> Result<DataFrame> {
     for column_name in df.get_column_names() {
         let column = df
             .column(column_name)
-            .map_err(|e| Error::operation(format!("Failed to get column: {}", e)))?;
+            .map_err(|e| Error::operation(format!("Failed to get column: {e}")))?;
 
         if column.null_count() > 0 {
             // For now, just use forward fill strategy instead of custom values
             let filled_column = column
                 .fill_null(FillNullStrategy::Forward(None))
-                .map_err(|e| Error::operation(format!("Failed to fill nulls: {}", e)))?;
+                .map_err(|e| Error::operation(format!("Failed to fill nulls: {e}")))?;
 
             filled = filled
                 .with_column(filled_column)
-                .map_err(|e| Error::operation(format!("Failed to update column: {}", e)))?
+                .map_err(|e| Error::operation(format!("Failed to update column: {e}")))?
                 .clone();
         }
     }
@@ -145,13 +152,14 @@ pub fn fill_null(df: &DataFrame, _value: &Value) -> Result<DataFrame> {
 }
 
 /// Rename columns
+#[allow(clippy::implicit_hasher)]
 pub fn rename(df: &DataFrame, mapping: &HashMap<String, String>) -> Result<DataFrame> {
     let mut renamed = df.clone();
 
     for (old_name, new_name) in mapping {
         renamed = renamed
             .rename(old_name, new_name)
-            .map_err(|e| Error::operation(format!("Failed to rename column: {}", e)))?
+            .map_err(|e| Error::operation(format!("Failed to rename column: {e}")))?
             .clone();
     }
 
@@ -165,7 +173,7 @@ pub fn with_column(df: &DataFrame, name: &str, value: &Value) -> Result<DataFram
     let mut result = df.clone();
     result
         .with_column(series)
-        .map_err(|e| Error::operation(format!("Failed to add column: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to add column: {e}")))?;
 
     Ok(result)
 }
@@ -180,14 +188,14 @@ pub fn drop(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
 pub fn cast(df: &DataFrame, column: &str, dtype: &DataType) -> Result<DataFrame> {
     let casted_column = df
         .column(column)
-        .map_err(|e| Error::operation(format!("Column not found: {}", e)))?
+        .map_err(|e| Error::operation(format!("Column not found: {e}")))?
         .cast(dtype)
-        .map_err(|e| Error::operation(format!("Failed to cast column: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to cast column: {e}")))?;
 
     let mut result = df.clone();
     result
         .with_column(casted_column)
-        .map_err(|e| Error::operation(format!("Failed to update column: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to update column: {e}")))?;
 
     Ok(result)
 }
@@ -199,7 +207,7 @@ where
 {
     let col = df
         .column(column)
-        .map_err(|e| Error::operation(format!("Column not found: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Column not found: {e}")))?;
 
     let values: Vec<Value> = series_to_values(col)?;
     let mapped_values: Result<Vec<Value>> = values.iter().map(f).collect();
@@ -210,12 +218,12 @@ where
     let mut result = df.clone();
     result
         .with_column(mapped_series)
-        .map_err(|e| Error::operation(format!("Failed to update column: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to update column: {e}")))?;
 
     Ok(result)
 }
 
-/// Transpose DataFrame
+/// Transpose `DataFrame`
 pub fn transpose(
     df: &DataFrame,
     _include_header: bool,
@@ -224,11 +232,11 @@ pub fn transpose(
     // The Polars transpose API has changed, using a simpler version for now
     let transposed = df
         .transpose(header_name, None)
-        .map_err(|e| Error::operation(format!("Failed to transpose: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to transpose: {e}")))?;
     Ok(transposed)
 }
 
-/// Melt DataFrame from wide to long format
+/// Melt `DataFrame` from wide to long format
 pub fn melt(
     df: &DataFrame,
     id_vars: &[String],
@@ -238,12 +246,12 @@ pub fn melt(
 ) -> Result<DataFrame> {
     let melted = df
         .melt(id_vars, value_vars)
-        .map_err(|e| Error::operation(format!("Failed to melt: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to melt: {e}")))?;
 
     Ok(melted)
 }
 
-/// Pivot DataFrame from long to wide format (placeholder)
+/// Pivot `DataFrame` from long to wide format (placeholder)
 pub fn pivot(
     _df: &DataFrame,
     _values: &[String],
@@ -255,13 +263,13 @@ pub fn pivot(
     Err(Error::operation("Pivot functionality not yet implemented"))
 }
 
-/// Sample rows from DataFrame
+/// Sample rows from `DataFrame`
 pub fn sample(
     df: &DataFrame,
     n: Option<usize>,
     frac: Option<f64>,
     _with_replacement: bool,
-    seed: Option<u64>,
+    _seed: Option<u64>,
 ) -> Result<DataFrame> {
     // For now, implement a simple sampling approach
     if let Some(n) = n {
@@ -271,15 +279,15 @@ pub fn sample(
         #[cfg(feature = "rand")]
         {
             use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
-            let mut rng = if let Some(seed) = seed {
+            let mut rng = if let Some(seed) = _seed {
                 StdRng::seed_from_u64(seed)
             } else {
-                StdRng::from_entropy()
+                StdRng::from_os_rng()
             };
 
             let mut indices: Vec<u32> = (0..total_rows as u32).collect();
             indices.shuffle(&mut rng);
-            indices.truncate(sample_size);
+            indices.truncate(_sample_size);
 
             let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
             let sampled = df
@@ -291,26 +299,32 @@ pub fn sample(
         {
             Err(Error::operation("Sampling requires rand feature"))
         }
-    } else if let Some(frac) = frac {
-        let total_rows = df.height();
-        let sample_size = ((total_rows as f64) * frac).round() as usize;
+    } else if let Some(_frac) = frac {
+        #[cfg(feature = "rand")]
+        {
+            let total_rows = df.height();
+            let sample_size = ((total_rows as f64) * _frac).round() as usize;
 
-        use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
-        let mut rng = if let Some(seed) = seed {
-            StdRng::seed_from_u64(seed)
-        } else {
-            StdRng::from_os_rng()
-        };
+            let mut rng = if let Some(seed) = _seed {
+                StdRng::seed_from_u64(seed)
+            } else {
+                StdRng::from_os_rng()
+            };
 
-        let mut indices: Vec<u32> = (0..total_rows as u32).collect();
-        indices.shuffle(&mut rng);
-        indices.truncate(sample_size);
+            let mut indices: Vec<u32> = (0..total_rows as u32).collect();
+            indices.shuffle(&mut rng);
+            indices.truncate(sample_size);
 
-        let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
-        let sampled = df
-            .take(&idx_ca)
-            .map_err(|e| Error::operation(format!("Failed to sample: {}", e)))?;
-        Ok(sampled)
+            let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
+            let sampled = df
+                .take(&idx_ca)
+                .map_err(|e| Error::operation(format!("Failed to sample: {e}")))?;
+            Ok(sampled)
+        }
+        #[cfg(not(feature = "rand"))]
+        {
+            Err(Error::operation("Sampling requires rand feature"))
+        }
     } else {
         Err(Error::operation(
             "Either n or frac must be specified for sampling",
@@ -322,11 +336,11 @@ pub fn sample(
 pub fn explode(df: &DataFrame, columns: &[String]) -> Result<DataFrame> {
     let exploded = df
         .explode(columns)
-        .map_err(|e| Error::operation(format!("Failed to explode: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to explode: {e}")))?;
     Ok(exploded)
 }
 
-/// Select columns from a Value (works with DataFrame, Array, Object)
+/// Select columns from a Value (works with `DataFrame`, Array, Object)
 pub fn select_columns(value: &Value, columns: &[String]) -> Result<Value> {
     match value {
         Value::DataFrame(df) => {
@@ -517,6 +531,7 @@ pub fn drop_columns(value: &Value, columns: &[String]) -> Result<Value> {
 }
 
 /// Rename columns in a Value
+#[allow(clippy::implicit_hasher)]
 pub fn rename_columns(value: &Value, mapping: &HashMap<String, String>) -> Result<Value> {
     match value {
         Value::DataFrame(df) => {
@@ -547,7 +562,7 @@ pub fn tail(value: &Value, n: usize) -> Result<Value> {
         Value::DataFrame(df) => Ok(Value::DataFrame(df.tail(Some(n)))),
         Value::Array(arr) => {
             let len = arr.len();
-            let start = if n >= len { 0 } else { len - n };
+            let start = len.saturating_sub(n);
             Ok(Value::Array(arr[start..].to_vec()))
         }
         _ => Ok(value.clone()),
@@ -559,6 +574,11 @@ pub fn slice(value: &Value, offset: i64, length: usize) -> Result<Value> {
     match value {
         Value::DataFrame(df) => Ok(Value::DataFrame(df.slice(offset, length))),
         Value::Array(arr) => {
+            #[allow(
+                clippy::cast_sign_loss,
+                clippy::cast_possible_truncation,
+                clippy::cast_possible_wrap
+            )]
             let start = if offset < 0 {
                 (arr.len() as i64 + offset).max(0) as usize
             } else {
@@ -575,11 +595,12 @@ pub fn slice(value: &Value, offset: i64, length: usize) -> Result<Value> {
 pub fn reverse(value: &Value) -> Result<Value> {
     match value {
         Value::DataFrame(df) => {
+            #[allow(clippy::cast_possible_truncation)]
             let indices: Vec<u32> = (0..df.height() as u32).rev().collect();
             let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
             let reversed = df
                 .take(&idx_ca)
-                .map_err(|e| Error::operation(format!("Failed to reverse DataFrame: {}", e)))?;
+                .map_err(|e| Error::operation(format!("Failed to reverse DataFrame: {e}")))?;
             Ok(Value::DataFrame(reversed))
         }
         Value::Array(arr) => {
@@ -597,7 +618,7 @@ pub fn unique(value: &Value) -> Result<Value> {
         Value::DataFrame(df) => {
             let unique_df = df
                 .unique(None, UniqueKeepStrategy::First, None)
-                .map_err(|e| Error::operation(format!("Failed to get unique values: {}", e)))?;
+                .map_err(|e| Error::operation(format!("Failed to get unique values: {e}")))?;
             Ok(Value::DataFrame(unique_df))
         }
         Value::Array(arr) => {
@@ -614,6 +635,7 @@ pub fn unique(value: &Value) -> Result<Value> {
 }
 
 /// Count operation on Value
+#[allow(clippy::cast_possible_wrap)]
 pub fn count(value: &Value) -> Result<Value> {
     let count = match value {
         Value::DataFrame(df) => df.height() as i64,
@@ -634,7 +656,7 @@ fn df_row_to_value(df: &DataFrame, row_idx: usize) -> Result<Value> {
     for col_name in df.get_column_names() {
         let series = df
             .column(col_name)
-            .map_err(|e| Error::operation(format!("Failed to get column: {}", e)))?;
+            .map_err(|e| Error::operation(format!("Failed to get column: {e}")))?;
         let value = series_value_at(series, row_idx)?;
         obj.insert(col_name.to_string(), value);
     }
@@ -651,34 +673,34 @@ fn series_value_at(series: &Series, idx: usize) -> Result<Value> {
         DataType::Boolean => {
             let ca = series
                 .bool()
-                .map_err(|e| Error::operation(format!("Failed to get bool: {}", e)))?;
-            Ok(ca.get(idx).map(Value::Bool).unwrap_or(Value::Null))
+                .map_err(|e| Error::operation(format!("Failed to get bool: {e}")))?;
+            Ok(ca.get(idx).map_or(Value::Null, Value::Bool))
         }
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
             let ca = series
                 .i64()
-                .map_err(|e| Error::operation(format!("Failed to get int: {}", e)))?;
-            Ok(ca.get(idx).map(|v| Value::Int(v)).unwrap_or(Value::Null))
+                .map_err(|e| Error::operation(format!("Failed to get int: {e}")))?;
+            Ok(ca.get(idx).map_or(Value::Null, Value::Int))
         }
         DataType::Float32 | DataType::Float64 => {
             let ca = series
                 .f64()
-                .map_err(|e| Error::operation(format!("Failed to get float: {}", e)))?;
-            Ok(ca.get(idx).map(|v| Value::Float(v)).unwrap_or(Value::Null))
+                .map_err(|e| Error::operation(format!("Failed to get float: {e}")))?;
+            Ok(ca.get(idx).map_or(Value::Null, Value::Float))
         }
         DataType::Utf8 => {
             let ca = series
                 .utf8()
-                .map_err(|e| Error::operation(format!("Failed to get string: {}", e)))?;
+                .map_err(|e| Error::operation(format!("Failed to get string: {e}")))?;
             Ok(ca
                 .get(idx)
-                .map(|s| Value::String(s.to_string()))
-                .unwrap_or(Value::Null))
+                .map_or(Value::Null, |s| Value::String(s.to_string())))
         }
         _ => Ok(Value::Null),
     }
 }
 
+#[allow(clippy::cast_precision_loss)]
 fn compare_values(a: &Value, b: &Value) -> std::cmp::Ordering {
     use std::cmp::Ordering;
 
@@ -722,37 +744,33 @@ fn series_to_values(series: &Series) -> Result<Vec<Value>> {
         DataType::Boolean => {
             let ca = series
                 .bool()
-                .map_err(|e| Error::operation(format!("Failed to get bool array: {}", e)))?;
-            for opt_val in ca.into_iter() {
-                values.push(opt_val.map(Value::Bool).unwrap_or(Value::Null));
+                .map_err(|e| Error::operation(format!("Failed to get bool array: {e}")))?;
+            for opt_val in ca {
+                values.push(opt_val.map_or(Value::Null, Value::Bool));
             }
         }
         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
             let ca = series
                 .i64()
-                .map_err(|e| Error::operation(format!("Failed to get int array: {}", e)))?;
-            for opt_val in ca.into_iter() {
-                values.push(opt_val.map(|v| Value::Int(v)).unwrap_or(Value::Null));
+                .map_err(|e| Error::operation(format!("Failed to get int array: {e}")))?;
+            for opt_val in ca {
+                values.push(opt_val.map_or(Value::Null, Value::Int));
             }
         }
         DataType::Float32 | DataType::Float64 => {
             let ca = series
                 .f64()
-                .map_err(|e| Error::operation(format!("Failed to get float array: {}", e)))?;
-            for opt_val in ca.into_iter() {
-                values.push(opt_val.map(|v| Value::Float(v)).unwrap_or(Value::Null));
+                .map_err(|e| Error::operation(format!("Failed to get float array: {e}")))?;
+            for opt_val in ca {
+                values.push(opt_val.map_or(Value::Null, Value::Float));
             }
         }
         DataType::Utf8 => {
             let ca = series
                 .utf8()
-                .map_err(|e| Error::operation(format!("Failed to get string array: {}", e)))?;
-            for opt_val in ca.into_iter() {
-                values.push(
-                    opt_val
-                        .map(|s| Value::String(s.to_string()))
-                        .unwrap_or(Value::Null),
-                );
+                .map_err(|e| Error::operation(format!("Failed to get string array: {e}")))?;
+            for opt_val in ca {
+                values.push(opt_val.map_or(Value::Null, |s| Value::String(s.to_string())));
             }
         }
         _ => {
@@ -767,6 +785,7 @@ fn series_to_values(series: &Series) -> Result<Vec<Value>> {
 }
 
 /// Helper function to convert Values to Series
+#[allow(clippy::unnecessary_wraps, clippy::cast_precision_loss)]
 fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
     if values.is_empty() {
         return Ok(Series::new_empty(name, &DataType::Null));
@@ -776,14 +795,13 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
     let dtype = values
         .iter()
         .find(|v| !v.is_null())
-        .map(|v| match v {
+        .map_or(DataType::Null, |v| match v {
             Value::Bool(_) => DataType::Boolean,
             Value::Int(_) => DataType::Int64,
             Value::Float(_) => DataType::Float64,
             Value::String(_) => DataType::Utf8,
             _ => DataType::Null,
-        })
-        .unwrap_or(DataType::Null);
+        });
 
     match dtype {
         DataType::Boolean => {
@@ -791,7 +809,6 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                 .iter()
                 .map(|v| match v {
                     Value::Bool(b) => Some(*b),
-                    Value::Null => None,
                     _ => None,
                 })
                 .collect();
@@ -802,7 +819,6 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                 .iter()
                 .map(|v| match v {
                     Value::Int(i) => Some(*i),
-                    Value::Null => None,
                     _ => None,
                 })
                 .collect();
@@ -814,7 +830,6 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                 .map(|v| match v {
                     Value::Float(f) => Some(*f),
                     Value::Int(i) => Some(*i as f64),
-                    Value::Null => None,
                     _ => None,
                 })
                 .collect();
@@ -825,7 +840,6 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                 .iter()
                 .map(|v| match v {
                     Value::String(s) => Some(s.as_str()),
-                    Value::Null => None,
                     _ => None,
                 })
                 .collect();

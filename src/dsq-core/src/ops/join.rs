@@ -1,6 +1,6 @@
 //! Join operations for dsq
 //!
-//! This module provides join operations for DataFrames including:
+//! This module provides join operations for `DataFrames` including:
 //! - Inner joins
 //! - Left outer joins  
 //! - Right outer joins
@@ -10,34 +10,36 @@
 //! - Anti joins
 //!
 //! These operations correspond to SQL JOIN operations and allow combining
-//! data from multiple DataFrames based on common keys.
+//! data from multiple `DataFrames` based on common keys.
+
+use std::collections::HashMap;
+
+use polars::prelude::*;
 
 use crate::error::{Error, Result};
 use crate::Value;
-use polars::prelude::*;
-use std::collections::HashMap;
 
 /// Types of join operations supported
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JoinType {
-    /// Inner join - returns only matching rows from both DataFrames
+    /// Inner join - returns only matching rows from both `DataFrames`
     Inner,
-    /// Left outer join - returns all rows from left DataFrame, matching rows from right
+    /// Left outer join - returns all rows from left `DataFrame`, matching rows from right
     Left,
-    /// Right outer join - returns all rows from right DataFrame, matching rows from left
+    /// Right outer join - returns all rows from right `DataFrame`, matching rows from left
     Right,
-    /// Full outer join - returns all rows from both DataFrames
+    /// Full outer join - returns all rows from both `DataFrames`
     Outer,
-    /// Cross join - cartesian product of both DataFrames
+    /// Cross join - cartesian product of both `DataFrames`
     Cross,
-    /// Semi join - returns rows from left DataFrame that have matches in right
+    /// Semi join - returns rows from left `DataFrame` that have matches in right
     Semi,
-    /// Anti join - returns rows from left DataFrame that have no matches in right
+    /// Anti join - returns rows from left `DataFrame` that have no matches in right
     Anti,
 }
 
 impl JoinType {
-    /// Convert to Polars JoinType
+    /// Convert to Polars `JoinType`
     pub fn to_polars(&self) -> Result<polars::prelude::JoinType> {
         match self {
             JoinType::Inner => Ok(polars::prelude::JoinType::Inner),
@@ -57,6 +59,7 @@ impl JoinType {
     }
 
     /// Get the string representation
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             JoinType::Inner => "inner",
@@ -70,6 +73,7 @@ impl JoinType {
     }
 
     /// Parse from string
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "inner" => Ok(JoinType::Inner),
@@ -79,7 +83,7 @@ impl JoinType {
             "cross" => Ok(JoinType::Cross),
             "semi" => Ok(JoinType::Semi),
             "anti" => Ok(JoinType::Anti),
-            _ => Err(Error::operation(format!("Unknown join type: {}", s))),
+            _ => Err(Error::operation(format!("Unknown join type: {s}"))),
         }
     }
 }
@@ -89,7 +93,7 @@ impl JoinType {
 pub struct JoinOptions {
     /// Type of join to perform
     pub join_type: JoinType,
-    /// Suffix to add to duplicate column names from the right DataFrame
+    /// Suffix to add to duplicate column names from the right `DataFrame`
     pub suffix: String,
     /// Whether to validate that join keys are unique (for performance)
     pub validate: JoinValidation,
@@ -125,11 +129,14 @@ pub enum JoinValidation {
 }
 
 impl JoinValidation {
-    /// Convert to Polars JoinValidation
+    /// Convert to Polars `JoinValidation`
+    #[must_use]
     pub fn to_polars(&self) -> polars::prelude::JoinValidation {
         match self {
-            JoinValidation::None => polars::prelude::JoinValidation::OneToMany, // None not available in Polars 0.35, default to OneToMany
-            JoinValidation::OneToMany => polars::prelude::JoinValidation::OneToMany,
+            // None not available in Polars 0.35, default to OneToMany
+            JoinValidation::None | JoinValidation::OneToMany => {
+                polars::prelude::JoinValidation::OneToMany
+            }
             JoinValidation::ManyToOne => polars::prelude::JoinValidation::ManyToOne,
             JoinValidation::OneToOne => polars::prelude::JoinValidation::OneToOne,
         }
@@ -143,25 +150,28 @@ pub enum JoinKeys {
     On(Vec<String>),
     /// Join with different column names for left and right
     LeftRight {
-        /// Column names from left DataFrame
+        /// Column names from left `DataFrame`
         left: Vec<String>,
-        /// Column names from right DataFrame
+        /// Column names from right `DataFrame`
         right: Vec<String>,
     },
 }
 
 impl JoinKeys {
     /// Create join keys for columns with the same name
+    #[must_use]
     pub fn on(columns: Vec<String>) -> Self {
         JoinKeys::On(columns)
     }
 
     /// Create join keys with different left and right column names
+    #[must_use]
     pub fn left_right(left: Vec<String>, right: Vec<String>) -> Self {
         JoinKeys::LeftRight { left, right }
     }
 
     /// Get the left column names
+    #[must_use]
     pub fn left_columns(&self) -> &[String] {
         match self {
             JoinKeys::On(cols) => cols,
@@ -170,6 +180,7 @@ impl JoinKeys {
     }
 
     /// Get the right column names
+    #[must_use]
     pub fn right_columns(&self) -> &[String] {
         match self {
             JoinKeys::On(cols) => cols,
@@ -178,7 +189,7 @@ impl JoinKeys {
     }
 }
 
-/// Join two DataFrames
+/// Join two `DataFrames`
 ///
 /// # Examples
 ///
@@ -221,7 +232,7 @@ pub fn join(left: &Value, right: &Value, keys: &JoinKeys, options: &JoinOptions)
     }
 }
 
-/// Join two DataFrames using Polars
+/// Join two `DataFrames` using Polars
 fn join_dataframes(
     left_df: &DataFrame,
     right_df: &DataFrame,
@@ -271,7 +282,7 @@ fn join_dataframes(
     Ok(Value::DataFrame(result_df))
 }
 
-/// Join two LazyFrames
+/// Join two `LazyFrames`
 fn join_lazy_frames(
     left_lf: &LazyFrame,
     right_lf: &LazyFrame,
@@ -680,13 +691,16 @@ fn values_equal_for_join(left: &Value, right: &Value) -> bool {
         (Value::Float(a), Value::Float(b)) => (a - b).abs() < f64::EPSILON,
         (Value::String(a), Value::String(b)) => a == b,
         // Cross-type numeric comparisons
+        #[allow(clippy::cast_precision_loss)]
         (Value::Int(a), Value::Float(b)) => (*a as f64 - b).abs() < f64::EPSILON,
+        #[allow(clippy::cast_precision_loss)]
         (Value::Float(a), Value::Int(b)) => (a - *b as f64).abs() < f64::EPSILON,
         _ => false,
     }
 }
 
 /// Merge two objects, handling column name conflicts
+#[allow(clippy::unnecessary_wraps)]
 fn merge_objects(
     left_obj: &HashMap<String, Value>,
     right_obj: &HashMap<String, Value>,
@@ -699,7 +713,7 @@ fn merge_objects(
     for (right_key, right_val) in right_obj {
         let key = if result.contains_key(right_key) {
             // Column name conflict - add suffix to right column
-            format!("{}{}", right_key, suffix)
+            format!("{right_key}{suffix}")
         } else {
             right_key.clone()
         };
@@ -708,14 +722,12 @@ fn merge_objects(
 
     if fill_nulls {
         for key in null_keys {
-            if !result.contains_key(key) {
-                result.insert(key.clone(), Value::Null);
-            } else {
+            if result.contains_key(key) {
                 // If conflict, suffix
-                let suffixed = format!("{}{}", key, suffix);
-                if !result.contains_key(&suffixed) {
-                    result.insert(suffixed, Value::Null);
-                }
+                let suffixed = format!("{key}{suffix}");
+                result.entry(suffixed).or_insert(Value::Null);
+            } else {
+                result.insert(key.clone(), Value::Null);
             }
         }
     }
@@ -738,7 +750,9 @@ fn compare_values_for_sorting(a: &Value, b: &Value) -> std::cmp::Ordering {
         (Value::String(a), Value::String(b)) => a.cmp(b),
 
         // Cross-type numeric comparisons
+        #[allow(clippy::cast_precision_loss)]
         (Value::Int(a), Value::Float(b)) => (*a as f64).partial_cmp(b).unwrap_or(Ordering::Equal),
+        #[allow(clippy::cast_precision_loss)]
         (Value::Float(a), Value::Int(b)) => a.partial_cmp(&(*b as f64)).unwrap_or(Ordering::Equal),
 
         // For complex types, compare string representations
@@ -782,9 +796,9 @@ pub fn outer_join(left: &Value, right: &Value, keys: &JoinKeys) -> Result<Value>
     join(left, right, keys, &options)
 }
 
-/// Join multiple DataFrames in sequence
+/// Join multiple `DataFrames` in sequence
 ///
-/// Performs a series of joins on multiple DataFrames using the same join keys.
+/// Performs a series of joins on multiple `DataFrames` using the same join keys.
 ///
 /// # Examples
 ///
@@ -818,7 +832,7 @@ pub fn join_multiple(
     for (i, df) in dataframes.iter().enumerate().skip(1) {
         // Adjust suffix for each join to avoid conflicts
         let mut join_options = options.clone();
-        join_options.suffix = format!("_right_{}", i);
+        join_options.suffix = format!("_right_{i}");
 
         result = join(&result, df, keys, &join_options)?;
     }
@@ -847,12 +861,13 @@ pub fn join_multiple(
 ///     "_right"
 /// ).unwrap();
 /// ```
+#[allow(clippy::used_underscore_binding)]
 pub fn join_with_condition(
     left: &Value,
     right: &Value,
     condition: Expr,
-    join_type: JoinType,
-    suffix: &str,
+    _join_type: JoinType,
+    _suffix: &str,
 ) -> Result<Value> {
     match (left, right) {
         (Value::DataFrame(left_df), Value::DataFrame(right_df)) => {
@@ -902,8 +917,8 @@ pub fn join_with_condition(
                 &Value::DataFrame(left_df),
                 &Value::DataFrame(right_df),
                 condition,
-                join_type,
-                suffix,
+                _join_type,
+                _suffix,
             )
         }
     }
@@ -911,8 +926,9 @@ pub fn join_with_condition(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashMap;
+
+    use super::*;
 
     fn create_left_dataframe() -> DataFrame {
         let id = Series::new("id", &[1, 2, 3, 4]);

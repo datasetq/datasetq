@@ -1,12 +1,12 @@
 //! Aggregation operations for dsq
 //!
-//! This module provides aggregation functions for DataFrames including:
+//! This module provides aggregation functions for `DataFrames` including:
 //! - Group by operations
 //! - Statistical aggregations (sum, mean, count, etc.)
 //! - Window functions
 //! - Pivot and unpivot operations
 //!
-//! These operations correspond to common SQL aggregations and jq's group_by
+//! These operations correspond to common SQL aggregations and jq's `group_by`
 //! functionality, adapted for tabular data processing.
 
 use crate::error::{Error, Result, TypeError};
@@ -17,9 +17,9 @@ use smallvec::SmallVec;
 
 use std::collections::HashMap;
 
-/// Group a DataFrame by one or more columns
+/// Group a `DataFrame` by one or more columns
 ///
-/// Equivalent to SQL's GROUP BY clause or jq's group_by function.
+/// Equivalent to SQL's GROUP BY clause or jq's `group_by` function.
 ///
 /// # Examples
 ///
@@ -44,7 +44,7 @@ pub fn group_by(value: &Value, columns: &[String]) -> Result<Value> {
                 for col_name in df.get_column_names() {
                     if let Ok(series) = df.column(col_name) {
                         // Convert series value to Value
-                        if let Some(val) = series.get(i).ok() {
+                        if let Ok(val) = series.get(i) {
                             let value = match val {
                                 polars::prelude::AnyValue::Int64(i) => Value::Int(i),
                                 polars::prelude::AnyValue::Float64(f) => Value::Float(f),
@@ -84,17 +84,14 @@ pub fn group_by(value: &Value, columns: &[String]) -> Result<Value> {
                     let mut key_parts = Vec::new();
                     for col in columns {
                         if let Some(val) = obj.get(col) {
-                            key_parts.push(format!("{:?}", val));
+                            key_parts.push(format!("{val:?}"));
                         } else {
                             key_parts.push("null".to_string());
                         }
                     }
                     let key = key_parts.join("|");
 
-                    groups
-                        .entry(key)
-                        .or_insert_with(Vec::new)
-                        .push(item.clone());
+                    groups.entry(key).or_default().push(item.clone());
                 } else {
                     return Err(TypeError::UnsupportedOperation {
                         operation: "group_by".to_string(),
@@ -154,7 +151,7 @@ pub fn group_by_agg(
                 group_columns.iter().map(|col_name| col(col_name)).collect();
             let agg_exprs: Vec<Expr> = aggregations
                 .iter()
-                .map(|agg| agg.to_polars_expr())
+                .map(AggregationFunction::to_polars_expr)
                 .collect::<Result<Vec<_>>>()?;
 
             let grouped = df
@@ -172,7 +169,7 @@ pub fn group_by_agg(
                 group_columns.iter().map(|col_name| col(col_name)).collect();
             let agg_exprs: Vec<Expr> = aggregations
                 .iter()
-                .map(|agg| agg.to_polars_expr())
+                .map(AggregationFunction::to_polars_expr)
                 .collect::<Result<Vec<_>>>()?;
 
             let grouped = lf.clone().group_by(group_exprs).agg(agg_exprs);
@@ -225,63 +222,64 @@ impl AggregationFunction {
         match self {
             AggregationFunction::Count => Ok(count().alias("count")),
             AggregationFunction::Sum(col_name) => {
-                Ok(col(col_name).sum().alias(&format!("{}_sum", col_name)))
+                Ok(col(col_name).sum().alias(&format!("{col_name}_sum")))
             }
             AggregationFunction::Mean(col_name) => {
-                Ok(col(col_name).mean().alias(&format!("{}_mean", col_name)))
+                Ok(col(col_name).mean().alias(&format!("{col_name}_mean")))
             }
-            AggregationFunction::Median(col_name) => Ok(col(col_name)
-                .median()
-                .alias(&format!("{}_median", col_name))),
+            AggregationFunction::Median(col_name) => {
+                Ok(col(col_name).median().alias(&format!("{col_name}_median")))
+            }
             AggregationFunction::Min(col_name) => {
-                Ok(col(col_name).min().alias(&format!("{}_min", col_name)))
+                Ok(col(col_name).min().alias(&format!("{col_name}_min")))
             }
             AggregationFunction::Max(col_name) => {
-                Ok(col(col_name).max().alias(&format!("{}_max", col_name)))
+                Ok(col(col_name).max().alias(&format!("{col_name}_max")))
             }
             AggregationFunction::Std(col_name) => {
-                Ok(col(col_name).std(1).alias(&format!("{}_std", col_name)))
+                Ok(col(col_name).std(1).alias(&format!("{col_name}_std")))
             }
             AggregationFunction::Var(col_name) => {
-                Ok(col(col_name).var(1).alias(&format!("{}_var", col_name)))
+                Ok(col(col_name).var(1).alias(&format!("{col_name}_var")))
             }
             AggregationFunction::First(col_name) => {
-                Ok(col(col_name).first().alias(&format!("{}_first", col_name)))
+                Ok(col(col_name).first().alias(&format!("{col_name}_first")))
             }
             AggregationFunction::Last(col_name) => {
-                Ok(col(col_name).last().alias(&format!("{}_last", col_name)))
+                Ok(col(col_name).last().alias(&format!("{col_name}_last")))
             }
             AggregationFunction::List(col_name) => {
-                Ok(col(col_name).alias(&format!("{}_list", col_name)))
+                Ok(col(col_name).alias(&format!("{col_name}_list")))
             }
             AggregationFunction::CountUnique(col_name) => Ok(col(col_name)
                 .n_unique()
-                .alias(&format!("{}_nunique", col_name))),
+                .alias(&format!("{col_name}_nunique"))),
             AggregationFunction::StringConcat(col_name, separator) => {
                 let _sep = separator.as_deref().unwrap_or(",");
                 // String concatenation in groupby context requires custom aggregation
                 // For now, we'll collect into a list and handle concatenation in array processing
-                Ok(col(col_name).alias(&format!("{}_concat", col_name)))
+                Ok(col(col_name).alias(&format!("{col_name}_concat")))
             }
         }
     }
 
     /// Get the output column name for this aggregation
+    #[must_use]
     pub fn output_column_name(&self) -> String {
         match self {
             AggregationFunction::Count => "count".to_string(),
-            AggregationFunction::Sum(col_name) => format!("{}_sum", col_name),
-            AggregationFunction::Mean(col_name) => format!("{}_mean", col_name),
-            AggregationFunction::Median(col_name) => format!("{}_median", col_name),
-            AggregationFunction::Min(col_name) => format!("{}_min", col_name),
-            AggregationFunction::Max(col_name) => format!("{}_max", col_name),
-            AggregationFunction::Std(col_name) => format!("{}_std", col_name),
-            AggregationFunction::Var(col_name) => format!("{}_var", col_name),
-            AggregationFunction::First(col_name) => format!("{}_first", col_name),
-            AggregationFunction::Last(col_name) => format!("{}_last", col_name),
-            AggregationFunction::List(col_name) => format!("{}_list", col_name),
-            AggregationFunction::CountUnique(col_name) => format!("{}_nunique", col_name),
-            AggregationFunction::StringConcat(col_name, _) => format!("{}_concat", col_name),
+            AggregationFunction::Sum(col_name) => format!("{col_name}_sum"),
+            AggregationFunction::Mean(col_name) => format!("{col_name}_mean"),
+            AggregationFunction::Median(col_name) => format!("{col_name}_median"),
+            AggregationFunction::Min(col_name) => format!("{col_name}_min"),
+            AggregationFunction::Max(col_name) => format!("{col_name}_max"),
+            AggregationFunction::Std(col_name) => format!("{col_name}_std"),
+            AggregationFunction::Var(col_name) => format!("{col_name}_var"),
+            AggregationFunction::First(col_name) => format!("{col_name}_first"),
+            AggregationFunction::Last(col_name) => format!("{col_name}_last"),
+            AggregationFunction::List(col_name) => format!("{col_name}_list"),
+            AggregationFunction::CountUnique(col_name) => format!("{col_name}_nunique"),
+            AggregationFunction::StringConcat(col_name, _) => format!("{col_name}_concat"),
         }
     }
 }
@@ -302,14 +300,14 @@ fn group_by_agg_array(
             let mut key_parts: SmallVec<[String; 8]> = SmallVec::new();
             for col in group_columns {
                 if let Some(val) = obj.get(col) {
-                    key_parts.push(format!("{:?}", val));
+                    key_parts.push(format!("{val:?}"));
                 } else {
                     key_parts.push("null".to_string());
                 }
             }
             let key = key_parts.join("|");
 
-            groups.entry(key).or_insert_with(Vec::new).push(item);
+            groups.entry(key).or_default().push(item);
         } else {
             return Err(TypeError::UnsupportedOperation {
                 operation: "group_by_agg".to_string(),
@@ -365,6 +363,7 @@ fn group_by_agg_array(
 /// Apply a single aggregation function to a group of objects
 fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value]) -> Result<Value> {
     match agg {
+        #[allow(clippy::cast_possible_wrap)]
         AggregationFunction::Count => Ok(Value::Int(group_items.len() as i64)),
         AggregationFunction::Sum(col_name) => {
             let mut sum = 0.0;
@@ -375,7 +374,10 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                     if let Some(val) = obj.get(col_name) {
                         match val {
                             Value::Int(i) => {
-                                sum += *i as f64;
+                                #[allow(clippy::cast_precision_loss)]
+                                {
+                                    sum += *i as f64;
+                                }
                                 count += 1;
                             }
                             Value::Float(f) => {
@@ -397,10 +399,14 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
 
             if count == 0 {
                 Ok(Value::Null)
-            } else if sum.fract() == 0.0 && sum <= i64::MAX as f64 && sum >= i64::MIN as f64 {
-                Ok(Value::Int(sum as i64))
             } else {
-                Ok(Value::Float(sum))
+                #[allow(clippy::cast_precision_loss)]
+                if sum.fract() == 0.0 && sum <= i64::MAX as f64 && sum >= i64::MIN as f64 {
+                    #[allow(clippy::cast_possible_truncation)]
+                    Ok(Value::Int(sum as i64))
+                } else {
+                    Ok(Value::Float(sum))
+                }
             }
         }
         AggregationFunction::Mean(col_name) => {
@@ -412,7 +418,10 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                     if let Some(val) = obj.get(col_name) {
                         match val {
                             Value::Int(i) => {
-                                sum += *i as f64;
+                                #[allow(clippy::cast_precision_loss)]
+                                {
+                                    sum += *i as f64;
+                                }
                                 count += 1;
                             }
                             Value::Float(f) => {
@@ -435,7 +444,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
             if count == 0 {
                 Ok(Value::Null)
             } else {
-                Ok(Value::Float(sum / count as f64))
+                Ok(Value::Float(sum / f64::from(count)))
             }
         }
         AggregationFunction::Min(col_name) => {
@@ -460,7 +469,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 }
             }
 
-            Ok(min_val.cloned().unwrap_or(Value::Null))
+            Ok(min_val.map_or(Value::Null, Clone::clone))
         }
         AggregationFunction::Max(col_name) => {
             let mut max_val: Option<&Value> = None;
@@ -484,7 +493,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 }
             }
 
-            Ok(max_val.cloned().unwrap_or(Value::Null))
+            Ok(max_val.map_or(Value::Null, Clone::clone))
         }
         AggregationFunction::First(col_name) => {
             for item in group_items {
@@ -527,12 +536,15 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
             for item in group_items {
                 if let Value::Object(obj) = item {
                     if let Some(val) = obj.get(col_name) {
-                        unique_values.insert(format!("{:?}", val));
+                        unique_values.insert(format!("{val:?}"));
                     }
                 }
             }
 
-            Ok(Value::Int(unique_values.len() as i64))
+            #[allow(clippy::cast_possible_wrap)]
+            {
+                Ok(Value::Int(unique_values.len() as i64))
+            }
         }
         AggregationFunction::StringConcat(col_name, separator) => {
             let mut string_values: SmallVec<[String; 16]> = SmallVec::new();
@@ -559,7 +571,12 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 if let Value::Object(obj) = item {
                     if let Some(val) = obj.get(col_name) {
                         match val {
-                            Value::Int(i) => numeric_values.push(*i as f64),
+                            Value::Int(i) => {
+                                #[allow(clippy::cast_precision_loss)]
+                                {
+                                    numeric_values.push(*i as f64);
+                                }
+                            }
                             Value::Float(f) => numeric_values.push(*f),
                             Value::Null => {} // Skip nulls
                             _ => {
@@ -582,7 +599,7 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
 
             let median = if numeric_values.len() % 2 == 0 {
                 let mid = numeric_values.len() / 2;
-                (numeric_values[mid - 1] + numeric_values[mid]) / 2.0
+                f64::midpoint(numeric_values[mid - 1], numeric_values[mid])
             } else {
                 numeric_values[numeric_values.len() / 2]
             };
@@ -596,7 +613,12 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 if let Value::Object(obj) = item {
                     if let Some(val) = obj.get(col_name) {
                         match val {
-                            Value::Int(i) => numeric_values.push(*i as f64),
+                            Value::Int(i) => {
+                                #[allow(clippy::cast_precision_loss)]
+                                {
+                                    numeric_values.push(*i as f64);
+                                }
+                            }
                             Value::Float(f) => numeric_values.push(*f),
                             Value::Null => {} // Skip nulls
                             _ => {
@@ -615,7 +637,9 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 return Ok(Value::Null);
             }
 
+            #[allow(clippy::cast_precision_loss)]
             let mean = numeric_values.iter().sum::<f64>() / numeric_values.len() as f64;
+            #[allow(clippy::cast_precision_loss)]
             let variance = numeric_values
                 .iter()
                 .map(|x| (x - mean).powi(2))
@@ -631,7 +655,12 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 if let Value::Object(obj) = item {
                     if let Some(val) = obj.get(col_name) {
                         match val {
-                            Value::Int(i) => numeric_values.push(*i as f64),
+                            Value::Int(i) => {
+                                #[allow(clippy::cast_precision_loss)]
+                                {
+                                    numeric_values.push(*i as f64);
+                                }
+                            }
                             Value::Float(f) => numeric_values.push(*f),
                             Value::Null => {} // Skip nulls
                             _ => {
@@ -650,7 +679,9 @@ fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value])
                 return Ok(Value::Null);
             }
 
+            #[allow(clippy::cast_precision_loss)]
             let mean = numeric_values.iter().sum::<f64>() / numeric_values.len() as f64;
+            #[allow(clippy::cast_precision_loss)]
             let variance = numeric_values
                 .iter()
                 .map(|x| (x - mean).powi(2))
@@ -677,7 +708,9 @@ fn compare_values_for_ordering(a: &Value, b: &Value) -> std::cmp::Ordering {
         (Value::String(a), Value::String(b)) => a.cmp(b),
 
         // Cross-type numeric comparisons
+        #[allow(clippy::cast_precision_loss)]
         (Value::Int(a), Value::Float(b)) => (*a as f64).partial_cmp(b).unwrap_or(Ordering::Equal),
+        #[allow(clippy::cast_precision_loss)]
         (Value::Float(a), Value::Int(b)) => a.partial_cmp(&(*b as f64)).unwrap_or(Ordering::Equal),
 
         // For complex types, compare string representations
@@ -685,7 +718,7 @@ fn compare_values_for_ordering(a: &Value, b: &Value) -> std::cmp::Ordering {
     }
 }
 
-/// Pivot a DataFrame (convert rows to columns)
+/// Pivot a `DataFrame` (convert rows to columns)
 ///
 /// Equivalent to SQL's PIVOT operation or Excel's pivot tables.
 ///
@@ -774,7 +807,7 @@ pub fn pivot(
     }
 }
 
-/// Unpivot a DataFrame (convert columns to rows)
+/// Unpivot a `DataFrame` (convert columns to rows)
 ///
 /// Equivalent to SQL's UNPIVOT operation or pandas' melt function.
 ///
@@ -861,9 +894,9 @@ pub fn rolling_agg(
         Value::DataFrame(_df) => {
             // Rolling functions are not available in Polars 0.35 Expr API
             // Use a simple implementation for now
-            return Err(Error::operation(
+            Err(Error::operation(
                 "Rolling window functions not implemented in this version",
-            ));
+            ))
         }
         Value::LazyFrame(_lf) => {
             // Rolling functions are not available in Polars 0.35 Expr API
@@ -901,6 +934,7 @@ pub enum WindowFunction {
 
 impl WindowFunction {
     /// Get the function name as a string
+    #[must_use]
     pub fn name(&self) -> &'static str {
         match self {
             WindowFunction::Sum => "sum",
@@ -930,6 +964,7 @@ impl WindowFunction {
 ///     WindowFunction::Sum            // cumulative sum
 /// ).unwrap();
 /// ```
+#[allow(clippy::needless_pass_by_value)]
 pub fn cumulative_agg(value: &Value, _column: &str, function: WindowFunction) -> Result<Value> {
     match value {
         Value::DataFrame(_df) => {

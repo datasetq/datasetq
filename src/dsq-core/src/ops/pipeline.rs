@@ -1,9 +1,10 @@
-use super::Operation;
 use crate::error::Result;
 use crate::ops::aggregate::{group_by, group_by_agg, AggregationFunction};
 use crate::ops::basic::{filter_values, select_columns, sort_by_columns, SortOptions};
 use crate::ops::join::{join, JoinKeys, JoinOptions};
 use crate::Value;
+
+use super::Operation;
 
 /// A pipeline of operations that can be applied sequentially
 ///
@@ -27,6 +28,7 @@ pub struct OperationPipeline {
 
 impl OperationPipeline {
     /// Create a new empty operation pipeline
+    #[must_use]
     pub fn new() -> Self {
         Self {
             operations: Vec::new(),
@@ -34,17 +36,20 @@ impl OperationPipeline {
     }
 
     /// Add a generic operation to the pipeline
+    #[must_use]
     pub fn add_operation(mut self, op: Box<dyn Operation + Send + Sync>) -> Self {
         self.operations.push(op);
         self
     }
 
     /// Add a select columns operation
+    #[must_use]
     pub fn select(self, columns: Vec<String>) -> Self {
         self.add_operation(Box::new(SelectOperation { columns }))
     }
 
     /// Add a filter operation
+    #[must_use]
     pub fn filter<F>(self, predicate: F) -> Self
     where
         F: Fn(&Value) -> Result<bool> + Send + Sync + 'static,
@@ -55,26 +60,31 @@ impl OperationPipeline {
     }
 
     /// Add a sort operation
+    #[must_use]
     pub fn sort(self, options: Vec<SortOptions>) -> Self {
         self.add_operation(Box::new(SortOperation { options }))
     }
 
     /// Add a head operation (take first N rows)
+    #[must_use]
     pub fn head(self, n: usize) -> Self {
         self.add_operation(Box::new(HeadOperation { n }))
     }
 
     /// Add a tail operation (take last N rows)
+    #[must_use]
     pub fn tail(self, n: usize) -> Self {
         self.add_operation(Box::new(TailOperation { n }))
     }
 
     /// Add a group by operation
+    #[must_use]
     pub fn group_by(self, columns: Vec<String>) -> Self {
         self.add_operation(Box::new(GroupByOperation { columns }))
     }
 
     /// Add an aggregation operation
+    #[must_use]
     pub fn aggregate(
         self,
         group_columns: Vec<String>,
@@ -87,6 +97,7 @@ impl OperationPipeline {
     }
 
     /// Add a join operation
+    #[must_use]
     pub fn join(self, right: Value, keys: JoinKeys, options: JoinOptions) -> Self {
         self.add_operation(Box::new(JoinOperation {
             right,
@@ -113,16 +124,19 @@ impl OperationPipeline {
     }
 
     /// Get the number of operations in the pipeline
+    #[must_use]
     pub fn len(&self) -> usize {
         self.operations.len()
     }
 
     /// Check if the pipeline is empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.operations.is_empty()
     }
 
     /// Get descriptions of all operations in the pipeline
+    #[must_use]
     pub fn describe(&self) -> Vec<String> {
         self.operations.iter().map(|op| op.description()).collect()
     }
@@ -150,6 +164,7 @@ impl Operation for SelectOperation {
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub struct FilterOperation {
     pub predicate: Box<dyn Fn(&Value) -> Result<bool> + Send + Sync>,
 }
@@ -251,7 +266,7 @@ impl Operation for AggregateOperation {
         let agg_desc: Vec<String> = self
             .agg_functions
             .iter()
-            .map(|f| f.output_column_name())
+            .map(super::aggregate::AggregationFunction::output_column_name)
             .collect();
         format!(
             "aggregate by {} with functions: {}",
@@ -313,7 +328,7 @@ pub fn apply_operations(
 
 /// Apply a series of operations to an owned value (consumes the value)
 ///
-/// More efficient than apply_operations when you don't need to keep the original value.
+/// More efficient than `apply_operations` when you don't need to keep the original value.
 pub fn apply_operations_owned(
     mut value: Value,
     operations: Vec<Box<dyn Operation + Send + Sync>>,
@@ -328,7 +343,7 @@ pub fn apply_operations_owned(
 
 /// Apply a series of operations to a value in place
 ///
-/// This is more efficient than apply_operations when the caller doesn't need
+/// This is more efficient than `apply_operations` when the caller doesn't need
 /// to preserve the original value.
 pub fn apply_operations_mut(
     value: &mut Value,

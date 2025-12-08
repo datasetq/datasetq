@@ -1,6 +1,7 @@
-use super::Operation;
 use crate::error::Result;
 use crate::Value;
+
+use super::Operation;
 
 /// Literal value operation
 pub struct LiteralOperation {
@@ -8,6 +9,7 @@ pub struct LiteralOperation {
 }
 
 impl LiteralOperation {
+    #[must_use]
     pub fn new(value: Value) -> Self {
         Self { value }
     }
@@ -29,6 +31,7 @@ pub struct VariableOperation {
 }
 
 impl VariableOperation {
+    #[must_use]
     pub fn new(name: String) -> Self {
         Self { name }
     }
@@ -49,6 +52,7 @@ impl Operation for VariableOperation {
 }
 
 /// Object construction operation
+#[allow(clippy::type_complexity)]
 pub struct ObjectConstructOperation {
     pub field_ops: Vec<(
         Box<dyn Operation + Send + Sync>,
@@ -57,6 +61,8 @@ pub struct ObjectConstructOperation {
 }
 
 impl ObjectConstructOperation {
+    #[must_use]
+    #[allow(clippy::type_complexity)]
     pub fn new(
         field_ops: Vec<(
             Box<dyn Operation + Send + Sync>,
@@ -77,13 +83,10 @@ impl Operation for ObjectConstructOperation {
 
         for (key_op, value_op) in &self.field_ops {
             let key_value = key_op.apply(value)?;
-            let key = match key_value {
-                Value::String(s) => s,
-                _ => {
-                    return Err(crate::error::Error::operation(
-                        "Object key must be a string",
-                    ));
-                }
+            let Value::String(key) = key_value else {
+                return Err(crate::error::Error::operation(
+                    "Object key must be a string",
+                ));
             };
 
             let field_value = if let Some(ref ops) = value_op {
@@ -114,6 +117,7 @@ pub struct ArrayConstructOperation {
 }
 
 impl ArrayConstructOperation {
+    #[must_use]
     pub fn new(element_ops: Vec<Box<dyn Operation + Send + Sync>>) -> Self {
         Self { element_ops }
     }

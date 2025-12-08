@@ -4,25 +4,28 @@ use crate::Value;
 ///
 /// This function provides a way to determine compatibility before
 /// attempting to apply operations.
+#[must_use]
 pub fn supports_operation(value: &Value, operation_type: OperationType) -> bool {
-    match (value, operation_type) {
-        (Value::DataFrame(_), _) => true, // DataFrames support all operations
-        (Value::LazyFrame(_), _) => true, // LazyFrames support all operations
-        (
-            Value::Array(_),
-            OperationType::Basic
-            | OperationType::Aggregate
-            | OperationType::Transform
-            | OperationType::Filter,
-        ) => true,
-        (Value::Array(_), OperationType::Join) => true, // Arrays can be joined
-        (
-            Value::Object(_),
-            OperationType::Basic | OperationType::Transform | OperationType::Filter,
-        ) => true,
-        (Value::Series(_), OperationType::Basic | OperationType::Transform) => true,
-        _ => false,
-    }
+    matches!(
+        (value, operation_type),
+        (Value::DataFrame(_) | Value::LazyFrame(_), _)
+            | (
+                Value::Array(_),
+                OperationType::Basic
+                    | OperationType::Aggregate
+                    | OperationType::Transform
+                    | OperationType::Filter
+                    | OperationType::Join,
+            )
+            | (
+                Value::Object(_),
+                OperationType::Basic | OperationType::Transform | OperationType::Filter,
+            )
+            | (
+                Value::Series(_),
+                OperationType::Basic | OperationType::Transform
+            )
+    )
 }
 
 /// Types of operations supported by dsq
@@ -44,18 +47,12 @@ pub enum OperationType {
 ///
 /// This function provides guidance on how to chunk large datasets
 /// for efficient processing.
+#[must_use]
 pub fn recommended_batch_size(value: &Value, operation_type: OperationType) -> Option<usize> {
     match value {
         Value::DataFrame(df) => {
             let rows = df.height();
             match operation_type {
-                OperationType::Basic | OperationType::Filter => {
-                    if rows > 1_000_000 {
-                        Some(100_000)
-                    } else {
-                        None
-                    }
-                }
                 OperationType::Aggregate => {
                     if rows > 500_000 {
                         Some(50_000)
@@ -70,7 +67,7 @@ pub fn recommended_batch_size(value: &Value, operation_type: OperationType) -> O
                         None
                     }
                 }
-                OperationType::Transform => {
+                OperationType::Basic | OperationType::Filter | OperationType::Transform => {
                     if rows > 1_000_000 {
                         Some(100_000)
                     } else {
@@ -82,13 +79,6 @@ pub fn recommended_batch_size(value: &Value, operation_type: OperationType) -> O
         Value::Array(arr) => {
             let len = arr.len();
             match operation_type {
-                OperationType::Basic | OperationType::Filter => {
-                    if len > 100_000 {
-                        Some(10_000)
-                    } else {
-                        None
-                    }
-                }
                 OperationType::Aggregate => {
                     if len > 50_000 {
                         Some(5_000)
@@ -103,7 +93,7 @@ pub fn recommended_batch_size(value: &Value, operation_type: OperationType) -> O
                         None
                     }
                 }
-                OperationType::Transform => {
+                OperationType::Basic | OperationType::Filter | OperationType::Transform => {
                     if len > 100_000 {
                         Some(10_000)
                     } else {

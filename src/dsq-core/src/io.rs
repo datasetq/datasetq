@@ -5,6 +5,11 @@
 //!
 //! It orchestrates between dsq-io (low-level I/O) and dsq-formats (serialization).
 
+use std::io::Cursor;
+use std::path::Path;
+
+use polars::prelude::*;
+
 use crate::error::{Error, Result};
 use crate::Value;
 #[cfg(feature = "json5")]
@@ -16,19 +21,13 @@ use dsq_formats::{
     FormatWriteOptions, ReadOptions as DsFormatReadOptions,
 };
 
-use polars::prelude::*;
-use std::io::Cursor;
-use std::path::Path;
-
-#[cfg(not(target_arch = "wasm32"))]
-use once_cell::sync::Lazy;
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
 
 // Shared Tokio runtime to avoid creating new runtimes for each sync call
 #[cfg(not(target_arch = "wasm32"))]
-static TOKIO_RUNTIME: Lazy<Runtime> =
-    Lazy::new(|| Runtime::new().expect("Failed to create Tokio runtime"));
+static TOKIO_RUNTIME: std::sync::LazyLock<Runtime> =
+    std::sync::LazyLock::new(|| Runtime::new().expect("Failed to create Tokio runtime"));
 
 /// Options for reading files
 #[derive(Debug, Clone)]
@@ -96,7 +95,13 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
     let path = path.as_ref();
     let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
-    let format = if !extension.is_empty() {
+    let format = if extension.is_empty() {
+        // No extension, try content detection
+        let bytes = dsq_io::read_file(path).await?;
+        detect_format_from_content(&bytes).ok_or_else(|| {
+            Error::operation("Could not detect file format from content".to_string())
+        })?
+    } else {
         match extension.to_lowercase().as_str() {
             "csv" => DataFormat::Csv,
             "tsv" => DataFormat::Tsv,
@@ -107,16 +112,10 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             "parquet" => DataFormat::Parquet,
             _ => {
                 return Err(Error::operation(format!(
-                    "Unsupported file format: {}",
-                    extension
+                    "Unsupported file format: {extension}"
                 )));
             }
         }
-    } else {
-        // No extension, try content detection
-        let bytes = dsq_io::read_file(path).await?;
-        detect_format_from_content(&bytes)
-            .ok_or_else(|| Error::operation(format!("Could not detect file format from content")))?
     };
 
     // Read the file bytes
@@ -161,10 +160,7 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             &format_read_options,
             &format_options,
         )?),
-        _ => Err(Error::operation(format!(
-            "Unsupported format: {:?}",
-            format
-        ))),
+        _ => Err(Error::operation(format!("Unsupported format: {format:?}"))),
     }
 }
 
@@ -182,7 +178,13 @@ pub fn read_file_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<
     let path = path.as_ref();
     let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
-    let format = if !extension.is_empty() {
+    let format = if extension.is_empty() {
+        // No extension, try content detection
+        let content =
+            fs::read(path).map_err(|e| Error::operation(format!("Failed to read file: {e}")))?;
+        detect_format_from_content(&content)
+            .ok_or_else(|| Error::operation("Could not detect file format from content"))?
+    } else {
         match extension.to_lowercase().as_str() {
             "csv" => dsq_formats::DataFormat::Csv,
             "tsv" => dsq_formats::DataFormat::Tsv,
@@ -190,12 +192,6 @@ pub fn read_file_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<
             "parquet" => dsq_formats::DataFormat::Parquet,
             _ => return read_file_sync(path, options), // Fall back to eager reading
         }
-    } else {
-        // No extension, try content detection
-        let content =
-            fs::read(path).map_err(|e| Error::operation(format!("Failed to read file: {}", e)))?;
-        detect_format_from_content(&content)
-            .ok_or_else(|| Error::operation("Could not detect file format from content"))?
     };
 
     match format {
@@ -216,7 +212,10 @@ pub async fn write_file<P: AsRef<Path>>(
     let path = path.as_ref();
     let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
-    let format = if !extension.is_empty() {
+    let format = if extension.is_empty() {
+        // Default to CSV when no extension
+        DataFormat::Csv
+    } else {
         match extension.to_lowercase().as_str() {
             "csv" => DataFormat::Csv,
             "tsv" => DataFormat::Tsv,
@@ -226,14 +225,10 @@ pub async fn write_file<P: AsRef<Path>>(
             "parquet" => DataFormat::Parquet,
             _ => {
                 return Err(Error::operation(format!(
-                    "Unsupported output format: {}",
-                    extension
+                    "Unsupported output format: {extension}"
                 )));
             }
         }
-    } else {
-        // Default to CSV when no extension
-        DataFormat::Csv
     };
 
     // Serialize based on format
@@ -245,27 +240,22 @@ pub async fn write_file<P: AsRef<Path>>(
     let format_options = FormatWriteOptions::default();
     match format {
         DataFormat::Csv => {
-            serialize_csv(&mut buffer, value, &format_write_options, &format_options)?
+            serialize_csv(&mut buffer, value, &format_write_options, &format_options)?;
         }
         DataFormat::Adt => {
-            serialize_adt(&mut buffer, value, &format_write_options, &format_options)?
+            serialize_adt(&mut buffer, value, &format_write_options, &format_options)?;
         }
-        DataFormat::Json => {
-            serialize_json(&mut buffer, value, &format_write_options, &format_options)?
+        DataFormat::Json | DataFormat::Json5 => {
+            serialize_json(&mut buffer, value, &format_write_options, &format_options)?;
+            // JSON5 not implemented, use JSON
         }
-        DataFormat::Json5 => {
-            serialize_json(&mut buffer, value, &format_write_options, &format_options)?
-        } // JSON5 not implemented, use JSON
         DataFormat::Parquet => {
-            serialize_parquet(&mut buffer, value, &format_write_options, &format_options)?
+            serialize_parquet(&mut buffer, value, &format_write_options, &format_options)?;
         }
         _ => {
-            return Err(Error::operation(format!(
-                "Unsupported format: {:?}",
-                format
-            )));
+            return Err(Error::operation(format!("Unsupported format: {format:?}")));
         }
-    };
+    }
 
     // Write the buffer to file
     dsq_io::write_file(path, &buffer).await?;
@@ -301,8 +291,10 @@ pub fn inspect_file<P: AsRef<Path>>(path: P) -> Result<FileInfo> {
     let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
     // Try to read a small sample to get metadata
-    let mut options = ReadOptions::default();
-    options.n_rows = Some(1);
+    let options = ReadOptions {
+        n_rows: Some(1),
+        ..Default::default()
+    };
 
     match read_file_sync(path, &options) {
         Ok(value) => match value {
@@ -314,7 +306,7 @@ pub fn inspect_file<P: AsRef<Path>>(path: P) -> Result<FileInfo> {
                 column_names: Some(
                     df.get_column_names()
                         .iter()
-                        .map(|s| s.to_string())
+                        .map(|s| (*s).to_string())
                         .collect(),
                 ),
             }),
@@ -345,7 +337,7 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
     const RECORD_SEPARATOR: u8 = dsq_shared::constants::RECORD_SEPARATOR;
 
     let content = fs::read(path.as_ref())
-        .map_err(|e| Error::operation(format!("Failed to read ADT file: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to read ADT file: {e}")))?;
 
     if content.is_empty() {
         return Err(Error::operation("ADT file is empty"));
@@ -416,7 +408,6 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
     }
 
     // Convert to DataFrame
-    use polars::prelude::*;
     let mut df_columns = Vec::new();
 
     for header in &header_fields {
@@ -426,7 +417,7 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
     }
 
     let df = DataFrame::new(df_columns)
-        .map_err(|e| Error::operation(format!("Failed to create DataFrame: {}", e)))?;
+        .map_err(|e| Error::operation(format!("Failed to create DataFrame: {e}")))?;
 
     Ok(Value::DataFrame(df))
 }
@@ -517,7 +508,11 @@ fn read_parquet_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<V
     let mut lf = reader.finish()?.lazy();
 
     if options.skip_rows > 0 {
-        lf = lf.slice(options.skip_rows as i64, u32::MAX);
+        lf = lf.slice(
+            i64::try_from(options.skip_rows)
+                .map_err(|_| Error::operation("Skip rows value out of range for i64"))?,
+            u32::MAX,
+        );
     }
 
     // Enable predicate pushdown and projection pushdown for better performance

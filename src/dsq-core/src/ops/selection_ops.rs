@@ -1,7 +1,9 @@
-use super::Operation;
+use polars::prelude::NewChunkedArray;
+
 use crate::error::{Error, Result};
 use crate::Value;
-use polars::prelude::NewChunkedArray;
+
+use super::Operation;
 
 /// Select condition operation for filtering (select(condition))
 pub struct SelectConditionOperation {
@@ -9,6 +11,7 @@ pub struct SelectConditionOperation {
 }
 
 impl SelectConditionOperation {
+    #[must_use]
     pub fn new(condition_ops: Vec<Box<dyn Operation + Send + Sync>>) -> Self {
         Self { condition_ops }
     }
@@ -50,7 +53,7 @@ impl Operation for SelectConditionOperation {
                         Ok(filtered_df) => return Ok(Value::DataFrame(filtered_df)),
                         Err(e) => {
                             return Err(Error::Operation(
-                                format!("select() failed to filter DataFrame: {}", e).into(),
+                                format!("select() failed to filter DataFrame: {e}").into(),
                             ));
                         }
                     }
@@ -67,7 +70,7 @@ impl Operation for SelectConditionOperation {
             Value::Array(arr) if !arr.is_empty() => true,
             Value::Object(obj) if !obj.is_empty() => true,
             Value::DataFrame(df) if df.height() > 0 => true,
-            Value::Series(series) if series.len() > 0 => true,
+            Value::Series(series) if !series.is_empty() => true,
             _ => false,
         };
 

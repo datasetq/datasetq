@@ -3,7 +3,6 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::io;
 
-// External crate imports
 use dsq_formats;
 #[cfg(feature = "io")]
 use dsq_io;
@@ -117,7 +116,7 @@ pub enum TypeError {
         typ: String,
     },
 
-    /// Field not found in object or DataFrame
+    /// Field not found in object or `DataFrame`
     FieldNotFound {
         /// Field name
         field: String,
@@ -136,13 +135,13 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Io(e) => write!(f, "I/O error: {e}"),
-            Error::Polars(e) => write!(f, "DataFrame error: {}", e),
-            Error::Json(e) => write!(f, "JSON error: {}", e),
-            Error::Format(e) => write!(f, "Format error: {}", e),
-            Error::Filter(e) => write!(f, "Filter error: {}", e),
-            Error::Type(e) => write!(f, "Type error: {}", e),
-            Error::Operation(msg) => write!(f, "Operation error: {}", msg),
-            Error::Config(msg) => write!(f, "Configuration error: {}", msg),
+            Error::Polars(e) => write!(f, "DataFrame error: {e}"),
+            Error::Json(e) => write!(f, "JSON error: {e}"),
+            Error::Format(e) => write!(f, "Format error: {e}"),
+            Error::Filter(e) => write!(f, "Filter error: {e}"),
+            Error::Type(e) => write!(f, "Type error: {e}"),
+            Error::Operation(msg) => write!(f, "Operation error: {msg}"),
+            Error::Config(msg) => write!(f, "Configuration error: {msg}"),
             Error::Multiple(errors) => {
                 write!(f, "Multiple errors occurred:")?;
                 for (i, e) in errors.iter().enumerate() {
@@ -158,19 +157,19 @@ impl fmt::Display for FormatError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FormatError::Unknown(format) => {
-                write!(f, "Unknown format: {}", format)
+                write!(f, "Unknown format: {format}")
             }
             FormatError::DetectionFailed(path) => {
-                write!(f, "Failed to detect format for: {}", path)
+                write!(f, "Failed to detect format for: {path}")
             }
             FormatError::UnsupportedFeature(feature) => {
-                write!(f, "Unsupported feature: {}", feature)
+                write!(f, "Unsupported feature: {feature}")
             }
             FormatError::SchemaMismatch { expected, actual } => {
-                write!(f, "Schema mismatch: expected {}, got {}", expected, actual)
+                write!(f, "Schema mismatch: expected {expected}, got {actual}")
             }
             FormatError::InvalidOption(option) => {
-                write!(f, "Invalid format option: {}", option)
+                write!(f, "Invalid format option: {option}")
             }
         }
     }
@@ -179,19 +178,15 @@ impl fmt::Display for FormatError {
 impl fmt::Display for FilterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FilterError::Parse(msg) => write!(f, "Parse error: {}", msg),
-            FilterError::Compile(msg) => write!(f, "Compilation error: {}", msg),
-            FilterError::Runtime(msg) => write!(f, "Runtime error: {}", msg),
-            FilterError::Undefined(name) => write!(f, "Undefined: {}", name),
+            FilterError::Parse(msg) => write!(f, "Parse error: {msg}"),
+            FilterError::Compile(msg) => write!(f, "Compilation error: {msg}"),
+            FilterError::Runtime(msg) => write!(f, "Runtime error: {msg}"),
+            FilterError::Undefined(name) => write!(f, "Undefined: {name}"),
             FilterError::TypeMismatch { expected, actual } => {
-                write!(f, "Type mismatch: expected {}, got {}", expected, actual)
+                write!(f, "Type mismatch: expected {expected}, got {actual}")
             }
             FilterError::ArgumentCount { expected, actual } => {
-                write!(
-                    f,
-                    "Wrong argument count: expected {}, got {}",
-                    expected, actual
-                )
+                write!(f, "Wrong argument count: expected {expected}, got {actual}")
             }
         }
     }
@@ -201,21 +196,17 @@ impl fmt::Display for TypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TypeError::InvalidConversion { from, to } => {
-                write!(f, "Cannot convert from {} to {}", from, to)
+                write!(f, "Cannot convert from {from} to {to}")
             }
             TypeError::UnsupportedOperation { operation, typ } => {
-                write!(
-                    f,
-                    "Operation '{}' not supported for type {}",
-                    operation, typ
-                )
+                write!(f, "Operation '{operation}' not supported for type {typ}")
             }
             TypeError::FieldNotFound { field, typ } => {
-                write!(f, "Field '{}' not found in {}", field, typ)
+                write!(f, "Field '{field}' not found in {typ}")
             }
-            TypeError::OutOfRange(msg) => write!(f, "Value out of range: {}", msg),
+            TypeError::OutOfRange(msg) => write!(f, "Value out of range: {msg}"),
             TypeError::UnexpectedNull(context) => {
-                write!(f, "Unexpected null value in: {}", context)
+                write!(f, "Unexpected null value in: {context}")
             }
         }
     }
@@ -315,6 +306,7 @@ impl Error {
     }
 
     /// Combine multiple errors into a single error
+    #[must_use]
     pub fn combine(errors: Vec<Error>) -> Self {
         match errors.len() {
             0 => Error::operation(Cow::Borrowed("No errors")),

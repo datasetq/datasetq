@@ -3,13 +3,15 @@
 //! This module provides an interactive shell for experimenting with dsq filters
 //! and data transformations in real-time.
 
+use std::io::{self, Write};
+use std::path::Path;
+
+use dsq_core::error::{Error, Result};
+use dsq_core::Value;
+
 use crate::config::Config;
 use crate::executor::Executor;
 use crate::output::OutputWriter;
-use dsq_core::error::{Error, Result};
-use dsq_core::Value;
-use std::io::{self, Write};
-use std::path::Path;
 
 /// Interactive REPL for dsq
 pub struct Repl {
@@ -79,7 +81,7 @@ impl Repl {
     /// Process a single command
     async fn process_command(&mut self, line: &str) -> Result<CommandResult> {
         let parts: Vec<&str> = line.split_whitespace().collect();
-        let command = parts.get(0).unwrap_or(&"");
+        let command = parts.first().unwrap_or(&"");
 
         match *command {
             "quit" | "exit" | "q" => Ok(CommandResult::Exit),
@@ -278,10 +280,13 @@ enum CommandResult {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use dsq_core::Value;
     use std::io::Write;
+
     use tempfile::NamedTempFile;
+
+    use dsq_core::Value;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_repl_new() {

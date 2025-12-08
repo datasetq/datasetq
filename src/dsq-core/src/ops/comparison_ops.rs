@@ -1,6 +1,7 @@
-use super::Operation;
 use crate::error::Result;
 use crate::Value;
+
+use super::Operation;
 
 pub struct EqOperation {
     pub left_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -8,6 +9,7 @@ pub struct EqOperation {
 }
 
 impl EqOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -45,6 +47,7 @@ pub struct NeOperation {
 }
 
 impl NeOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -82,6 +85,7 @@ pub struct LtOperation {
 }
 
 impl LtOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -120,6 +124,7 @@ pub struct LeOperation {
 }
 
 impl LeOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -158,6 +163,7 @@ pub struct GtOperation {
 }
 
 impl GtOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -196,6 +202,7 @@ pub struct GeOperation {
 }
 
 impl GeOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,

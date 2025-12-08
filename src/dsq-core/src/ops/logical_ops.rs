@@ -1,6 +1,7 @@
-use super::Operation;
 use crate::error::Result;
 use crate::Value;
+
+use super::Operation;
 
 pub struct AndOperation {
     pub left_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -8,6 +9,7 @@ pub struct AndOperation {
 }
 
 impl AndOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -69,6 +71,7 @@ pub struct OrOperation {
 }
 
 impl OrOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -129,6 +132,7 @@ pub struct NegationOperation {
 }
 
 impl NegationOperation {
+    #[must_use]
     pub fn new(expr_ops: Vec<Box<dyn Operation + Send + Sync>>) -> Self {
         Self { expr_ops }
     }

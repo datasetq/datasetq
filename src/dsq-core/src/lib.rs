@@ -189,7 +189,6 @@
     clippy::too_many_lines
 )]
 
-// Re-export shared types
 pub use dsq_shared::{BuildInfo, VERSION};
 
 // Re-export format types from dsq-formats
@@ -318,10 +317,11 @@ pub const BUILD_INFO: BuildInfo = BuildInfo {
 
 /// Utility functions for working with dsq
 pub mod utils {
-    use crate::{Error, Result, Value};
     use std::collections::HashMap;
 
-    /// Create a Value::Object from key-value pairs
+    use crate::{Error, Result, Value};
+
+    /// Create a `Value::Object` from key-value pairs
     ///
     /// # Examples
     ///
@@ -343,7 +343,7 @@ pub mod utils {
         Value::Object(map)
     }
 
-    /// Create a Value::Array from values
+    /// Create a `Value::Array` from values
     ///
     /// # Examples
     ///
@@ -364,7 +364,7 @@ pub mod utils {
         Value::Array(values.into_iter().collect())
     }
 
-    /// Try to extract a DataFrame from a Value
+    /// Try to extract a `DataFrame` from a Value
     ///
     /// # Examples
     ///
@@ -392,7 +392,7 @@ pub mod utils {
         }
     }
 
-    /// Try to convert any Value to a DataFrame
+    /// Try to convert any Value to a `DataFrame`
     ///
     /// # Examples
     ///
@@ -431,18 +431,19 @@ pub mod utils {
         match value.to_json() {
             Ok(json) => {
                 if let Ok(pretty) = serde_json::to_string_pretty(&json) {
-                    println!("{}", pretty);
+                    println!("{pretty}");
                 } else {
-                    println!("{}", value);
+                    println!("{value}");
                 }
             }
-            Err(_) => println!("{}", value),
+            Err(_) => println!("{value}"),
         }
     }
 
     /// Get basic statistics about a Value
     ///
     /// Returns information like type, length, memory usage estimates, etc.
+    #[must_use]
     pub fn value_stats(value: &Value) -> ValueStats {
         ValueStats::from_value(value)
     }
@@ -452,9 +453,9 @@ pub mod utils {
     pub struct ValueStats {
         /// Value type name
         pub type_name: String,
-        /// Length (for arrays, strings, DataFrames, etc.)
+        /// Length (for arrays, strings, `DataFrames`, etc.)
         pub length: Option<usize>,
-        /// Width (for DataFrames, objects)
+        /// Width (for `DataFrames`, objects)
         pub width: Option<usize>,
         /// Estimated memory usage in bytes
         pub estimated_size: Option<usize>,
@@ -497,15 +498,15 @@ pub mod utils {
             write!(f, "Type: {}", self.type_name)?;
 
             if let Some(length) = self.length {
-                write!(f, ", Length: {}", length)?;
+                write!(f, ", Length: {length}")?;
             }
 
             if let Some(width) = self.width {
-                write!(f, ", Width: {}", width)?;
+                write!(f, ", Width: {width}")?;
             }
 
             if let Some(size) = self.estimated_size {
-                write!(f, ", Size: ~{} bytes", size)?;
+                write!(f, ", Size: ~{size} bytes")?;
             }
 
             if self.is_empty {
@@ -519,13 +520,16 @@ pub mod utils {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    #[allow(unused_imports)]
-    use crate::utils::{array, extract_dataframe, object, to_dataframe, value_stats};
-    use polars::prelude::*;
     use std::collections::HashMap;
     #[allow(unused_imports)]
     use std::path::Path;
+
+    use polars::prelude::*;
+
+    #[allow(unused_imports)]
+    use crate::utils::{array, extract_dataframe, object, to_dataframe, value_stats};
+
+    use super::*;
 
     #[test]
     fn test_version_info() {
@@ -750,13 +754,16 @@ mod tests {
 
     #[cfg(feature = "filter")]
     mod filter_tests {
-        use super::*;
-        use crate::filter;
-        use crate::utils::{array, object};
-        use polars::prelude::*;
         use std::fs;
         use std::io::Write;
+
+        use polars::prelude::*;
         use tempfile::NamedTempFile;
+
+        use crate::filter;
+        use crate::utils::{array, object};
+
+        use super::*;
 
         fn create_mock_data() -> Value {
             // Create mock data similar to the example datasets

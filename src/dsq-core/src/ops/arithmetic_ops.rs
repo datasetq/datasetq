@@ -1,6 +1,7 @@
-use super::Operation;
 use crate::error::Result;
 use crate::Value;
+
+use super::Operation;
 
 /// Binary operations
 pub struct AddOperation {
@@ -9,6 +10,7 @@ pub struct AddOperation {
 }
 
 impl AddOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -46,6 +48,7 @@ pub struct SubOperation {
 }
 
 impl SubOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -83,6 +86,7 @@ pub struct MulOperation {
 }
 
 impl MulOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,
@@ -120,6 +124,7 @@ pub struct DivOperation {
 }
 
 impl DivOperation {
+    #[must_use]
     pub fn new(
         left_ops: Vec<Box<dyn Operation + Send + Sync>>,
         right_ops: Vec<Box<dyn Operation + Send + Sync>>,

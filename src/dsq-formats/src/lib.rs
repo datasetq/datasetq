@@ -187,9 +187,9 @@ pub use json::{
 
 #[cfg(feature = "json5")]
 pub use json5::{
-    detect_json5_format, read_json5_file, read_json5_file_with_options, read_json5l_file,
-    write_json5_file, write_json5_file_with_options, write_json5l_file, Json5ReadOptions,
-    Json5Reader, Json5WriteOptions, Json5Writer,
+    read_json5_file, read_json5_file_with_options, read_json5l_file, write_json5_file,
+    write_json5_file_with_options, write_json5l_file, Json5ReadOptions, Json5Reader,
+    Json5WriteOptions, Json5Writer,
 };
 
 #[cfg(feature = "parquet")]
