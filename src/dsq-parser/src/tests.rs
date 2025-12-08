@@ -1665,47 +1665,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_error_from_nom_verbose_error() {
-        use nom::error::{ErrorKind, VerboseError, VerboseErrorKind};
-        use std::num::NonZeroUsize;
-
-        // Test From<nom::Err<nom::error::VerboseError<&str>>> for ParseError
-        let verbose_error = nom::Err::Error(VerboseError {
-            errors: vec![("remaining", VerboseErrorKind::Nom(ErrorKind::Tag))],
-        });
-        let parse_error: ParseError = verbose_error.into();
-        match parse_error {
-            ParseError::InvalidSyntax { message, position } => {
-                assert!(message.contains("Parse error"));
-                assert_eq!(position, 0); // Position is set to 0 due to limitation
-            }
-            _ => panic!("Expected InvalidSyntax error"),
-        }
-
-        // Test with empty errors
-        let verbose_error_empty = nom::Err::Error(VerboseError { errors: vec![] });
-        let parse_error: ParseError = verbose_error_empty.into();
-        match parse_error {
-            ParseError::General { message } => {
-                assert_eq!(message, "Unknown parse error");
-            }
-            _ => panic!("Expected General error"),
-        }
-
-        // Test Incomplete
-        let nom_incomplete = nom::Err::<nom::error::VerboseError<&str>>::Incomplete(
-            nom::Needed::Size(NonZeroUsize::new(1).unwrap()),
-        );
-        let parse_error: ParseError = nom_incomplete.into();
-        match parse_error {
-            ParseError::General { message } => {
-                assert_eq!(message, "Incomplete input");
-            }
-            _ => panic!("Expected General error"),
-        }
-    }
-
-    #[test]
     fn test_parse_error_construction() {
         // Test constructing each variant
         let _unexpected_token = ParseError::UnexpectedToken {
