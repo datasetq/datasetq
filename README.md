@@ -212,6 +212,8 @@ dsq builds on excellent foundations from:
 
 Special thanks to **Ronald Duncan** for [defining the ASCII Delimited Text (ADT) format](https://ronaldduncan.wordpress.com/2009/10/31/text-file-formats-ascii-delimited-text-not-csv-or-tab-delimited-text/).
 
+Our GitHub Actions disk space cleanup script was inspired by the [Apache Flink project](https://github.com/apache/flink).
+
 ## License
 
 See LICENSE file for details.

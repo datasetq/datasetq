@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Free up disk space
+        run: bash .github/scripts/free_disk_space.sh
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
