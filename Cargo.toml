@@ -31,8 +31,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Data processing
-polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
-arrow = "53"
+polars = { version = "0.52", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+arrow = "54"
 
 # Parsing
 nom = "8.0"
@@ -61,7 +61,7 @@ rayon = "1.10"
 
 # Testing
 tempfile = "3.8"
-criterion = "0.5"
+criterion = "0.8"
 proptest = "1.4"
 pretty_assertions = "1.4"
 
@@ -92,7 +92,7 @@ serde_yaml = { version = "0.9", optional = true }
 toml = { version = "0.8", optional = true }
 
 # I/O and utilities
-apache-avro = { version = "0.16", features = ["snappy"], optional = true }
+apache-avro = { version = "0.21", features = ["snappy"], optional = true }
 atty = { version = "0.2", optional = true }
 chrono = { workspace = true }
 env_logger = { version = "0.10", optional = true }
@@ -122,11 +122,11 @@ serde_json = "1.0"
 getrandom = { version = "0.3.3", features = ["wasm_js"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"], optional = true }
+polars = { version = "0.52", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"], optional = true }
 getrandom = { version = "0.3.3", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { version = "0.35", default-features = false, features = ["csv", "json", "strings", "dtype-datetime", "dtype-date", "dtype-time"], optional = true }
+polars = { version = "0.52", default-features = false, features = ["csv", "json", "strings", "dtype-datetime", "dtype-date", "dtype-time"], optional = true }
 getrandom = { version = "0.2", features = ["js"] }
 zstd-sys = { version = "2.0.16", default-features = false }
 
@@ -134,7 +134,7 @@ zstd-sys = { version = "2.0.16", default-features = false }
 assert_cmd = "2.0"
 predicates = "3.0"
 tempfile = "3.8"
-criterion = "0.5"
+criterion = "0.8"
 coz = "0.1"
 dsq-formats = { path = "src/dsq-formats" }
 
