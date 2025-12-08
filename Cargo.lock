@@ -1127,7 +1127,7 @@ dependencies = [
  "futures",
  "indexmap",
  "itertools 0.12.1",
- "json5",
+ "json5 0.4.1",
  "log",
  "nom",
  "once_cell",
@@ -1177,7 +1177,7 @@ dependencies = [
  "criterion",
  "dsq-shared",
  "indexmap",
- "json5",
+ "json5 1.3.0",
  "log",
  "paste",
  "polars",
@@ -1905,6 +1905,16 @@ dependencies = [
  "pest",
  "pest_derive",
  "serde",
+]
+
+[[package]]
+name = "json5"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56c86c72f9e1d3fe29baa32cab8896548eef9aae271fce4e796d16b583fdf6d5"
+dependencies = [
+ "serde",
+ "ucd-trie",
 ]
 
 [[package]]
