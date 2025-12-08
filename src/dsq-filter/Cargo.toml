@@ -33,7 +33,7 @@ lru = "0.16"
 coz = { version = "0.1", optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+polars = { version = "0.52", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 dsq-functions = { path = "../dsq-functions", features = ["rand"] }
 rand = "0.9"
 

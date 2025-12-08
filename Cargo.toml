@@ -31,7 +31,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Data processing
-polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+polars = { version = "0.52", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 arrow = "53"
 
 # Parsing
