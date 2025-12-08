@@ -15,7 +15,7 @@ arrow = { workspace = true }
 chrono = { workspace = true }
 
 # Avro support
-apache-avro = { version = "0.16", features = ["snappy"] }
+apache-avro = { version = "0.21", features = ["snappy"] }
 
 # Serialization
 serde = { workspace = true }
