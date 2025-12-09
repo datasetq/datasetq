@@ -19,23 +19,23 @@ fn any_value_to_value(any_val: &AnyValue) -> Result<Value> {
     use serde_json::Value as JsonValue;
     let json_val = match any_val {
         AnyValue::Null => JsonValue::Null,
-        AnyValue::Boolean(b) => JsonValue::Bool(b),
-        AnyValue::Int8(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::Int16(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::Int32(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::Int64(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::UInt8(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::UInt16(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::UInt32(i) => JsonValue::Number(serde_json::Number::from(i)),
-        AnyValue::UInt64(i) => JsonValue::Number(serde_json::Number::from(i)),
+        AnyValue::Boolean(b) => JsonValue::Bool(*b),
+        AnyValue::Int8(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::Int16(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::Int32(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::Int64(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::UInt8(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::UInt16(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::UInt32(i) => JsonValue::Number(serde_json::Number::from(*i)),
+        AnyValue::UInt64(i) => JsonValue::Number(serde_json::Number::from(*i)),
         AnyValue::Float32(f) => JsonValue::Number(
-            serde_json::Number::from_f64(f64::from(f))
+            serde_json::Number::from_f64(f64::from(*f))
                 .ok_or_else(|| Error::operation("Invalid float"))?,
         ),
         AnyValue::Float64(f) => JsonValue::Number(
-            serde_json::Number::from_f64(f).ok_or_else(|| Error::operation("Invalid float"))?,
+            serde_json::Number::from_f64(*f).ok_or_else(|| Error::operation("Invalid float"))?,
         ),
-        AnyValue::String(s) => JsonValue::String(s.to_string()),
+        AnyValue::String(s) => JsonValue::String((*s).to_string()),
         _ => return Err(Error::operation("Unsupported AnyValue type")),
     };
     Ok(Value::from_json(json_val))
