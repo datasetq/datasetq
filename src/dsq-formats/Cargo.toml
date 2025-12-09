@@ -20,7 +20,6 @@ apache-avro = { version = "0.16", features = ["snappy"] }
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
-json5 = "1.3"
 
 # Error handling
 thiserror = { workspace = true }
@@ -61,6 +60,5 @@ csv = []
 json = []
 parquet = []
 avro = []
-json5 = []
 cli = ["dep:clap"]
 profiling = ["coz"]

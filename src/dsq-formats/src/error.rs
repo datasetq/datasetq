@@ -293,8 +293,7 @@ mod tests {
         let err = Error::Io(io_err);
         assert!(err.source().is_some());
 
-        let polars_err =
-            polars::error::PolarsError::from(io::Error::new(io::ErrorKind::Other, "test"));
+        let polars_err = polars::error::PolarsError::from(io::Error::other("test"));
         let err = Error::Polars(polars_err);
         assert!(err.source().is_some());
 

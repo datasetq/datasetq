@@ -91,7 +91,11 @@ mod tests {
 
     #[test]
     fn test_has_float() {
-        let result = builtin_has(&[Value::Float(3.14), Value::String("key".to_string())]).unwrap();
+        let result = builtin_has(&[
+            Value::Float(std::f64::consts::PI),
+            Value::String("key".to_string()),
+        ])
+        .unwrap();
         assert_eq!(result, Value::Bool(false));
     }
 

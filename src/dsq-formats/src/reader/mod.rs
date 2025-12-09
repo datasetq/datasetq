@@ -2,7 +2,6 @@
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -10,7 +9,6 @@ mod data_reader;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -18,7 +16,6 @@ mod dispatch;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -27,7 +24,6 @@ mod file_reader;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -35,7 +31,6 @@ pub mod json_utils;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -47,7 +42,6 @@ pub mod options;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -56,14 +50,11 @@ pub use data_reader::DataReader;
 pub use dispatch::deserialize_csv;
 #[cfg(feature = "json")]
 pub use dispatch::deserialize_json;
-#[cfg(feature = "json5")]
-pub use dispatch::deserialize_json5;
 #[cfg(feature = "parquet")]
 pub use dispatch::deserialize_parquet;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -71,7 +62,6 @@ pub use dispatch::{deserialize, deserialize_adt, from_csv, from_json};
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -79,7 +69,6 @@ pub use file_reader::FileReader;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -93,7 +82,6 @@ pub use crate::writer::CsvEncoding;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -105,7 +93,6 @@ pub fn from_path<P: AsRef<std::path::Path>>(path: P) -> crate::error::Result<Fil
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -120,7 +107,6 @@ pub fn from_path_with_format<P: AsRef<std::path::Path>>(
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]

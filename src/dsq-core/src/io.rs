@@ -12,8 +12,6 @@ use polars::prelude::*;
 
 use crate::error::{Error, Result};
 use crate::Value;
-#[cfg(feature = "json5")]
-use dsq_formats::deserialize_json5;
 use dsq_formats::format::detect_format_from_content;
 use dsq_formats::{
     deserialize_adt, deserialize_csv, deserialize_json, deserialize_parquet, serialize_adt,
@@ -108,7 +106,6 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             "adt" => DataFormat::Adt,
             "json" => DataFormat::Json,
             "jsonl" | "ndjson" => DataFormat::JsonLines,
-            "json5" => DataFormat::Json5,
             "parquet" => DataFormat::Parquet,
             _ => {
                 return Err(Error::operation(format!(
@@ -145,16 +142,6 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             &format_read_options,
             &format_options,
         )?),
-        #[cfg(feature = "json5")]
-        DataFormat::Json5 => Ok(deserialize_json5(
-            cursor,
-            &format_read_options,
-            &format_options,
-        )?),
-        #[cfg(not(feature = "json5"))]
-        DataFormat::Json5 => Err(Error::operation(
-            "JSON5 support not enabled. Rebuild with 'json5' feature.",
-        )),
         DataFormat::Parquet => Ok(deserialize_parquet(
             cursor,
             &format_read_options,
@@ -244,10 +231,6 @@ pub async fn write_file<P: AsRef<Path>>(
         }
         DataFormat::Adt => {
             serialize_adt(&mut buffer, value, &format_write_options, &format_options)?;
-        }
-        DataFormat::Json | DataFormat::Json5 => {
-            serialize_json(&mut buffer, value, &format_write_options, &format_options)?;
-            // JSON5 not implemented, use JSON
         }
         DataFormat::Parquet => {
             serialize_parquet(&mut buffer, value, &format_write_options, &format_options)?;
@@ -865,7 +848,7 @@ mod tests {
             ),
         ];
 
-        for (format_name, data) in test_data.iter() {
+        for (format_name, data) in &test_data {
             let input_path = temp_dir.path().join(format!("input.{}", format_name));
             fs::write(&input_path, data).unwrap();
 
@@ -888,8 +871,8 @@ mod tests {
             let read_back_result = read_file_sync(&output_path, &read_options).unwrap();
             match read_back_result {
                 Value::DataFrame(df) => {
-                    assert_eq!(df.height(), 3, "Wrong row count for {}", format_name);
-                    assert_eq!(df.width(), 3, "Wrong column count for {}", format_name);
+                    assert_eq!(df.height(), 3, "Wrong row count for {format_name}");
+                    assert_eq!(df.width(), 3, "Wrong column count for {format_name}");
                     assert!(
                         df.get_column_names()
                             .contains(&&polars::datatypes::PlSmallStr::from("name")),
@@ -1008,7 +991,7 @@ mod tests {
 
         // Read the file content and verify it's valid NDJSON
         let content = std::fs::read_to_string(&jsonl_path).unwrap();
-        let lines: Vec<&str> = content.trim().split('\n').collect();
+        let lines: Vec<&str> = content.trim().lines().collect();
         assert_eq!(lines.len(), 2);
 
         for line in lines {
@@ -1034,8 +1017,7 @@ mod tests {
         let write_result = write_file_sync(&empty_value, &ndjson_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write empty NDJSON: {:?}",
-            write_result
+            "Failed to write empty NDJSON: {write_result:?}",
         );
 
         let content = std::fs::read_to_string(&ndjson_path).unwrap();
@@ -1099,28 +1081,6 @@ mod tests {
                     .contains(&&polars::datatypes::PlSmallStr::from("age")));
             }
             _ => panic!("Expected DataFrame"),
-        }
-    }
-
-    #[test]
-    #[ignore = "JSON5 format detection not working without extension hint"]
-    fn test_read_json5() {
-        // JSON5 is currently stubbed to read as JSON
-        let json5_data = r#"{"name": "Alice", "age": 30}"#;
-
-        let mut temp_file = NamedTempFile::new().unwrap();
-        temp_file.write_all(json5_data.as_bytes()).unwrap();
-        let path = temp_file.path();
-
-        let options = ReadOptions::default();
-        let result = read_file_sync(path, &options).unwrap();
-
-        match result {
-            Value::Object(obj) => {
-                assert_eq!(obj.get("name"), Some(&Value::String("Alice".to_string())));
-                assert_eq!(obj.get("age"), Some(&Value::Int(30)));
-            }
-            _ => panic!("Expected Object"),
         }
     }
 
@@ -1211,34 +1171,6 @@ mod tests {
             }
             _ => panic!("Expected DataFrame after reading JSON"),
         }
-    }
-
-    #[test]
-    #[ignore = "JSON5 format not fully supported"]
-    fn test_write_json5() {
-        // JSON5 is currently stubbed to write as JSON
-        let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice"]).into(),
-            Series::new("age".into(), vec![30i64]).into(),
-        ])
-        .unwrap();
-        let df_value = Value::DataFrame(df);
-
-        let temp_file = NamedTempFile::new().unwrap();
-        let json5_path = temp_file.path().with_extension("json5");
-
-        let write_options = WriteOptions::default();
-        let write_result = write_file_sync(&df_value, &json5_path, &write_options);
-        assert!(
-            write_result.is_ok(),
-            "Failed to write JSON5: {:?}",
-            write_result
-        );
-
-        // Should be readable as JSON
-        let content = std::fs::read_to_string(&json5_path).unwrap();
-        let json_val: serde_json::Value = serde_json::from_str(&content).unwrap();
-        assert!(json_val.is_array());
     }
 
     #[test]

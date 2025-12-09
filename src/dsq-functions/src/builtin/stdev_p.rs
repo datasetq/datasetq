@@ -74,9 +74,9 @@ mod tests {
             Value::Int(5),
         ];
         let result = builtin_stdev_p(&[Value::Array(arr)]).unwrap();
-        // Population standard deviation of [1,2,3,4,5] is sqrt(2) ≈ 1.414213562
+        // Population standard deviation of [1,2,3,4,5] is sqrt(2)
         match result {
-            Value::Float(val) => assert!((val - 1.414213562).abs() < 1e-6),
+            Value::Float(val) => assert!((val - std::f64::consts::SQRT_2).abs() < 1e-6),
             _ => panic!("Expected Float"),
         }
 

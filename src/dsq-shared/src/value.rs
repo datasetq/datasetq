@@ -10,9 +10,6 @@ use serde::ser::{SerializeMap, SerializeSeq};
 use serde_json::{Number as JsonNumber, Value as JsonValue};
 use std::collections::HashMap;
 
-#[cfg(not(target_arch = "wasm32"))]
-#[allow(unused_imports)]
-use polars::prelude::*;
 use rayon::prelude::*;
 
 /// A value type that bridges between jaq's JSON values and Polars `DataFrames`
@@ -990,7 +987,10 @@ mod tests {
             Value::bigint(BigInt::from(123456789012345678901234567890i128)),
             Value::BigInt(BigInt::from(123456789012345678901234567890i128))
         );
-        assert_eq!(Value::float(3.14), Value::Float(3.14));
+        assert_eq!(
+            Value::float(std::f64::consts::PI),
+            Value::Float(std::f64::consts::PI)
+        );
         assert_eq!(Value::float(-2.5), Value::Float(-2.5));
         assert_eq!(Value::string("hello"), Value::String("hello".to_string()));
         assert_eq!(Value::string(""), Value::String("".to_string()));
@@ -1103,9 +1103,12 @@ mod tests {
         assert_eq!(Value::from_json(json), Value::int(42));
 
         // Float
-        let json = Value::float(3.14).to_json().unwrap();
-        assert_eq!(json, JsonValue::Number(JsonNumber::from_f64(3.14).unwrap()));
-        assert_eq!(Value::from_json(json), Value::float(3.14));
+        let json = Value::float(std::f64::consts::PI).to_json().unwrap();
+        assert_eq!(
+            json,
+            JsonValue::Number(JsonNumber::from_f64(std::f64::consts::PI).unwrap())
+        );
+        assert_eq!(Value::from_json(json), Value::float(std::f64::consts::PI));
 
         // String
         let json = Value::string("hello").to_json().unwrap();
@@ -1358,7 +1361,7 @@ mod tests {
         assert_eq!(Value::Bool(true).type_name(), "boolean");
         assert_eq!(Value::Int(42).type_name(), "integer");
         assert_eq!(Value::BigInt(BigInt::from(42)).type_name(), "biginteger");
-        assert_eq!(Value::Float(3.14).type_name(), "float");
+        assert_eq!(Value::Float(std::f64::consts::PI).type_name(), "float");
         assert_eq!(Value::String("test".to_string()).type_name(), "string");
         assert_eq!(Value::Array(vec![]).type_name(), "array");
         assert_eq!(Value::Object(HashMap::new()).type_name(), "object");
@@ -1368,7 +1371,10 @@ mod tests {
     fn test_equality() {
         // Same types
         assert_eq!(Value::int(42), Value::int(42));
-        assert_eq!(Value::float(3.14), Value::float(3.14));
+        assert_eq!(
+            Value::float(std::f64::consts::PI),
+            Value::float(std::f64::consts::PI)
+        );
         assert_eq!(
             Value::bigint(BigInt::from(42)),
             Value::bigint(BigInt::from(42))
@@ -1453,6 +1459,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::approx_constant)]
     fn test_display() {
         assert_eq!(format!("{}", Value::Null), "null");
         assert_eq!(format!("{}", Value::bool(true)), "true");
@@ -1533,6 +1540,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::approx_constant)]
     fn test_value_from_any_value() {
         use polars::datatypes::AnyValue;
 

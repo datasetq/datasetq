@@ -420,8 +420,10 @@ mod tests {
         assert!(result.is_err());
 
         // Test with ignore error mode
-        let mut config = ExecutorConfig::default();
-        config.error_mode = ErrorMode::Ignore;
+        let config = ExecutorConfig {
+            error_mode: ErrorMode::Ignore,
+            ..Default::default()
+        };
         executor.set_config(config);
 
         let input = Value::int(42);
@@ -486,8 +488,10 @@ mod tests {
 
     #[test]
     fn test_stats_collection() {
-        let mut config = ExecutorConfig::default();
-        config.collect_stats = true;
+        let config = ExecutorConfig {
+            collect_stats: true,
+            ..Default::default()
+        };
         let mut executor = FilterExecutor::with_config(config);
 
         let input = Value::int(42);
@@ -542,8 +546,10 @@ mod tests {
         let config = executor.get_config();
         assert_eq!(config.timeout_ms, None);
 
-        let mut new_config = ExecutorConfig::default();
-        new_config.timeout_ms = Some(1000);
+        let new_config = ExecutorConfig {
+            timeout_ms: Some(1000),
+            ..Default::default()
+        };
         executor.set_config(new_config);
 
         let config = executor.get_config();
@@ -553,8 +559,10 @@ mod tests {
     #[test]
     fn test_error_collect_mode() {
         let mut executor = FilterExecutor::new();
-        let mut config = ExecutorConfig::default();
-        config.error_mode = ErrorMode::Collect;
+        let config = ExecutorConfig {
+            error_mode: ErrorMode::Collect,
+            ..Default::default()
+        };
         executor.set_config(config);
 
         let input = Value::int(42);
@@ -567,8 +575,10 @@ mod tests {
     #[test]
     fn test_timeout_configuration() {
         let mut executor = FilterExecutor::new();
-        let mut config = ExecutorConfig::default();
-        config.timeout_ms = Some(1000); // 1 second timeout
+        let config = ExecutorConfig {
+            timeout_ms: Some(1000),
+            ..Default::default()
+        };
         executor.set_config(config);
 
         let input = Value::int(42);

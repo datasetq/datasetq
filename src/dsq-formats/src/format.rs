@@ -30,8 +30,6 @@ pub enum DataFormat {
     /// Compact JSON (no pretty printing)
     #[cfg_attr(feature = "cli", value(name = "jsonc", alias = "json-compact"))]
     JsonCompact,
-    /// JSON5 format (JSON with comments and relaxed syntax)
-    Json5,
     /// Microsoft Excel format (output only)
     Excel,
     /// Apache ORC columnar format (output only)
@@ -60,7 +58,6 @@ impl DataFormat {
             "arrow" => Ok(Self::Arrow),
             "json" => Ok(Self::Json),
             "jsonc" => Ok(Self::JsonCompact),
-            "json5" => Ok(Self::Json5),
             "xlsx" => Ok(Self::Excel),
             "orc" => Ok(Self::Orc),
             _ => Err(Error::Format(FormatError::Unknown(ext.to_string()))),
@@ -79,7 +76,6 @@ impl DataFormat {
             "arrow" => Ok(Self::Arrow),
             "json" => Ok(Self::Json),
             "jsonc" | "json-compact" => Ok(Self::JsonCompact),
-            "json5" => Ok(Self::Json5),
             "excel" | "xlsx" => Ok(Self::Excel),
             "orc" => Ok(Self::Orc),
             _ => Err(Error::Format(FormatError::Unknown(s.to_string()))),
@@ -98,7 +94,6 @@ impl DataFormat {
             Self::Arrow => "arrow",
             Self::Json => "json",
             Self::JsonCompact => "jsonc",
-            Self::Json5 => "json5",
             Self::Excel => "xlsx",
             Self::Orc => "orc",
         }
@@ -115,8 +110,7 @@ impl DataFormat {
             | Self::JsonLines
             | Self::Arrow
             | Self::Json
-            | Self::JsonCompact
-            | Self::Json5 => true,
+            | Self::JsonCompact => true,
             Self::Excel | Self::Orc => false,
         }
     }
@@ -135,7 +129,6 @@ impl DataFormat {
             | Self::Arrow
             | Self::Json
             | Self::JsonCompact
-            | Self::Json5
             | Self::Excel
             | Self::Orc => false,
         }
@@ -150,7 +143,6 @@ impl DataFormat {
             | Self::Arrow
             | Self::Json
             | Self::JsonCompact
-            | Self::Json5
             | Self::Excel
             | Self::Orc => false,
         }
@@ -168,7 +160,6 @@ impl DataFormat {
             Self::Arrow => "Arrow",
             Self::Json => "JSON",
             Self::JsonCompact => "JSON Compact",
-            Self::Json5 => "JSON5",
             Self::Excel => "Excel",
             Self::Orc => "ORC",
         }
@@ -238,9 +229,6 @@ pub fn detect_format_from_content(bytes: &[u8]) -> Option<DataFormat> {
     if let Ok(text) = std::str::from_utf8(bytes) {
         // Try to detect JSON formats first
         if serde_json::from_str::<serde_json::Value>(&text).is_ok() {
-            if text.contains("//") || text.contains("/*") {
-                return Some(DataFormat::Json5);
-            }
             return Some(DataFormat::Json);
         }
 
@@ -327,10 +315,6 @@ mod tests {
             DataFormat::JsonCompact
         );
         assert_eq!(
-            DataFormat::from_extension("json5").unwrap(),
-            DataFormat::Json5
-        );
-        assert_eq!(
             DataFormat::from_extension("xlsx").unwrap(),
             DataFormat::Excel
         );
@@ -374,7 +358,6 @@ mod tests {
             DataFormat::from_str("json-compact").unwrap(),
             DataFormat::JsonCompact
         );
-        assert_eq!(DataFormat::from_str("json5").unwrap(), DataFormat::Json5);
         assert_eq!(DataFormat::from_str("excel").unwrap(), DataFormat::Excel);
         assert_eq!(DataFormat::from_str("xlsx").unwrap(), DataFormat::Excel);
         assert_eq!(DataFormat::from_str("orc").unwrap(), DataFormat::Orc);
@@ -393,7 +376,6 @@ mod tests {
         assert!(DataFormat::Arrow.supports_reading());
         assert!(DataFormat::Json.supports_reading());
         assert!(DataFormat::JsonCompact.supports_reading());
-        assert!(DataFormat::Json5.supports_reading());
         assert!(!DataFormat::Excel.supports_reading());
         assert!(!DataFormat::Orc.supports_reading());
 
@@ -407,7 +389,6 @@ mod tests {
         assert!(DataFormat::Arrow.supports_writing());
         assert!(DataFormat::Json.supports_writing());
         assert!(DataFormat::JsonCompact.supports_writing());
-        assert!(DataFormat::Json5.supports_writing());
         assert!(DataFormat::Excel.supports_writing());
         assert!(DataFormat::Orc.supports_writing());
 
@@ -421,7 +402,6 @@ mod tests {
         assert!(!DataFormat::Arrow.supports_lazy_reading());
         assert!(!DataFormat::Json.supports_lazy_reading());
         assert!(!DataFormat::JsonCompact.supports_lazy_reading());
-        assert!(!DataFormat::Json5.supports_lazy_reading());
         assert!(!DataFormat::Excel.supports_lazy_reading());
         assert!(!DataFormat::Orc.supports_lazy_reading());
 
@@ -435,7 +415,6 @@ mod tests {
         assert!(!DataFormat::Arrow.supports_streaming());
         assert!(!DataFormat::Json.supports_streaming());
         assert!(!DataFormat::JsonCompact.supports_streaming());
-        assert!(!DataFormat::Json5.supports_streaming());
         assert!(!DataFormat::Excel.supports_streaming());
         assert!(!DataFormat::Orc.supports_streaming());
     }
@@ -527,7 +506,6 @@ mod tests {
         assert_eq!(DataFormat::Arrow.default_extension(), "arrow");
         assert_eq!(DataFormat::Json.default_extension(), "json");
         assert_eq!(DataFormat::JsonCompact.default_extension(), "jsonc");
-        assert_eq!(DataFormat::Json5.default_extension(), "json5");
         assert_eq!(DataFormat::Excel.default_extension(), "xlsx");
         assert_eq!(DataFormat::Orc.default_extension(), "orc");
     }
@@ -543,7 +521,6 @@ mod tests {
         assert_eq!(DataFormat::Arrow.display_name(), "Arrow");
         assert_eq!(DataFormat::Json.display_name(), "JSON");
         assert_eq!(DataFormat::JsonCompact.display_name(), "JSON Compact");
-        assert_eq!(DataFormat::Json5.display_name(), "JSON5");
         assert_eq!(DataFormat::Excel.display_name(), "Excel");
         assert_eq!(DataFormat::Orc.display_name(), "ORC");
     }

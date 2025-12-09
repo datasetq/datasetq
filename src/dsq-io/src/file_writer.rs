@@ -88,10 +88,6 @@ impl FileWriter {
                 lines: true,
                 pretty: false,
             },
-            DataFormat::Json5 => FormatWriteOptions::Json5 {
-                lines: false,
-                pretty: false,
-            },
             DataFormat::Parquet => FormatWriteOptions::Parquet {
                 compression: ParquetCompression::Snappy,
             },

@@ -15,7 +15,6 @@ pub struct ReadOptions {
     #[cfg(any(
         feature = "csv",
         feature = "json",
-        feature = "json5",
         feature = "parquet",
         feature = "avro"
     ))]
@@ -38,7 +37,6 @@ impl Default for ReadOptions {
             #[cfg(any(
                 feature = "csv",
                 feature = "json",
-                feature = "json5",
                 feature = "parquet",
                 feature = "avro"
             ))]
@@ -79,13 +77,6 @@ pub enum FormatReadOptions {
     },
     /// JSON format options
     Json {
-        /// Whether to read lines
-        lines: bool,
-        /// Whether to ignore errors
-        ignore_errors: bool,
-    },
-    /// JSON5 format options
-    Json5 {
         /// Whether to read lines
         lines: bool,
         /// Whether to ignore errors

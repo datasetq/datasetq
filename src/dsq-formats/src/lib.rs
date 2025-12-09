@@ -93,8 +93,6 @@ pub mod adt;
 pub mod csv;
 /// JSON format reading and writing
 pub mod json;
-/// JSON5 format reading and writing
-pub mod json5;
 /// Parquet format reading and writing
 pub mod parquet;
 
@@ -110,7 +108,6 @@ pub use format::{detect_format_from_content, DataFormat, FormatOptions};
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -121,7 +118,6 @@ pub use reader::{FormatReadOptions, ReadOptions};
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -139,12 +135,9 @@ pub use writer::ParquetCompression;
 pub use reader::deserialize_csv;
 #[cfg(feature = "json")]
 pub use reader::deserialize_json;
-#[cfg(feature = "json5")]
-pub use reader::deserialize_json5;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -157,12 +150,9 @@ pub use reader::deserialize_parquet;
 pub use writer::serialize_csv;
 #[cfg(feature = "json")]
 pub use writer::serialize_json;
-#[cfg(all(feature = "json5", feature = "json"))]
-pub use writer::serialize_json5;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -186,13 +176,6 @@ pub use json::{
     JsonWriteOptions, JsonWriter,
 };
 
-#[cfg(feature = "json5")]
-pub use json5::{
-    read_json5_file, read_json5_file_with_options, read_json5l_file, write_json5_file,
-    write_json5_file_with_options, write_json5l_file, Json5ReadOptions, Json5Reader,
-    Json5WriteOptions, Json5Writer,
-};
-
 #[cfg(feature = "parquet")]
 pub use parquet::{
     detect_parquet_format, read_parquet_file, read_parquet_file_lazy,
@@ -204,7 +187,6 @@ pub use parquet::{
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -268,12 +250,6 @@ mod tests {
             let _json_write_options: JsonWriteOptions = JsonWriteOptions::default();
         }
 
-        #[cfg(feature = "json5")]
-        {
-            let _json5_options: Json5ReadOptions = Json5ReadOptions::default();
-            let _json5_write_options: Json5WriteOptions = Json5WriteOptions::default();
-        }
-
         #[cfg(feature = "parquet")]
         {
             let _parquet_options: ParquetReadOptions = ParquetReadOptions::default();
@@ -293,7 +269,6 @@ mod tests {
     #[cfg(any(
         feature = "csv",
         feature = "json",
-        feature = "json5",
         feature = "parquet",
         feature = "avro"
     ))]

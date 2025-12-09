@@ -257,13 +257,14 @@ impl Dsq {
     /// Apply a jq-style filter expression
     #[cfg(feature = "filter")]
     pub fn apply_filter(mut self, filter: &str) -> Result<Self> {
-        let mut config = ExecutorConfig::default();
-        config.collect_stats = self.options.collect_stats;
-        // Map error mode
-        config.error_mode = match self.options.error_mode {
-            ErrorMode::Strict => FilterErrorMode::Strict,
-            ErrorMode::Collect => FilterErrorMode::Collect,
-            ErrorMode::Ignore => FilterErrorMode::Ignore,
+        let config = ExecutorConfig {
+            collect_stats: self.options.collect_stats,
+            error_mode: match self.options.error_mode {
+                ErrorMode::Strict => FilterErrorMode::Strict,
+                ErrorMode::Collect => FilterErrorMode::Collect,
+                ErrorMode::Ignore => FilterErrorMode::Ignore,
+            },
+            ..Default::default()
         };
 
         let mut executor = FilterExecutor::new();

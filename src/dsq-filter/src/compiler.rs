@@ -321,7 +321,7 @@ impl std::fmt::Debug for FunctionBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FunctionBody::Compiled(ops) => write!(f, "Compiled({} operations)", ops.len()),
-            FunctionBody::Ast(ast) => write!(f, "Ast({})", ast),
+            FunctionBody::Ast(ast) => write!(f, "Ast({ast})"),
             FunctionBody::Builtin(_) => write!(f, "Builtin"),
         }
     }
@@ -460,8 +460,7 @@ impl FilterContext {
             self.builtins.call_function(name, args)
         } else {
             Err(dsq_shared::error::operation_error(format!(
-                "function '{}'",
-                name
+                "function '{name}'"
             )))
         }
     }
@@ -615,7 +614,7 @@ impl FilterCompiler {
         let parser = FilterParser::new();
         let parsed = parser
             .parse(filter)
-            .map_err(|e| dsq_shared::error::operation_error(format!("{}", e)))?;
+            .map_err(|e| dsq_shared::error::operation_error(format!("{e}")))?;
 
         // Create compilation context with built-in functions
         let mut ctx = CompilationContext::new();
@@ -1880,8 +1879,7 @@ impl Operation for FunctionCallOperation {
                         for i in 0..series.len() {
                             let any_val = series.get(i).map_err(|e| {
                                 dsq_shared::error::operation_error(format!(
-                                    "Failed to get value: {}",
-                                    e
+                                    "Failed to get value: {e}"
                                 ))
                             })?;
                             let val = value_from_any_value(any_val)?;
@@ -1937,14 +1935,12 @@ impl Operation for FunctionCallOperation {
                             for col_name in df.get_column_names() {
                                 let series = df.column(col_name).map_err(|e| {
                                     dsq_shared::error::operation_error(format!(
-                                        "Failed to get column: {}",
-                                        e
+                                        "Failed to get column: {e}"
                                     ))
                                 })?;
                                 let any_val = series.get(i).map_err(|e| {
                                     dsq_shared::error::operation_error(format!(
-                                        "Failed to get value: {}",
-                                        e
+                                        "Failed to get value: {e}"
                                     ))
                                 })?;
                                 let val = value_from_any_value(any_val).unwrap_or(Value::Null);
@@ -2834,7 +2830,7 @@ mod tests {
         let mut ctx = FilterContext::new();
 
         // Test Context trait methods
-        let value = Value::Float(3.14);
+        let value = Value::Float(std::f64::consts::PI);
         ctx.set_variable("pi", value.clone());
 
         // Test get_variable through trait

@@ -3,7 +3,6 @@ use dsq_shared::value::Value;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -24,7 +23,6 @@ pub struct WriteOptions {
     #[cfg(any(
         feature = "csv",
         feature = "json",
-        feature = "json5",
         feature = "parquet",
         feature = "avro"
     ))]
@@ -42,7 +40,6 @@ impl Default for WriteOptions {
             #[cfg(any(
                 feature = "csv",
                 feature = "json",
-                feature = "json5",
                 feature = "parquet",
                 feature = "avro"
             ))]
@@ -101,13 +98,6 @@ pub enum FormatWriteOptions {
     },
     /// JSON format options
     Json {
-        /// Whether to write lines
-        lines: bool,
-        /// Whether to pretty print
-        pretty: bool,
-    },
-    /// JSON5 format options
-    Json5 {
         /// Whether to write lines
         lines: bool,
         /// Whether to pretty print
@@ -241,65 +231,6 @@ pub fn serialize_json<W: Write>(
     crate::json::serialize_json(writer, value, options, format_options)
 }
 
-/// Serialize JSON5 data to a writer
-#[cfg(all(feature = "json5", feature = "json"))]
-pub fn serialize_json5<W: Write>(
-    mut writer: W,
-    value: &Value,
-    _options: &WriteOptions,
-    format_options: &FormatWriteOptions,
-) -> Result<()> {
-    use crate::json::row_to_json_value;
-
-    let df = match value {
-        Value::DataFrame(df) => df.clone(),
-        Value::LazyFrame(lf) => (*lf).clone().collect().map_err(Error::from)?,
-        _ => {
-            return Err(Error::operation(
-                "Expected DataFrame for JSON5 serialization",
-            ));
-        }
-    };
-
-    let json5_opts = match format_options {
-        FormatWriteOptions::Json5 { lines, pretty } => (*lines, *pretty),
-        _ => (false, false),
-    };
-
-    let column_names = df
-        .get_column_names()
-        .iter()
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>();
-    if json5_opts.0 {
-        // JSON5 Lines
-        for i in 0..df.height() {
-            let row = df.get_row(i).map_err(Error::from)?;
-            let json_value = row_to_json_value(&row.0, &column_names);
-            let json5_str = json5::to_string(&json_value)
-                .map_err(|e| Error::Format(FormatError::SerializationError(e.to_string())))?;
-            writer
-                .write_all(json5_str.as_bytes())
-                .map_err(Error::from)?;
-            writer.write_all(b"\n").map_err(Error::from)?;
-        }
-    } else {
-        // Regular JSON5 array
-        let mut rows = Vec::new();
-        for i in 0..df.height() {
-            let row = df.get_row(i).map_err(Error::from)?;
-            rows.push(row_to_json_value(&row.0, &column_names));
-        }
-        let json5_str = json5::to_string(&rows)
-            .map_err(|e| Error::Format(FormatError::SerializationError(e.to_string())))?;
-        writer
-            .write_all(json5_str.as_bytes())
-            .map_err(Error::from)?;
-    }
-
-    Ok(())
-}
-
 /// Serialize Parquet data to a writer
 #[cfg(feature = "parquet")]
 pub fn serialize_parquet<W: Write>(
@@ -345,7 +276,6 @@ pub fn serialize_parquet<W: Write>(
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -362,7 +292,6 @@ pub fn serialize_adt<W: Write>(
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -437,12 +366,6 @@ pub fn serialize<W: Write>(
         DataFormat::Json | DataFormat::JsonLines => Err(Error::Format(
             FormatError::UnsupportedFeature("JSON not supported in this build".to_string()),
         )),
-        #[cfg(all(feature = "json5", feature = "json"))]
-        DataFormat::Json5 => serialize_json5(writer, value, options, format_options),
-        #[cfg(not(all(feature = "json5", feature = "json")))]
-        DataFormat::Json5 => Err(Error::Format(FormatError::UnsupportedFeature(
-            "JSON5 not supported in this build".to_string(),
-        ))),
         #[cfg(feature = "parquet")]
         DataFormat::Parquet => serialize_parquet(writer, value, options, format_options),
         #[cfg(not(feature = "parquet"))]
@@ -472,7 +395,6 @@ pub use crate::format::DataFormat;
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -487,7 +409,6 @@ pub trait DataWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -500,7 +421,6 @@ pub struct FileWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -563,10 +483,6 @@ impl FileWriter {
                 lines: true,
                 pretty: false,
             },
-            DataFormat::Json5 => FormatWriteOptions::Json5 {
-                lines: false,
-                pretty: false,
-            },
             #[cfg(feature = "parquet")]
             DataFormat::Parquet => FormatWriteOptions::Parquet {
                 compression: ParquetCompression::Snappy,
@@ -607,7 +523,6 @@ impl FileWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -631,7 +546,6 @@ impl DataWriter for FileWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -644,7 +558,6 @@ pub struct MemoryWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -678,7 +591,6 @@ impl MemoryWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -698,7 +610,6 @@ impl DataWriter for MemoryWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -710,7 +621,6 @@ pub fn to_path<P: AsRef<std::path::Path>>(path: P) -> Result<FileWriter> {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -722,7 +632,6 @@ pub fn to_path_with_format<P: AsRef<std::path::Path>>(path: P, format: DataForma
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -734,7 +643,6 @@ pub fn to_memory(format: DataFormat) -> MemoryWriter {
 #[cfg(any(
     feature = "csv",
     feature = "json",
-    feature = "json5",
     feature = "parquet",
     feature = "avro"
 ))]
@@ -917,52 +825,6 @@ mod tests {
         let output = String::from_utf8(buffer).unwrap();
         assert!(output.contains("  \"name\": \"Alice\""));
         assert!(output.contains("  \"age\": 25"));
-    }
-
-    #[cfg(all(feature = "json5", feature = "json"))]
-    #[test]
-    fn test_serialize_json5() {
-        let df = create_test_dataframe();
-        let value = Value::DataFrame(df);
-        let options = WriteOptions::default();
-        let format_options = FormatWriteOptions::Json5 {
-            lines: false,
-            pretty: false,
-        };
-
-        let mut buffer = Vec::new();
-        let result = serialize_json5(Cursor::new(&mut buffer), &value, &options, &format_options);
-        assert!(result.is_ok());
-
-        let output = String::from_utf8(buffer).unwrap();
-        // Check that all expected key-value pairs are present (order may vary)
-        assert!(output.contains(r#""name":"Alice""#));
-        assert!(output.contains(r#""age":25"#));
-        assert!(output.contains(r#""active":true"#));
-    }
-
-    #[cfg(all(feature = "json5", feature = "json"))]
-    #[test]
-    fn test_serialize_json5_lines() {
-        let df = create_test_dataframe();
-        let value = Value::DataFrame(df);
-        let options = WriteOptions::default();
-        let format_options = FormatWriteOptions::Json5 {
-            lines: true,
-            pretty: false,
-        };
-
-        let mut buffer = Vec::new();
-        let result = serialize_json5(Cursor::new(&mut buffer), &value, &options, &format_options);
-        assert!(result.is_ok());
-
-        let output = String::from_utf8(buffer).unwrap();
-        let lines: Vec<&str> = output.lines().collect();
-        assert_eq!(lines.len(), 3);
-        // Check that each line contains the expected key-value pairs (order may vary)
-        assert!(lines[0].contains(r#""name":"Alice""#));
-        assert!(lines[0].contains(r#""age":25"#));
-        assert!(lines[0].contains(r#""active":true"#));
     }
 
     #[cfg(feature = "parquet")]

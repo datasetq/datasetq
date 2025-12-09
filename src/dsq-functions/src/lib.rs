@@ -899,7 +899,7 @@ mod tests {
         let result = registry
             .call_function("pow", &[Value::Float(2.0), Value::Float(0.5)])
             .unwrap();
-        assert_eq!(result, Value::Float(1.4142135623730951));
+        assert_eq!(result, Value::Float(std::f64::consts::SQRT_2));
     }
 
     #[test]
@@ -1648,8 +1648,8 @@ mod tests {
         assert_eq!(result, arr);
 
         // Test with float
-        let result = builtin_select(&[Value::Float(3.14)]).unwrap();
-        assert_eq!(result, Value::Float(3.14));
+        let result = builtin_select(&[Value::Float(std::f64::consts::PI)]).unwrap();
+        assert_eq!(result, Value::Float(std::f64::consts::PI));
 
         // Test with negative int
         let result = builtin_select(&[Value::Int(-1)]).unwrap();
@@ -3250,8 +3250,8 @@ mod tests {
         let result = registry.call_function("stdev_s", &[arr]).unwrap();
         match result {
             Value::Float(stdev) => {
-                // Only [1,3] should be considered, std is 1.414...
-                assert!((stdev - 1.414213562).abs() < 0.0001);
+                // Only [1,3] should be considered, std is sqrt(2)
+                assert!((stdev - std::f64::consts::SQRT_2).abs() < 0.0001);
             }
             _ => panic!("Expected float result"),
         }
@@ -3389,8 +3389,8 @@ mod tests {
         let result = registry.call_function("std", &[arr]).unwrap();
         match result {
             Value::Float(stdev) => {
-                // Only [1,3] should be considered, std is 1.414...
-                assert!((stdev - 1.414213562).abs() < 0.0001);
+                // Only [1,3] should be considered, std is sqrt(2)
+                assert!((stdev - std::f64::consts::SQRT_2).abs() < 0.0001);
             }
             _ => panic!("Expected float result"),
         }

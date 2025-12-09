@@ -534,7 +534,7 @@ mod tests {
     #[test]
     fn test_version_info() {
         assert!(!VERSION.is_empty());
-        println!("{}", BUILD_INFO);
+        println!("{BUILD_INFO}");
     }
 
     #[test]
@@ -695,8 +695,8 @@ mod tests {
         );
         assert_eq!(Value::int(42).to_json().unwrap(), serde_json::json!(42));
         assert_eq!(
-            Value::float(3.14).to_json().unwrap(),
-            serde_json::json!(3.14)
+            Value::float(std::f64::consts::PI).to_json().unwrap(),
+            serde_json::json!(std::f64::consts::PI)
         );
         assert_eq!(
             Value::string("hello").to_json().unwrap(),

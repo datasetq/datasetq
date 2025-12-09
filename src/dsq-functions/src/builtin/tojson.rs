@@ -46,9 +46,9 @@ mod tests {
 
     #[test]
     fn test_tojson_float() {
-        let input = Value::Float(3.14);
+        let input = Value::Float(std::f64::consts::PI);
         let result = builtin_tojson(&[input]).unwrap();
-        assert_eq!(result, Value::String("3.14".to_string()));
+        assert_eq!(result, Value::String("3.141592653589793".to_string()));
     }
 
     #[test]

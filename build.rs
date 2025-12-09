@@ -86,7 +86,7 @@ fn patch_stdlib_h(path: &PathBuf) {
         );
 
         if let Err(e) = fs::write(path, patched) {
-            eprintln!("Warning: Failed to patch zstd-sys wasm-shim: {}", e);
+            eprintln!("Warning: Failed to patch zstd-sys wasm-shim: {e}");
         }
     }
 }
@@ -119,7 +119,7 @@ fn capture_build_info() {
             if let Ok(rustc_version) = String::from_utf8(output.stdout) {
                 // Extract just version number
                 if let Some(version) = rustc_version.split_whitespace().nth(1) {
-                    println!("cargo:rustc-env=RUSTC_VERSION={}", version);
+                    println!("cargo:rustc-env=RUSTC_VERSION={version}");
                 }
             }
         }

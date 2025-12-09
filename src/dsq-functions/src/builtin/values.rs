@@ -100,7 +100,7 @@ mod tests {
         ];
 
         for value in test_cases {
-            let result = builtin_values(&[value.clone()]).unwrap();
+            let result = builtin_values(std::slice::from_ref(&value)).unwrap();
             if let Value::Array(arr) = result {
                 assert_eq!(arr.len(), 1);
                 assert_eq!(arr[0], value);

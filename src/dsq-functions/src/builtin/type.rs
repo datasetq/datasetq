@@ -33,7 +33,7 @@ mod tests {
 
     #[test]
     fn test_builtin_type_float() {
-        let result = builtin_type(&[Value::Float(3.14)]).unwrap();
+        let result = builtin_type(&[Value::Float(2.5)]).unwrap();
         assert_eq!(result, Value::String("float".to_string()));
     }
 

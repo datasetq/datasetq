@@ -76,8 +76,8 @@ mod tests {
 
     #[test]
     fn test_coalesce_with_float() {
-        let result = builtin_coalesce(&[Value::Null, Value::Float(3.14)]).unwrap();
-        assert_eq!(result, Value::Float(3.14));
+        let result = builtin_coalesce(&[Value::Null, Value::Float(std::f64::consts::PI)]).unwrap();
+        assert_eq!(result, Value::Float(std::f64::consts::PI));
     }
 
     #[test]

@@ -305,6 +305,5 @@ mod tests {
         assert!(constants::HIGH_THROUGHPUT_BATCH_SIZE > constants::DEFAULT_BATCH_SIZE);
         assert!(constants::CONTENT_SAMPLE_SIZE > 0);
         assert!(constants::DEFAULT_MEMORY_LIMIT > 0);
-        assert!(constants::MAX_MEMORY_FILE_SIZE > 0);
     }
 }

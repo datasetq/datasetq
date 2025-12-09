@@ -22,46 +22,6 @@ pub fn deserialize_json<R: Read>(
     crate::json::deserialize_json(reader, options, format_options)
 }
 
-/// Deserialize JSON5 data from a reader
-pub fn deserialize_json5<R: Read>(
-    mut reader: R,
-    options: &ReadOptions,
-    _format_options: &FormatReadOptions,
-) -> Result<Value> {
-    use polars::prelude::*;
-    use std::io::Cursor;
-
-    let mut json5_str = String::new();
-    reader.read_to_string(&mut json5_str).map_err(Error::from)?;
-
-    // Handle empty input
-    if json5_str.trim().is_empty() {
-        return Ok(Value::DataFrame(DataFrame::empty()));
-    }
-
-    // Parse JSON5 to standard JSON
-    let value: serde_json::Value = json5::from_str(&json5_str)
-        .map_err(|e| Error::Format(crate::error::FormatError::SerializationError(e.to_string())))?;
-
-    // Convert serde_json::Value to JSON string and use Polars' native reader
-    let json_str = serde_json::to_string(&value)
-        .map_err(|e| Error::Format(crate::error::FormatError::SerializationError(e.to_string())))?;
-
-    let cursor = Cursor::new(json_str.as_bytes());
-    let mut df = polars::io::json::JsonReader::new(cursor)
-        .finish()
-        .map_err(Error::from)?;
-
-    // Apply max_rows by slicing the DataFrame
-    if let Some(max_rows) = options.max_rows {
-        if df.height() > max_rows {
-            df = df.slice(0, max_rows);
-        }
-    }
-
-    Ok(Value::DataFrame(df))
-}
-
 /// Deserialize Parquet data from a reader
 #[cfg(feature = "parquet")]
 pub fn deserialize_parquet<R: Read + polars::io::mmap::MmapBytesReader + std::io::Seek>(
@@ -115,7 +75,6 @@ pub fn deserialize<R: Read + polars::io::mmap::MmapBytesReader>(
     match format {
         DataFormat::Csv => deserialize_csv(reader, options, format_options),
         DataFormat::Json => deserialize_json(reader, options, format_options),
-        DataFormat::Json5 => deserialize_json5(reader, options, format_options),
         #[cfg(feature = "parquet")]
         DataFormat::Parquet => deserialize_parquet(reader, options, format_options),
         #[cfg(not(feature = "parquet"))]

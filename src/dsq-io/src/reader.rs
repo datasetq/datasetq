@@ -63,10 +63,6 @@ pub enum FormatReadOptions {
         lines: bool,
         ignore_errors: bool,
     },
-    Json5 {
-        lines: bool,
-        ignore_errors: bool,
-    },
     Avro {
         columns: Option<Vec<String>>,
     },
@@ -289,28 +285,6 @@ impl FileReader {
         }
     }
 
-    /// Read JSON5 file
-    fn read_json5(&self, options: &ReadOptions) -> Result<Value> {
-        let json5_opts = match &self.format_options {
-            FormatReadOptions::Json5 {
-                lines,
-                ignore_errors,
-            } => (*lines, *ignore_errors),
-            _ => (false, false),
-        };
-
-        let file = File::open(&self.path)?;
-        let mut reader = BufReader::with_capacity(128 * 1024, file); // 128KB buffer
-
-        if json5_opts.0 {
-            // JSON5 Lines format
-            self.read_json5_lines(&mut reader, options, json5_opts.1)
-        } else {
-            // Regular JSON5 format
-            self.read_json5_regular(&mut reader, options)
-        }
-    }
-
     /// Read JSON Lines format
     fn read_json_lines<R: BufRead>(
         &self,
@@ -399,96 +373,7 @@ impl FileReader {
         }
     }
 
-    /// Read JSON5 Lines format
-    fn read_json5_lines<R: BufRead>(
-        &self,
-        reader: &mut R,
-        options: &ReadOptions,
-        ignore_errors: bool,
-    ) -> Result<Value> {
-        let mut rows = Vec::new();
-        let mut line = String::new();
-        let mut count = 0;
 
-        let max_rows = options.max_rows.unwrap_or(usize::MAX);
-        let skip_rows = options.skip_rows;
-        let mut skipped = 0;
-
-        loop {
-            line.clear();
-            let bytes_read = reader.read_line(&mut line)?;
-            if bytes_read == 0 {
-                break; // EOF
-            }
-
-            if skipped < skip_rows {
-                skipped += 1;
-                continue;
-            }
-
-            if count >= max_rows {
-                break;
-            }
-
-            let trimmed = line.trim();
-            if !trimmed.is_empty() {
-                match json5::from_str::<serde_json::Value>(trimmed) {
-                    Ok(json_val) => {
-                        rows.push(Value::from_json(json_val));
-                        count += 1;
-                    }
-                    Err(e) => {
-                        if !ignore_errors {
-                            return Err(Error::Format(format!(
-                                "Invalid JSON5 on line {}: {}",
-                                count + skip_rows + 1,
-                                e
-                            )));
-                        }
-                    }
-                }
-            }
-        }
-
-        let array_value = Value::Array(rows);
-        let df = array_value.to_dataframe()?;
-
-        if options.lazy {
-            Ok(Value::LazyFrame(Box::new(df.lazy())))
-        } else {
-            Ok(Value::DataFrame(df))
-        }
-    }
-
-    /// Read regular JSON5 format
-    fn read_json5_regular<R: Read>(&self, reader: &mut R, options: &ReadOptions) -> Result<Value> {
-        let mut content = String::new();
-        reader.read_to_string(&mut content).map_err(Error::from)?;
-        let json_val: serde_json::Value = json5::from_str(&content)
-            .map_err(|e| Error::Format(format!("Invalid JSON5: {}", e)))?;
-
-        let value = Value::from_json(json_val);
-        let mut df = value.to_dataframe()?;
-
-        // Apply options
-        if options.skip_rows > 0 {
-            df = df.slice(options.skip_rows as i64, usize::MAX);
-        }
-
-        if let Some(max_rows) = options.max_rows {
-            df = df.head(Some(max_rows));
-        }
-
-        if let Some(cols) = &options.columns {
-            df = df.select(cols).map_err(Error::from)?;
-        }
-
-        if options.lazy {
-            Ok(Value::LazyFrame(Box::new(df.lazy())))
-        } else {
-            Ok(Value::DataFrame(df))
-        }
-    }
 
     /// Read Avro file
     fn read_avro(&self, options: &ReadOptions) -> Result<Value> {
@@ -779,7 +664,6 @@ impl DataReader for FileReader {
                 }
                 self.read_json(options)
             }
-            DataFormat::Json5 => self.read_json5(options),
             DataFormat::Avro => self.read_avro(options),
             DataFormat::Arrow => self.read_arrow(options),
             DataFormat::Excel | DataFormat::Orc => Err(Error::Format(format!(
@@ -950,34 +834,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_json5_reader() {
-        let json5_data = r#"// Comment
-{
-  name: "Alice",
-  age: 30
-}
-// Another comment
-{
-  name: "Bob",
-  age: 25
-}"#;
-
-        let mut temp_file = NamedTempFile::new().unwrap();
-        temp_file.write_all(json5_data.as_bytes()).unwrap();
-
-        let mut reader = FileReader::with_format(temp_file.path(), DataFormat::Json5);
-        let options = ReadOptions::default();
-
-        let result = reader.read(&options).unwrap();
-        match result {
-            Value::DataFrame(df) => {
-                assert_eq!(df.height(), 2);
-                assert_eq!(df.width(), 2);
-            }
-            _ => panic!("Expected DataFrame"),
-        }
-    }
 
     #[test]
     fn test_lazy_reading() {
@@ -1088,35 +944,6 @@ mod tests {
         let df = reader.peek(2).unwrap();
         assert_eq!(df.height(), 2);
         assert_eq!(df.width(), 2);
-    }
-
-    #[test]
-    fn test_json5_reader() {
-        let json5_data = r#"// Comment
-{
-  name: "Alice",
-  age: 30
-}
-// Another comment
-{
-  name: "Bob",
-  age: 25
-}"#;
-
-        let mut temp_file = NamedTempFile::new().unwrap();
-        temp_file.write_all(json5_data.as_bytes()).unwrap();
-
-        let mut reader = FileReader::with_format(temp_file.path(), DataFormat::Json5);
-        let options = ReadOptions::default();
-
-        let result = reader.read(&options).unwrap();
-        match result {
-            Value::DataFrame(df) => {
-                assert_eq!(df.height(), 2);
-                assert_eq!(df.width(), 2);
-            }
-            _ => panic!("Expected DataFrame"),
-        }
     }
 
     #[test]

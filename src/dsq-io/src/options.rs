@@ -59,11 +59,6 @@ pub enum FormatWriteOptions {
         pretty: bool,
         maintain_order: bool,
     },
-    Json5 {
-        lines: bool,
-        pretty: bool,
-        maintain_order: bool,
-    },
     Excel {
         worksheet_name: String,
         include_header: bool,

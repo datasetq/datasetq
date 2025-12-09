@@ -1008,7 +1008,7 @@ mod tests {
 
         let city_series = df.column("city").unwrap();
         assert_eq!(
-            city_series.as_series().unwrap().str().unwrap().get(1),
+            city_series.as_materialized_series().str().unwrap().get(1),
             Some("Boston, MA")
         );
     }
@@ -1024,7 +1024,7 @@ mod tests {
         assert_eq!(df.height(), 1);
         let desc_series = df.column("description").unwrap();
         assert_eq!(
-            desc_series.as_series().unwrap().str().unwrap().get(0),
+            desc_series.as_materialized_series().str().unwrap().get(0),
             Some("She said \"Hello\"")
         );
     }
@@ -1292,11 +1292,11 @@ mod tests {
         assert_eq!(df.height(), 2); // Should have Alice and Bob
         let name_series = df.column("name").unwrap();
         assert_eq!(
-            name_series.as_series().unwrap().str().unwrap().get(0),
+            name_series.as_materialized_series().str().unwrap().get(0),
             Some("Alice")
         );
         assert_eq!(
-            name_series.as_series().unwrap().str().unwrap().get(1),
+            name_series.as_materialized_series().str().unwrap().get(1),
             Some("Bob")
         );
     }
@@ -1337,11 +1337,11 @@ mod tests {
         assert_eq!(df.height(), 2); // Comment line should be ignored
         let name_series = df.column("name").unwrap();
         assert_eq!(
-            name_series.as_series().unwrap().str().unwrap().get(0),
+            name_series.as_materialized_series().str().unwrap().get(0),
             Some("Alice")
         );
         assert_eq!(
-            name_series.as_series().unwrap().str().unwrap().get(1),
+            name_series.as_materialized_series().str().unwrap().get(1),
             Some("Charlie")
         );
     }
@@ -1629,7 +1629,7 @@ mod tests {
         assert_eq!(df.height(), 2);
         let desc_series = df.column("description").unwrap();
         assert_eq!(
-            desc_series.as_series().unwrap().str().unwrap().get(0),
+            desc_series.as_materialized_series().str().unwrap().get(0),
             Some("Hello\nWorld")
         );
     }
