@@ -38,9 +38,9 @@ mod tests {
     use polars::prelude::*;
 
     fn create_test_dataframe() -> DataFrame {
-        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age".into().into(), &[25, 30, 35]);
-        let scores = Series::new("score".into().into(), &[85.5, 92.0, 78.3]);
+        let names = Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]).into();
+        let ages = Series::new(PlSmallStr::from("age"), &[25, 30, 35]).into();
+        let scores = Series::new(PlSmallStr::from("score"), &[85.5, 92.0, 78.3]).into();
         DataFrame::new(vec![names, ages, scores]).unwrap()
     }
 

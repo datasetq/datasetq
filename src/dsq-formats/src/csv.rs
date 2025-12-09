@@ -228,7 +228,7 @@ impl<R: Read> CsvReader<R> {
         // Choose the separator with the highest consistent count
         let detected = separator_counts
             .iter()
-            .max_by_key(|(_, &count)| count)
+            .max_by_key(|&(_, &count)| count)
             .map(|(&sep, _)| sep)
             .unwrap_or(b','); // Default to comma
 
@@ -776,7 +776,7 @@ pub fn detect_csv_dialect<R: Read>(mut reader: R) -> Result<DsqCsvReadOptions> {
 
     let detected_separator = separator_scores
         .iter()
-        .max_by_key(|(_, &score)| score)
+        .max_by_key(|&(_, &score)| score)
         .map(|(&sep, _)| sep)
         .unwrap_or(b',');
 
@@ -1007,7 +1007,10 @@ mod tests {
         assert_eq!(df.get_column_names(), vec!["name", "age", "city"]);
 
         let city_series = df.column("city").unwrap();
-        assert_eq!(city_series.utf8().unwrap().get(1), Some("Boston, MA"));
+        assert_eq!(
+            city_series.as_series().unwrap().str().unwrap().get(1),
+            Some("Boston, MA")
+        );
     }
 
     #[test]
@@ -1021,7 +1024,7 @@ mod tests {
         assert_eq!(df.height(), 1);
         let desc_series = df.column("description").unwrap();
         assert_eq!(
-            desc_series.utf8().unwrap().get(0),
+            desc_series.as_series().unwrap().str().unwrap().get(0),
             Some("She said \"Hello\"")
         );
     }
@@ -1288,8 +1291,14 @@ mod tests {
 
         assert_eq!(df.height(), 2); // Should have Alice and Bob
         let name_series = df.column("name").unwrap();
-        assert_eq!(name_series.utf8().unwrap().get(0), Some("Alice"));
-        assert_eq!(name_series.utf8().unwrap().get(1), Some("Bob"));
+        assert_eq!(
+            name_series.as_series().unwrap().str().unwrap().get(0),
+            Some("Alice")
+        );
+        assert_eq!(
+            name_series.as_series().unwrap().str().unwrap().get(1),
+            Some("Bob")
+        );
     }
 
     #[test]
@@ -1327,8 +1336,14 @@ mod tests {
 
         assert_eq!(df.height(), 2); // Comment line should be ignored
         let name_series = df.column("name").unwrap();
-        assert_eq!(name_series.utf8().unwrap().get(0), Some("Alice"));
-        assert_eq!(name_series.utf8().unwrap().get(1), Some("Charlie"));
+        assert_eq!(
+            name_series.as_series().unwrap().str().unwrap().get(0),
+            Some("Alice")
+        );
+        assert_eq!(
+            name_series.as_series().unwrap().str().unwrap().get(1),
+            Some("Charlie")
+        );
     }
 
     #[test]
@@ -1436,8 +1451,8 @@ mod tests {
     #[test]
     fn test_null_value_writing() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), &["Alice", "Bob"]),
-            Series::new("age".into(), &[Some(30i32), None::<i32>]),
+            Series::new("name".into(), &["Alice", "Bob"]).into(),
+            Series::new("age".into(), &[Some(30i32), None::<i32>]).into(),
         ])
         .unwrap();
 
@@ -1613,7 +1628,10 @@ mod tests {
 
         assert_eq!(df.height(), 2);
         let desc_series = df.column("description").unwrap();
-        assert_eq!(desc_series.utf8().unwrap().get(0), Some("Hello\nWorld"));
+        assert_eq!(
+            desc_series.as_series().unwrap().str().unwrap().get(0),
+            Some("Hello\nWorld")
+        );
     }
 
     #[test]
@@ -1650,7 +1668,7 @@ mod tests {
     fn test_date_formatting() {
         use polars::prelude::*;
         let dates: Vec<NaiveDate> = vec![NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()];
-        let df = DataFrame::new(vec![Series::new("date_col".into(), dates)]).unwrap();
+        let df = DataFrame::new(vec![Series::new("date_col".into(), dates).into()]).unwrap();
 
         let mut buffer = Vec::new();
         {
@@ -1679,7 +1697,7 @@ mod tests {
         let series = Series::new("datetime_col".into(), datetimes)
             .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
             .unwrap();
-        let df = DataFrame::new(vec![series]).unwrap();
+        let df = DataFrame::new(vec![series.into()]).unwrap();
 
         let mut buffer = Vec::new();
         {
@@ -1713,9 +1731,9 @@ mod tests {
     #[test]
     fn test_null_handling_different_types() {
         let df = DataFrame::new(vec![
-            Series::new("int_col".into(), &[Some(1i32), None::<i32>]),
-            Series::new("float_col".into(), &[Some(1.5f64), None::<f64>]),
-            Series::new("str_col".into(), &[Some("test"), None::<&str>]),
+            Series::new("int_col".into(), &[Some(1i32), None::<i32>]).into(),
+            Series::new("float_col".into(), &[Some(1.5f64), None::<f64>]).into(),
+            Series::new("str_col".into(), &[Some("test"), None::<&str>]).into(),
         ])
         .unwrap();
 

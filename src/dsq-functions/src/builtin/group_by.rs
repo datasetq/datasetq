@@ -252,20 +252,25 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
                                                             };
                                                             group_keys.push(key);
                                                             // Remove the temp column
-                                                            if let Ok(df_clean) =
-                                                                group_df.drop(temp_col_name)
-                                                            {
-                                                                let objects =
-                                                                    dataframe_to_objects(&df_clean);
-                                                                result_groups.push(Value::Array(
-                                                                    objects
-                                                                        .into_iter()
-                                                                        .map(Value::Object)
-                                                                        .collect(),
-                                                                ));
-                                                            } else {
-                                                                result_groups
-                                                                    .push(Value::Array(vec![]));
+                                                            match group_df.drop(temp_col_name) {
+                                                                Ok(df_clean) => {
+                                                                    let objects =
+                                                                        dataframe_to_objects(
+                                                                            &df_clean,
+                                                                        );
+                                                                    result_groups.push(
+                                                                        Value::Array(
+                                                                            objects
+                                                                                .into_iter()
+                                                                                .map(Value::Object)
+                                                                                .collect(),
+                                                                        ),
+                                                                    );
+                                                                }
+                                                                _ => {
+                                                                    result_groups
+                                                                        .push(Value::Array(vec![]));
+                                                                }
                                                             }
                                                         }
                                                         Err(e) => {

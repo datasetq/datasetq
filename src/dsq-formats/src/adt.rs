@@ -197,8 +197,8 @@ mod tests {
     fn test_adt_round_trip() {
         // Create a simple DataFrame
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]),
-            Series::new("age".into(), vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
         let value = Value::DataFrame(df);
@@ -223,8 +223,8 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 2);
                 assert_eq!(df.width(), 2);
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"age".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df.get_column_names().contains(&(&PlSmallStr::from("age"))));
             }
             _ => panic!("Expected DataFrame"),
         }

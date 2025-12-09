@@ -210,11 +210,12 @@ mod tests {
     #[test]
     fn test_dos2unix_dataframe() {
         // Create a test DataFrame with string columns
-        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
+        let names = Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]).into();
         let descriptions = Series::new(
-            "description",
+            PlSmallStr::from("description"),
             &["Line1\r\nLine2", "Single line", "Another\r\nline"],
-        );
+        )
+        .into();
         let df = DataFrame::new(vec![names, descriptions]).unwrap();
 
         let result = builtin_dos2unix(&[Value::DataFrame(df)]);
@@ -241,7 +242,7 @@ mod tests {
     fn test_dos2unix_series() {
         // Create a test Series with strings containing CRLF
         let series = Series::new(
-            "test".into(),
+            PlSmallStr::from("test"),
             &["line1\r\nline2", "no crlf", "another\r\nline"],
         );
 
@@ -263,7 +264,7 @@ mod tests {
     #[test]
     fn test_dos2unix_series_non_utf8() {
         // Create a test Series with integers (should remain unchanged)
-        let series = Series::new("numbers".into().into(), &[1, 2, 3]);
+        let series = Series::new(PlSmallStr::from("numbers"), &[1, 2, 3]);
 
         let result = builtin_dos2unix(&[Value::Series(series.clone())]);
         assert!(result.is_ok());

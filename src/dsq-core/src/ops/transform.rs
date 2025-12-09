@@ -269,7 +269,7 @@ impl Transform {
     ) -> Result<DataFrame> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
         let n_values = vec![n as u32];
-        let n_series = Series::new("n".into().into(), n_values);
+        let n_series = Series::new("n".into(), n_values);
         df.sample_n(&n_series, with_replacement, true, seed)
             .map_err(|e| Error::operation(format!("Failed to sample DataFrame: {e}")))
     }
@@ -509,9 +509,9 @@ mod tests {
     #[test]
     fn test_select() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3]).into(),
-            Series::new("b".into().into(), &[4, 5, 6]).into(),
-            Series::new("c".into().into(), &[7, 8, 9]).into(),
+            Series::new(PlSmallStr::from("a"), &[1i32, 2, 3]).into(),
+            Series::new(PlSmallStr::from("b"), &[4i32, 5, 6]).into(),
+            Series::new(PlSmallStr::from("c"), &[7i32, 8, 9]).into(),
         ])
         .unwrap();
 
@@ -525,8 +525,8 @@ mod tests {
     #[test]
     fn test_filter() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into(),
-            Series::new("b".into().into(), &[10, 20, 30, 40, 50]).into(),
+            Series::new(PlSmallStr::from("a"), &[1i32, 2, 3, 4, 5]).into(),
+            Series::new(PlSmallStr::from("b"), &[10i32, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
@@ -542,8 +542,8 @@ mod tests {
     #[test]
     fn test_sort() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[3, 1, 4, 1, 5]).into(),
-            Series::new("b".into().into(), &[30, 10, 40, 15, 50]).into(),
+            Series::new(PlSmallStr::from("a"), &[3, 1, 4, 1, 5]).into(),
+            Series::new(PlSmallStr::from("b"), &[30, 10, 40, 15, 50]).into(),
         ])
         .unwrap();
 
@@ -575,8 +575,8 @@ mod tests {
     #[test]
     fn test_unique() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 2, 3, 3, 3]).into(),
-            Series::new("b".into().into(), &[10, 20, 20, 30, 30, 30]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 2, 3, 3, 3]).into(),
+            Series::new(PlSmallStr::from("b"), &[10, 20, 20, 30, 30, 30]).into(),
         ])
         .unwrap();
 
@@ -586,8 +586,10 @@ mod tests {
 
     #[test]
     fn test_limit_and_skip() {
-        let df =
-            DataFrame::new(vec![Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
+        let df = DataFrame::new(vec![
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into()
+        ])
+        .unwrap();
 
         let limited = Transform::limit(&df, 3).unwrap();
         assert_eq!(limited.height(), 3);
@@ -600,9 +602,13 @@ mod tests {
     #[test]
     fn test_drop_nulls() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[Some(1), None, Some(3), None, Some(5)]).into(),
             Series::new(
-                "b".into().into(),
+                PlSmallStr::from("a"),
+                &[Some(1), None, Some(3), None, Some(5)],
+            )
+            .into(),
+            Series::new(
+                PlSmallStr::from("b"),
                 &[Some(10), Some(20), None, Some(40), Some(50)],
             )
             .into(),
@@ -709,9 +715,9 @@ mod tests {
     #[test]
     fn test_select_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3]).into(),
-            Series::new("b".into().into(), &[4, 5, 6]).into(),
-            Series::new("c".into().into(), &[7, 8, 9]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3]).into(),
+            Series::new(PlSmallStr::from("b"), &[4, 5, 6]).into(),
+            Series::new(PlSmallStr::from("c"), &[7, 8, 9]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -727,8 +733,8 @@ mod tests {
     #[test]
     fn test_filter_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into(),
-            Series::new("b".into().into(), &[10, 20, 30, 40, 50]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into(),
+            Series::new(PlSmallStr::from("b"), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -746,8 +752,8 @@ mod tests {
     #[test]
     fn test_sort_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[3, 1, 4, 1, 5]).into(),
-            Series::new("b".into().into(), &[30, 10, 40, 15, 50]).into(),
+            Series::new(PlSmallStr::from("a"), &[3i32, 1, 4, 1, 5]).into(),
+            Series::new(PlSmallStr::from("b"), &[30i32, 10, 40, 15, 50]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -783,8 +789,8 @@ mod tests {
     #[test]
     fn test_with_column() {
         let df = DataFrame::new(vec![
-            Series::new("a".into(), &[1, 2, 3]),
-            Series::new("b".into(), &[4, 5, 6]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
         ])
         .unwrap();
 
@@ -801,8 +807,8 @@ mod tests {
     #[test]
     fn test_with_column_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into(), &[1, 2, 3]),
-            Series::new("b".into(), &[4, 5, 6]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -822,9 +828,9 @@ mod tests {
     #[test]
     fn test_drop() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3]).into(),
-            Series::new("b".into().into(), &[4, 5, 6]).into(),
-            Series::new("c".into().into(), &[7, 8, 9]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3]).into(),
+            Series::new(PlSmallStr::from("b"), &[4, 5, 6]).into(),
+            Series::new(PlSmallStr::from("c"), &[7, 8, 9]).into(),
         ])
         .unwrap();
 
@@ -838,9 +844,9 @@ mod tests {
     #[test]
     fn test_drop_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3]).into(),
-            Series::new("b".into().into(), &[4, 5, 6]).into(),
-            Series::new("c".into().into(), &[7, 8, 9]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3]).into(),
+            Series::new(PlSmallStr::from("b"), &[4, 5, 6]).into(),
+            Series::new(PlSmallStr::from("c"), &[7, 8, 9]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -856,8 +862,8 @@ mod tests {
     #[test]
     fn test_unique_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 2, 3, 3, 3]).into(),
-            Series::new("b".into().into(), &[10, 20, 20, 30, 30, 30]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 2, 3, 3, 3]).into(),
+            Series::new(PlSmallStr::from("b"), &[10, 20, 20, 30, 30, 30]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -869,8 +875,10 @@ mod tests {
 
     #[test]
     fn test_limit_lazy() {
-        let df =
-            DataFrame::new(vec![Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
+        let df = DataFrame::new(vec![
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into()
+        ])
+        .unwrap();
         let lf = df.lazy();
 
         let result = Transform::limit_lazy(lf, 3).unwrap();
@@ -880,8 +888,10 @@ mod tests {
 
     #[test]
     fn test_skip_lazy() {
-        let df =
-            DataFrame::new(vec![Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
+        let df = DataFrame::new(vec![
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into()
+        ])
+        .unwrap();
         let lf = df.lazy();
 
         let result = Transform::skip_lazy(lf, 2).unwrap();
@@ -895,8 +905,10 @@ mod tests {
 
     #[test]
     fn test_slice() {
-        let df =
-            DataFrame::new(vec![Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
+        let df = DataFrame::new(vec![
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into()
+        ])
+        .unwrap();
 
         let result = Transform::slice(&df, 1, 3).unwrap();
         assert_eq!(result.height(), 3);
@@ -907,8 +919,10 @@ mod tests {
 
     #[test]
     fn test_slice_lazy() {
-        let df =
-            DataFrame::new(vec![Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
+        let df = DataFrame::new(vec![
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into()
+        ])
+        .unwrap();
         let lf = df.lazy();
 
         let result = Transform::slice_lazy(lf, 1, 3).unwrap();
@@ -923,8 +937,8 @@ mod tests {
     #[test]
     fn test_reverse() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into(),
-            Series::new("b".into().into(), &[10, 20, 30, 40, 50]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into(),
+            Series::new(PlSmallStr::from("b"), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
@@ -939,8 +953,8 @@ mod tests {
     #[test]
     fn test_reverse_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[1, 2, 3, 4, 5]).into(),
-            Series::new("b".into().into(), &[10, 20, 30, 40, 50]).into(),
+            Series::new(PlSmallStr::from("a"), &[1, 2, 3, 4, 5]).into(),
+            Series::new(PlSmallStr::from("b"), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -960,7 +974,7 @@ mod tests {
 
     #[test]
     fn test_sample() {
-        let df = DataFrame::new(vec![Series::new(
+        let df = DataFrame::new(vec![Column::new(
             "a".into(),
             &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         )])
@@ -974,8 +988,8 @@ mod tests {
     #[test]
     fn test_fill_null() {
         let df = DataFrame::new(vec![
-            Series::new("a".into(), &[Some(1), None, Some(3)]),
-            Series::new("b".into(), &[Some(1.0), Some(2.0), None]),
+            Series::new("a".into(), &[Some(1), None, Some(3)]).into(),
+            Series::new("b".into(), &[Some(1.0), Some(2.0), None]).into(),
         ])
         .unwrap();
 
@@ -988,7 +1002,10 @@ mod tests {
 
     #[test]
     fn test_fill_null_lazy() {
-        let df = DataFrame::new(vec![Series::new("a".into(), &[Some(1), None, Some(3)])]).unwrap();
+        let df = DataFrame::new(vec![
+            Series::new("a".into(), &[Some(1), None, Some(3)]).into()
+        ])
+        .unwrap();
         let lf = df.lazy();
 
         let value = lit(0);
@@ -1002,9 +1019,13 @@ mod tests {
     #[test]
     fn test_drop_nulls_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), &[Some(1), None, Some(3), None, Some(5)]).into(),
             Series::new(
-                "b".into().into(),
+                PlSmallStr::from("a"),
+                &[Some(1), None, Some(3), None, Some(5)],
+            )
+            .into(),
+            Series::new(
+                PlSmallStr::from("b"),
                 &[Some(10), Some(20), None, Some(40), Some(50)],
             )
             .into(),
@@ -1019,7 +1040,7 @@ mod tests {
 
     #[test]
     fn test_cast() {
-        let df = DataFrame::new(vec![Series::new("a".into(), &[1.0, 2.0, 3.0])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1.0, 2.0, 3.0]).into()]).unwrap();
 
         let result = Transform::cast(&df, "a", &DataType::Int32).unwrap();
         assert_eq!(result.height(), 3);
@@ -1030,7 +1051,7 @@ mod tests {
 
     #[test]
     fn test_cast_lazy() {
-        let df = DataFrame::new(vec![Series::new("a".into(), &[1.0, 2.0, 3.0])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1.0, 2.0, 3.0]).into()]).unwrap();
         let lf = df.lazy();
 
         let result = Transform::cast_lazy(lf, "a", DataType::Int32).unwrap();
@@ -1046,8 +1067,8 @@ mod tests {
     fn test_explode() {
         let list_series = Series::new("list_col".into(), &[vec![1, 2], vec![3], vec![4, 5, 6]]);
         let df = DataFrame::new(vec![
-            list_series,
-            Series::new("other".into(), &[10, 20, 30]),
+            list_series.into(),
+            Series::new("other".into(), &[10, 20, 30]).into(),
         ])
         .unwrap();
 
@@ -1060,7 +1081,7 @@ mod tests {
     fn test_explode_lazy() {
         let list_series = Series::new("list_col".into(), &[vec![1, 2], vec![3], vec![4, 5, 6]]);
         let df = DataFrame::new(vec![
-            list_series,
+            list_series.into(),
             Series::new("other".into(), &[10, 20, 30]),
         ])
         .unwrap();
@@ -1074,9 +1095,9 @@ mod tests {
     #[test]
     fn test_melt() {
         let df = DataFrame::new(vec![
-            Series::new("id".into(), &[1, 2, 3]),
-            Series::new("a".into(), &[10, 20, 30]),
-            Series::new("b".into(), &[100, 200, 300]),
+            Series::new("id".into(), &[1, 2, 3]).into(),
+            Series::new("a".into(), &[10, 20, 30]).into(),
+            Series::new("b".into(), &[100, 200, 300]).into(),
         ])
         .unwrap();
 
@@ -1098,9 +1119,9 @@ mod tests {
     #[test]
     fn test_melt_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("id".into(), &[1, 2, 3]),
-            Series::new("a".into(), &[10, 20, 30]),
-            Series::new("b".into(), &[100, 200, 300]),
+            Series::new("id".into(), &[1, 2, 3]).into(),
+            Series::new("a".into(), &[10, 20, 30]).into(),
+            Series::new("b".into(), &[100, 200, 300]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -1129,8 +1150,8 @@ mod tests {
         ])
         .unwrap();
 
-        // Use all() to reference all columns in the temporary per-column DataFrame
-        let expr = all() + lit(10);
+        // Use col("*") to reference all columns in the temporary per-column DataFrame
+        let expr = col("*") + lit(10);
         let result = Transform::map_columns(&df, expr).unwrap();
 
         assert_eq!(result.height(), 3);
@@ -1144,7 +1165,7 @@ mod tests {
 
     #[test]
     fn test_cast_column() {
-        let df = DataFrame::new(vec![Series::new("a".into(), &[1.0, 2.0, 3.0])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1.0, 2.0, 3.0]).into()]).unwrap();
         let value = Value::DataFrame(df);
 
         let result = cast_column(&value, "a", ColumnDataType::Int32).unwrap();

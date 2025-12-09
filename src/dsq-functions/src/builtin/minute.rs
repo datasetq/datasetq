@@ -37,22 +37,29 @@ pub fn builtin_minute(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut minute_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(dt) = crate::extract_timestamp(&value) {
-                                        minute_values.push(dt.minute() as i64);
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value =
+                                        crate::value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match crate::extract_timestamp(&value) {
+                                            Ok(dt) => {
+                                                minute_values.push(dt.minute() as i64);
+                                            }
+                                            _ => {
+                                                minute_values.push(0i64);
+                                            }
+                                        }
                                     } else {
                                         minute_values.push(0i64);
                                     }
-                                } else {
+                                }
+                                _ => {
                                     minute_values.push(0i64);
                                 }
-                            } else {
-                                minute_values.push(0i64);
                             }
                         }
                         let minute_series = Series::new(col_name.clone(), minute_values);
@@ -76,19 +83,25 @@ pub fn builtin_minute(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut minute_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                            if let Ok(dt) = crate::extract_timestamp(&value) {
-                                minute_values.push(dt.minute() as i64);
+                    match series.get(i) {
+                        Ok(val) => {
+                            let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
+                            if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                                match crate::extract_timestamp(&value) {
+                                    Ok(dt) => {
+                                        minute_values.push(dt.minute() as i64);
+                                    }
+                                    _ => {
+                                        minute_values.push(0i64);
+                                    }
+                                }
                             } else {
                                 minute_values.push(0i64);
                             }
-                        } else {
+                        }
+                        _ => {
                             minute_values.push(0i64);
                         }
-                    } else {
-                        minute_values.push(0i64);
                     }
                 }
                 Ok(Value::Series(Series::new(

@@ -37,22 +37,28 @@ pub fn builtin_second(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut second_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(dt) = crate::extract_timestamp(&value) {
-                                        second_values.push(dt.second() as i64);
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value = value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match crate::extract_timestamp(&value) {
+                                            Ok(dt) => {
+                                                second_values.push(dt.second() as i64);
+                                            }
+                                            _ => {
+                                                second_values.push(0i64);
+                                            }
+                                        }
                                     } else {
                                         second_values.push(0i64);
                                     }
-                                } else {
+                                }
+                                _ => {
                                     second_values.push(0i64);
                                 }
-                            } else {
-                                second_values.push(0i64);
                             }
                         }
                         let second_series = Series::new(col_name.clone(), second_values);
@@ -76,19 +82,25 @@ pub fn builtin_second(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut second_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        let value = value_from_any_value(val).unwrap_or(Value::Null);
-                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                            if let Ok(dt) = crate::extract_timestamp(&value) {
-                                second_values.push(dt.second() as i64);
+                    match series.get(i) {
+                        Ok(val) => {
+                            let value = value_from_any_value(val).unwrap_or(Value::Null);
+                            if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                                match crate::extract_timestamp(&value) {
+                                    Ok(dt) => {
+                                        second_values.push(dt.second() as i64);
+                                    }
+                                    _ => {
+                                        second_values.push(0i64);
+                                    }
+                                }
                             } else {
                                 second_values.push(0i64);
                             }
-                        } else {
+                        }
+                        _ => {
                             second_values.push(0i64);
                         }
-                    } else {
-                        second_values.push(0i64);
                     }
                 }
                 Ok(Value::Series(Series::new(

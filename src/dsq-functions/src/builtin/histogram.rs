@@ -33,8 +33,8 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
                 _ => None,
             })
             .collect::<Vec<f64>>(),
-        Value::Series(series) => {
-            if let Ok(float_chunked) = series.cast(&DataType::Float64) {
+        Value::Series(series) => match series.cast(&DataType::Float64) {
+            Ok(float_chunked) => {
                 let f64_series = float_chunked.f64().map_err(|e| {
                     dsq_shared::error::operation_error(format!(
                         "histogram() failed to cast to f64: {}",
@@ -42,24 +42,28 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
                     ))
                 })?;
                 f64_series.into_iter().flatten().collect::<Vec<f64>>()
-            } else if let Ok(int_chunked) = series.cast(&DataType::Int64) {
-                let i64_series = int_chunked.i64().map_err(|e| {
-                    dsq_shared::error::operation_error(format!(
-                        "histogram() failed to cast to i64: {}",
-                        e
-                    ))
-                })?;
-                i64_series
-                    .into_iter()
-                    .flatten()
-                    .map(|x| x as f64)
-                    .collect::<Vec<f64>>()
-            } else {
-                return Err(dsq_shared::error::operation_error(
-                    "histogram() requires numeric series",
-                ));
             }
-        }
+            _ => match series.cast(&DataType::Int64) {
+                Ok(int_chunked) => {
+                    let i64_series = int_chunked.i64().map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "histogram() failed to cast to i64: {}",
+                            e
+                        ))
+                    })?;
+                    i64_series
+                        .into_iter()
+                        .flatten()
+                        .map(|x| x as f64)
+                        .collect::<Vec<f64>>()
+                }
+                _ => {
+                    return Err(dsq_shared::error::operation_error(
+                        "histogram() requires numeric series",
+                    ));
+                }
+            },
+        },
         _ => {
             return Err(dsq_shared::error::operation_error(
                 "histogram() requires array or series",

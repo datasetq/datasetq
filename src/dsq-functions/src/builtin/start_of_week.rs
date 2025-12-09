@@ -77,37 +77,49 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut start_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(dt) = crate::extract_timestamp(&value) {
-                                        let weekday = dt.weekday();
-                                        let days_to_subtract = match start_day.as_str() {
-                                            "monday" => weekday.num_days_from_monday() as i64,
-                                            "sunday" => weekday.num_days_from_sunday() as i64,
-                                            _ => {
-                                                return Err(dsq_shared::error::operation_error(
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value = value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match crate::extract_timestamp(&value) {
+                                            Ok(dt) => {
+                                                let weekday = dt.weekday();
+                                                let days_to_subtract = match start_day.as_str() {
+                                                    "monday" => {
+                                                        weekday.num_days_from_monday() as i64
+                                                    }
+                                                    "sunday" => {
+                                                        weekday.num_days_from_sunday() as i64
+                                                    }
+                                                    _ => {
+                                                        return Err(dsq_shared::error::operation_error(
                                                     "start_of_week() start_day must be 'monday' or 'sunday'",
                                                 ));
-                                            }
-                                        };
+                                                    }
+                                                };
 
-                                        let week_start_date = dt.date_naive()
-                                            - chrono::Duration::days(days_to_subtract);
-                                        let week_start =
-                                            week_start_date.and_hms_opt(0, 0, 0).unwrap().and_utc();
-                                        start_values.push(week_start.timestamp());
+                                                let week_start_date = dt.date_naive()
+                                                    - chrono::Duration::days(days_to_subtract);
+                                                let week_start = week_start_date
+                                                    .and_hms_opt(0, 0, 0)
+                                                    .unwrap()
+                                                    .and_utc();
+                                                start_values.push(week_start.timestamp());
+                                            }
+                                            _ => {
+                                                start_values.push(0i64);
+                                            }
+                                        }
                                     } else {
                                         start_values.push(0i64);
                                     }
-                                } else {
+                                }
+                                _ => {
                                     start_values.push(0i64);
                                 }
-                            } else {
-                                start_values.push(0i64);
                             }
                         }
                         let start_series = Series::new(col_name.clone(), start_values);
@@ -131,34 +143,40 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut start_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        let value = value_from_any_value(val).unwrap_or(Value::Null);
-                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                            if let Ok(dt) = crate::extract_timestamp(&value) {
-                                let weekday = dt.weekday();
-                                let days_to_subtract = match start_day.as_str() {
-                                    "monday" => weekday.num_days_from_monday() as i64,
-                                    "sunday" => weekday.num_days_from_sunday() as i64,
-                                    _ => {
-                                        return Err(dsq_shared::error::operation_error(
+                    match series.get(i) {
+                        Ok(val) => {
+                            let value = value_from_any_value(val).unwrap_or(Value::Null);
+                            if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                                match crate::extract_timestamp(&value) {
+                                    Ok(dt) => {
+                                        let weekday = dt.weekday();
+                                        let days_to_subtract = match start_day.as_str() {
+                                            "monday" => weekday.num_days_from_monday() as i64,
+                                            "sunday" => weekday.num_days_from_sunday() as i64,
+                                            _ => {
+                                                return Err(dsq_shared::error::operation_error(
                                             "start_of_week() start_day must be 'monday' or 'sunday'",
                                         ));
-                                    }
-                                };
+                                            }
+                                        };
 
-                                let week_start_date =
-                                    dt.date_naive() - chrono::Duration::days(days_to_subtract);
-                                let week_start =
-                                    week_start_date.and_hms_opt(0, 0, 0).unwrap().and_utc();
-                                start_values.push(week_start.timestamp());
+                                        let week_start_date = dt.date_naive()
+                                            - chrono::Duration::days(days_to_subtract);
+                                        let week_start =
+                                            week_start_date.and_hms_opt(0, 0, 0).unwrap().and_utc();
+                                        start_values.push(week_start.timestamp());
+                                    }
+                                    _ => {
+                                        start_values.push(0i64);
+                                    }
+                                }
                             } else {
                                 start_values.push(0i64);
                             }
-                        } else {
+                        }
+                        _ => {
                             start_values.push(0i64);
                         }
-                    } else {
-                        start_values.push(0i64);
                     }
                 }
                 Ok(Value::Series(Series::new(

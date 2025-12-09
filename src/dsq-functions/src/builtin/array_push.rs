@@ -22,18 +22,19 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
             if matches!(series.dtype(), DataType::List(_)) {
                 let list_chunked = series.list().unwrap();
                 if series.len() == 1 {
-                    if let Some(list_series) = list_chunked.get_as_series(0) {
-                        let mut arr = Vec::new();
-                        for i in 0..list_series.len() {
-                            if let Ok(val) = list_series.get(i) {
-                                let value = value_from_any_value(val).unwrap_or(Value::Null);
-                                arr.push(value);
+                    match list_chunked.get_as_series(0) {
+                        Some(list_series) => {
+                            let mut arr = Vec::new();
+                            for i in 0..list_series.len() {
+                                if let Ok(val) = list_series.get(i) {
+                                    let value = value_from_any_value(val).unwrap_or(Value::Null);
+                                    arr.push(value);
+                                }
                             }
+                            arr.extend_from_slice(&args[1..]);
+                            Ok(Value::Array(arr))
                         }
-                        arr.extend_from_slice(&args[1..]);
-                        Ok(Value::Array(arr))
-                    } else {
-                        Ok(Value::Array(args[1..].to_vec()))
+                        _ => Ok(Value::Array(args[1..].to_vec())),
                     }
                 } else {
                     Err(dsq_shared::error::operation_error(format!(
@@ -64,15 +65,18 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
                         let list_chunked = series.list().unwrap();
                         let mut new_lists = Vec::new();
                         for i in 0..df.height() {
-                            if let Some(list_series) = list_chunked.get_as_series(i) {
-                                let mut values = vec![];
-                                for j in 0..list_series.len() {
-                                    values.push(list_series.get(j).unwrap());
+                            match list_chunked.get_as_series(i) {
+                                Some(list_series) => {
+                                    let mut values = vec![];
+                                    for j in 0..list_series.len() {
+                                        values.push(list_series.get(j).unwrap());
+                                    }
+                                    values.push(any_value.clone());
+                                    new_lists.push(Series::new("".into(), values));
                                 }
-                                values.push(any_value.clone());
-                                new_lists.push(Series::new("".into(), values));
-                            } else {
-                                new_lists.push(Series::new("".into(), vec![any_value.clone()]));
+                                _ => {
+                                    new_lists.push(Series::new("".into(), vec![any_value.clone()]));
+                                }
                             }
                         }
                         let new_list_series = Series::new(col_name.clone(), new_lists);
@@ -128,9 +132,9 @@ mod tests {
 
     #[test]
     fn test_builtin_array_push_dataframe() {
-        let s1 = Series::new("".into().into(), &[1i64, 2i64]);
-        let s2 = Series::new("".into().into(), &[3i64]);
-        let list_series = Series::new("list_col".into().into(), &[s1, s2]);
+        let s1 = Series::new(PlSmallStr::from(""), &[1i64, 2i64]);
+        let s2 = Series::new(PlSmallStr::from(""), &[3i64]);
+        let list_series = Series::new(PlSmallStr::from("list_col"), &[s1, s2]).into();
         let df = DataFrame::new(vec![list_series]).unwrap();
         let result = builtin_array_push(&[Value::DataFrame(df), Value::Int(4)]).unwrap();
         match result {

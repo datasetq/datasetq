@@ -43,27 +43,35 @@ pub fn builtin_start_of_month(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut start_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(dt) = crate::extract_timestamp(&value) {
-                                        let year = dt.year();
-                                        let month = dt.month();
-                                        let start_of_month =
-                                            NaiveDate::from_ymd_opt(year, month, 1).unwrap();
-                                        start_values
-                                            .push(start_of_month.format("%Y-%m-%d").to_string());
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value = value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match crate::extract_timestamp(&value) {
+                                            Ok(dt) => {
+                                                let year = dt.year();
+                                                let month = dt.month();
+                                                let start_of_month =
+                                                    NaiveDate::from_ymd_opt(year, month, 1)
+                                                        .unwrap();
+                                                start_values.push(
+                                                    start_of_month.format("%Y-%m-%d").to_string(),
+                                                );
+                                            }
+                                            _ => {
+                                                start_values.push("".to_string());
+                                            }
+                                        }
                                     } else {
                                         start_values.push("".to_string());
                                     }
-                                } else {
+                                }
+                                _ => {
                                     start_values.push("".to_string());
                                 }
-                            } else {
-                                start_values.push("".to_string());
                             }
                         }
                         let start_series = Series::new(col_name.clone(), start_values);
@@ -87,23 +95,30 @@ pub fn builtin_start_of_month(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut start_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        let value = value_from_any_value(val).unwrap_or(Value::Null);
-                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                            if let Ok(dt) = crate::extract_timestamp(&value) {
-                                let year = dt.year();
-                                let month = dt.month();
-                                let start_of_month =
-                                    NaiveDate::from_ymd_opt(year, month, 1).unwrap();
-                                start_values.push(start_of_month.format("%Y-%m-%d").to_string());
+                    match series.get(i) {
+                        Ok(val) => {
+                            let value = value_from_any_value(val).unwrap_or(Value::Null);
+                            if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                                match crate::extract_timestamp(&value) {
+                                    Ok(dt) => {
+                                        let year = dt.year();
+                                        let month = dt.month();
+                                        let start_of_month =
+                                            NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+                                        start_values
+                                            .push(start_of_month.format("%Y-%m-%d").to_string());
+                                    }
+                                    _ => {
+                                        start_values.push("".to_string());
+                                    }
+                                }
                             } else {
                                 start_values.push("".to_string());
                             }
-                        } else {
+                        }
+                        _ => {
                             start_values.push("".to_string());
                         }
-                    } else {
-                        start_values.push("".to_string());
                     }
                 }
                 Ok(Value::Series(Series::new(

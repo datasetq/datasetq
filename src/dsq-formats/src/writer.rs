@@ -748,7 +748,7 @@ mod tests {
         let s1 = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
         let s2 = Series::new("age".into(), &[25i64, 30, 35]);
         let s3 = Series::new("active".into(), &[true, false, true]);
-        DataFrame::new(vec![s1, s2, s3]).unwrap()
+        DataFrame::new(vec![s1.into(), s2.into(), s3.into()]).unwrap()
     }
 
     #[test]
@@ -1028,7 +1028,7 @@ mod tests {
 
         let s1 = Series::new("name".into(), &["Alice", "Bob"]);
         let s2 = Series::new("age".into(), &[Some(25i64), None]);
-        let df = DataFrame::new(vec![s1, s2]).unwrap();
+        let df = DataFrame::new(vec![s1.into(), s2.into()]).unwrap();
         let row = df.get_row(1).unwrap();
         let column_names = df
             .get_column_names()

@@ -436,7 +436,7 @@ impl<R: std::io::BufRead> JsonReader<R> {
             let value_str = serde_json::to_string(&value)?;
 
             match &value {
-                JsonValue::Object(ref nested_obj) => {
+                JsonValue::Object(nested_obj) => {
                     if depth < self.options.max_depth {
                         let nested_flattened =
                             self.flatten_object(nested_obj.clone(), &new_key, depth + 1)?;
@@ -448,7 +448,7 @@ impl<R: std::io::BufRead> JsonReader<R> {
                         flattened.insert(new_key, Value::String(value_str));
                     }
                 }
-                JsonValue::Array(ref arr) => {
+                JsonValue::Array(arr) => {
                     if self.should_flatten_array(arr) {
                         for (i, item) in arr.iter().enumerate() {
                             let array_key = format!("{}[{}]", new_key, i);
@@ -1083,9 +1083,9 @@ mod tests {
         // Should have flattened columns like "user.name", "user.details.age", "active"
         let columns = df.get_column_names();
         assert_eq!(columns.len(), 3);
-        assert!(columns.contains(&"active"));
-        assert!(columns.contains(&"user.name"));
-        assert!(columns.contains(&"user.details.age"));
+        assert!(columns.contains(&&PlSmallStr::from("active")));
+        assert!(columns.contains(&&PlSmallStr::from("user.name")));
+        assert!(columns.contains(&&PlSmallStr::from("user.details.age")));
     }
 
     #[test]

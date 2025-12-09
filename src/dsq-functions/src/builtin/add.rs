@@ -275,17 +275,23 @@ mod tests {
     use dsq_shared::value::Value;
 
     fn create_test_dataframe() -> DataFrame {
-        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age".into().into(), &[25, 30, 35]);
-        let scores = Series::new("score".into().into(), &[85.5, 92.0, 78.3]);
-        DataFrame::new(vec![names, ages, scores]).unwrap()
+        let names: Series = Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]);
+        let ages = Column::new(
+            PlSmallStr::from("age"),
+            Series::new("".into(), &[25, 30, 35]),
+        );
+        let scores = Column::new(
+            PlSmallStr::from("score"),
+            Series::new("".into(), &[85.5, 92.0, 78.3]),
+        );
+        DataFrame::new(vec![names.into(), ages, scores]).unwrap()
     }
 
     #[test]
     fn test_builtin_add_with_dataframe() {
-        let df = DataFrame::new(vec![Series::new(
-            "value".into().into(),
-            &[10.0, 20.0, 30.0],
+        let df = DataFrame::new(vec![Column::new(
+            PlSmallStr::from("value"),
+            Series::new("".into(), &[10.0, 20.0, 30.0]),
         )])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -380,7 +386,7 @@ mod tests {
     #[test]
     fn test_builtin_add_with_series() {
         use polars::prelude::*;
-        let series = Series::new("test".into().into(), &[1, 2, 3, 4, 5]);
+        let series = Series::new("test".into(), &[1, 2, 3, 4, 5]);
         let series_value = Value::Series(series);
         let result = builtin_add(&[series_value]).unwrap();
         assert_eq!(result, Value::Int(15));

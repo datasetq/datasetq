@@ -42,19 +42,19 @@ pub fn builtin_array_pop(args: &[Value]) -> Result<Value> {
         Value::Series(series) => {
             if matches!(series.dtype(), DataType::List(_)) {
                 if series.len() == 1 {
-                    if let Some(list_series) = series.list().unwrap().get_as_series(0) {
-                        if list_series.len() > 0 {
-                            let last_idx = list_series.len() - 1;
-                            if let Ok(val) = list_series.get(last_idx) {
-                                Ok(value_from_any_value(val).unwrap_or(Value::Null))
+                    match series.list().unwrap().get_as_series(0) {
+                        Some(list_series) => {
+                            if list_series.len() > 0 {
+                                let last_idx = list_series.len() - 1;
+                                match list_series.get(last_idx) {
+                                    Ok(val) => Ok(value_from_any_value(val).unwrap_or(Value::Null)),
+                                    _ => Ok(Value::Null),
+                                }
                             } else {
                                 Ok(Value::Null)
                             }
-                        } else {
-                            Ok(Value::Null)
                         }
-                    } else {
-                        Ok(Value::Null)
+                        _ => Ok(Value::Null),
                     }
                 } else {
                     Err(dsq_shared::error::operation_error(format!(
@@ -102,9 +102,9 @@ mod tests {
 
     #[test]
     fn test_builtin_array_pop_dataframe() {
-        let s1 = Series::new("col1".into().into(), &[1i64, 2i64]);
-        let s2 = Series::new("col2".into().into(), &["a", "b"]);
-        let df = DataFrame::new(vec![s1, s2]).unwrap();
+        let s1 = Series::new(PlSmallStr::from("col1"), &[1i64, 2i64]);
+        let s2 = Series::new(PlSmallStr::from("col2"), &["a", "b"]);
+        let df = DataFrame::new(vec![s1.into(), s2.into()]).unwrap();
         let result = builtin_array_pop(&[Value::DataFrame(df)]).unwrap();
         match result {
             Value::Object(obj) => {
@@ -118,9 +118,10 @@ mod tests {
     #[test]
     fn test_builtin_array_pop_empty_dataframe() {
         let df = DataFrame::new(vec![Series::new(
-            "empty".into().into(),
+            PlSmallStr::from("empty"),
             Vec::<String>::new(),
-        )])
+        )
+        .into()])
         .unwrap();
         let result = builtin_array_pop(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Null);
@@ -128,16 +129,16 @@ mod tests {
 
     #[test]
     fn test_builtin_array_pop_series() {
-        let s1 = Series::new("".into().into(), &[1i64, 2i64, 3i64]);
-        let list_series = Series::new("list_col".into().into(), &[s1]);
+        let s1 = Series::new(PlSmallStr::from(""), &[1i64, 2i64, 3i64]);
+        let list_series = Series::new(PlSmallStr::from("list_col"), &[s1]);
         let result = builtin_array_pop(&[Value::Series(list_series)]).unwrap();
         assert_eq!(result, Value::Int(3));
     }
 
     #[test]
     fn test_builtin_array_pop_empty_series() {
-        let s1 = Series::new("".into().into(), &[] as &[i64]);
-        let list_series = Series::new("list_col".into().into(), &[s1]);
+        let s1 = Series::new(PlSmallStr::from(""), &[] as &[i64]);
+        let list_series = Series::new(PlSmallStr::from("list_col"), &[s1]);
         let result = builtin_array_pop(&[Value::Series(list_series)]).unwrap();
         assert_eq!(result, Value::Null);
     }

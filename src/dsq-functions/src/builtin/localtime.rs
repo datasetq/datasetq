@@ -98,8 +98,8 @@ pub fn builtin_localtime(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() {
                         let mut localtime_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                match val {
+                            match series.get(i) {
+                                Ok(val) => match val {
                                     AnyValue::Int64(ts) => {
                                         let dt =
                                             Utc.timestamp_opt(ts, 0).single().ok_or_else(|| {
@@ -127,9 +127,10 @@ pub fn builtin_localtime(args: &[Value]) -> Result<Value> {
                                             .push(local_dt.format("%Y-%m-%d %H:%M:%S").to_string());
                                     }
                                     _ => localtime_values.push("".to_string()),
+                                },
+                                _ => {
+                                    localtime_values.push("".to_string());
                                 }
-                            } else {
-                                localtime_values.push("".to_string());
                             }
                         }
                         let localtime_series = Series::new(col_name.clone(), localtime_values);
@@ -153,8 +154,8 @@ pub fn builtin_localtime(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() {
                 let mut localtime_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        match val {
+                    match series.get(i) {
+                        Ok(val) => match val {
                             AnyValue::Int64(ts) => {
                                 let dt = Utc.timestamp_opt(ts, 0).single().ok_or_else(|| {
                                     dsq_shared::error::operation_error("Invalid timestamp")
@@ -175,9 +176,10 @@ pub fn builtin_localtime(args: &[Value]) -> Result<Value> {
                                     .push(local_dt.format("%Y-%m-%d %H:%M:%S").to_string());
                             }
                             _ => localtime_values.push("".to_string()),
+                        },
+                        _ => {
+                            localtime_values.push("".to_string());
                         }
-                    } else {
-                        localtime_values.push("".to_string());
                     }
                 }
                 Ok(Value::Series(Series::new("".into(), localtime_values)))

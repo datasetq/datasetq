@@ -191,8 +191,8 @@ mod tests {
     #[test]
     fn test_join_dataframe_special_case() {
         let left_df = DataFrame::new(vec![
-            Series::new("dept_id".into().into(), &[1i64, 2, 1]),
-            Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]),
+            Series::new("dept_id".into(), &[1i64, 2, 1]).into(),
+            Series::new("name".into(), &["Alice", "Bob", "Charlie"]).into(),
         ])
         .unwrap();
         let result = builtin_join(&[

@@ -909,9 +909,12 @@ mod tests {
     use super::*;
 
     fn create_left_dataframe() -> DataFrame {
-        let id = Series::new("id".into(), &[1, 2, 3, 4]);
-        let name = Series::new("name".into(), &["Alice", "Bob", "Charlie", "Dave"]);
-        let dept_id = Series::new("dept_id".into(), &[10, 20, 10, 30]);
+        let id = Column::new("id".into(), Series::new("".into(), &[1, 2, 3, 4]));
+        let name = Column::new(
+            "name".into(),
+            Series::new("".into(), &["Alice", "Bob", "Charlie", "Dave"]),
+        );
+        let dept_id = Column::new("dept_id".into(), Series::new("".into(), &[10, 20, 10, 30]));
         DataFrame::new(vec![id, name, dept_id]).unwrap()
     }
 
@@ -939,8 +942,10 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.shape().0, 3); // Alice, Bob, and Charlie should match
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"dept_name".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("dept_name")));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -963,8 +968,10 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 4); // All left rows should be present
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"dept_name".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("dept_name")));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1243,9 +1250,9 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 2);
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"age".into()));
-                assert!(df.get_column_names().contains(&"city".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("age")));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("city")));
             }
             _ => panic!("Expected DataFrame"),
         }

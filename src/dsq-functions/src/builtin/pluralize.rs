@@ -1,6 +1,7 @@
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
+use polars::datatypes::PlSmallStr;
 use polars::prelude::*;
 use std::borrow::Cow;
 
@@ -254,9 +255,12 @@ mod tests {
     #[test]
     fn test_pluralize_dataframe() {
         use polars::prelude::*;
-        let s1 = Series::new("words".into().into(), &["cat", "dog", "child"]);
-        let s2 = Series::new("numbers".into().into(), &[1, 2, 3]);
-        let df = DataFrame::new(vec![s1, s2]).unwrap();
+        let s1 = Series::new(
+            "words".into().into(),
+            vec!["cat".to_string(), "dog".to_string(), "child".to_string()],
+        );
+        let s2 = Series::new("numbers".into().into(), vec![1, 2, 3]);
+        let df = DataFrame::new(vec![s1.into(), s2.into()]).unwrap();
 
         let args = vec![Value::DataFrame(df)];
         let result = builtin_pluralize(&args).unwrap();
@@ -274,7 +278,7 @@ mod tests {
             let numbers_series = result_df.column("numbers").unwrap();
             assert_eq!(
                 numbers_series,
-                &Series::new("numbers".into().into(), &[1, 2, 3])
+                &Series::new("numbers".into(), &[1, 2, 3]).into()
             );
         } else {
             panic!("Expected DataFrame");

@@ -147,7 +147,7 @@ mod tests {
         let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
         let ages = Series::new("age".into().into(), &[25, 30, 35]);
         let scores = Series::new("score".into().into(), &[85.5, 92.0, 78.3]);
-        DataFrame::new(vec![names, ages, scores]).unwrap()
+        DataFrame::new(vec![names.into(), ages.into(), scores.into()]).unwrap()
     }
 
     #[test]

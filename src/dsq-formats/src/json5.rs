@@ -1145,9 +1145,9 @@ mod tests {
         assert_eq!(df.height(), 2);
         // Should have flattened columns like "user.name", "user.details.age", "active"
         let columns = df.get_column_names();
-        assert!(columns.contains(&"active"));
-        assert!(columns.contains(&"user.name"));
-        assert!(columns.contains(&"user.details.age"));
+        assert!(columns.contains(&&PlSmallStr::from("active")));
+        assert!(columns.contains(&&PlSmallStr::from("user.name")));
+        assert!(columns.contains(&&PlSmallStr::from("user.details.age")));
     }
 
     #[test]

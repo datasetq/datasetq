@@ -63,7 +63,7 @@ mod tests {
         );
         if let Expr::FunctionCall { ref args, .. } = filter.expr {
             assert!(
-                matches!(&args[0], Expr::FunctionCall { ref name, ref args } if name == "has" && args.len() == 1)
+                matches!(&args[0], Expr::FunctionCall { name, args } if name == "has" && args.len() == 1)
             );
         }
     }
@@ -74,10 +74,10 @@ mod tests {
         assert!(matches!(filter.expr, Expr::Sequence(ref exprs) if exprs.len() == 2));
         if let Expr::Sequence(ref exprs) = filter.expr {
             assert!(
-                matches!(&exprs[0], Expr::FieldAccess { ref base, ref fields } if matches!(**base, Expr::Identity) && *fields == vec!["name".to_string()])
+                matches!(&exprs[0], Expr::FieldAccess { base, fields } if matches!(**base, Expr::Identity) && *fields == vec!["name".to_string()])
             );
             assert!(
-                matches!(&exprs[1], Expr::FieldAccess { ref base, ref fields } if matches!(**base, Expr::Identity) && *fields == vec!["price".to_string()])
+                matches!(&exprs[1], Expr::FieldAccess { base, fields } if matches!(**base, Expr::Identity) && *fields == vec!["price".to_string()])
             );
         }
     }
@@ -399,9 +399,9 @@ mod tests {
         );
         if let Expr::FunctionCall { ref args, .. } = filter.expr {
             assert!(
-                matches!(&args[0], Expr::FunctionCall { ref name, ref args } if *name == "map_values" && args.len() == 1)
+                matches!(&args[0], Expr::FunctionCall { name, args } if *name == "map_values" && args.len() == 1)
             );
-            if let Expr::FunctionCall { ref args, .. } = &args[0] {
+            if let Expr::FunctionCall { args, .. } = &args[0] {
                 assert!(matches!(&args[0], Expr::If { .. }));
             }
         }
@@ -419,7 +419,7 @@ mod tests {
         );
         if let Expr::FunctionCall { ref args, .. } = filter.expr {
             assert!(
-                matches!(&args[0], Expr::FieldAccess { ref base, ref fields } if matches!(**base, Expr::Identity) && *fields == vec!["value"])
+                matches!(&args[0], Expr::FieldAccess { base, fields } if matches!(**base, Expr::Identity) && *fields == vec!["value"])
             );
         }
 
@@ -435,7 +435,7 @@ mod tests {
         );
         if let Expr::FunctionCall { ref args, .. } = filter.expr {
             assert!(
-                matches!(&args[0], Expr::FieldAccess { ref base, ref fields } if matches!(**base, Expr::Identity) && *fields == vec!["price"])
+                matches!(&args[0], Expr::FieldAccess { base, fields } if matches!(**base, Expr::Identity) && *fields == vec!["price"])
             );
         }
 
@@ -445,7 +445,7 @@ mod tests {
         );
         if let Expr::FunctionCall { ref args, .. } = filter.expr {
             assert!(
-                matches!(&args[0], Expr::FieldAccess { ref base, ref fields } if matches!(**base, Expr::Identity) && *fields == vec!["salary"])
+                matches!(&args[0], Expr::FieldAccess { base, fields } if matches!(**base, Expr::Identity) && *fields == vec!["salary"])
             );
         }
     }

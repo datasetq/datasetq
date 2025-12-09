@@ -37,22 +37,29 @@ pub fn builtin_hour(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut hour_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(dt) = crate::extract_timestamp(&value) {
-                                        hour_values.push(dt.hour() as i64);
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value =
+                                        crate::value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match crate::extract_timestamp(&value) {
+                                            Ok(dt) => {
+                                                hour_values.push(dt.hour() as i64);
+                                            }
+                                            _ => {
+                                                hour_values.push(0i64);
+                                            }
+                                        }
                                     } else {
                                         hour_values.push(0i64);
                                     }
-                                } else {
+                                }
+                                _ => {
                                     hour_values.push(0i64);
                                 }
-                            } else {
-                                hour_values.push(0i64);
                             }
                         }
                         let hour_series = Series::new(col_name.clone(), hour_values);
@@ -76,19 +83,25 @@ pub fn builtin_hour(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut hour_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                            if let Ok(dt) = crate::extract_timestamp(&value) {
-                                hour_values.push(dt.hour() as i64);
+                    match series.get(i) {
+                        Ok(val) => {
+                            let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
+                            if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                                match crate::extract_timestamp(&value) {
+                                    Ok(dt) => {
+                                        hour_values.push(dt.hour() as i64);
+                                    }
+                                    _ => {
+                                        hour_values.push(0i64);
+                                    }
+                                }
                             } else {
                                 hour_values.push(0i64);
                             }
-                        } else {
+                        }
+                        _ => {
                             hour_values.push(0i64);
                         }
-                    } else {
-                        hour_values.push(0i64);
                     }
                 }
                 Ok(Value::Series(Series::new(

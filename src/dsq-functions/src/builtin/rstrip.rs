@@ -125,8 +125,8 @@ mod tests {
     #[test]
     fn test_rstrip_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name".into().into(), &["  Alice  ", "Bob   ", "Charlie"]),
-            Series::new("age".into().into(), &[25, 30, 35]),
+            Series::new("name".into(), &["  Alice  ", "Bob   ", "Charlie"]).into(),
+            Series::new("age".into(), &[25, 30, 35]).into(),
         ])
         .unwrap();
         let result = builtin_rstrip(&[Value::DataFrame(df.clone())]).unwrap();
@@ -148,10 +148,7 @@ mod tests {
 
     #[test]
     fn test_rstrip_series() {
-        let series = Series::new(
-            "test".into().into(),
-            &["  hello  ", "world   ", "no spaces"],
-        );
+        let series = Series::new("test".into(), &["  hello  ", "world   ", "no spaces"]);
         let result = builtin_rstrip(&[Value::Series(series)]).unwrap();
         if let Value::Series(result_series) = result {
             let values: Vec<String> = result_series
@@ -168,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_rstrip_non_string_series() {
-        let series = Series::new("numbers".into().into(), &[1, 2, 3]);
+        let series = Series::new("numbers".into::<String>().into(), vec![1i32, 2, 3]);
         let result = builtin_rstrip(&[Value::Series(series.clone())]).unwrap();
         if let Value::Series(result_series) = result {
             assert_eq!(result_series.name(), series.name());

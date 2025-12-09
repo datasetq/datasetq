@@ -24,11 +24,14 @@ pub fn builtin_filter(args: &[Value]) -> Result<Value> {
                 if let Ok(series) = df.column(first_col) {
                     let mut mask = Vec::new();
                     for i in 0..series.len() {
-                        if let Ok(val) = series.get(i) {
-                            let value = value_from_any_value(val).unwrap_or(Value::Null);
-                            mask.push(value == filter_value);
-                        } else {
-                            mask.push(false);
+                        match series.get(i) {
+                            Ok(val) => {
+                                let value = value_from_any_value(val).unwrap_or(Value::Null);
+                                mask.push(value == filter_value);
+                            }
+                            _ => {
+                                mask.push(false);
+                            }
                         }
                     }
                     let mask_chunked = BooleanChunked::from_slice("mask".into(), &mask);
@@ -49,11 +52,14 @@ pub fn builtin_filter(args: &[Value]) -> Result<Value> {
         Value::Series(series) => {
             let mut mask = Vec::new();
             for i in 0..series.len() {
-                if let Ok(val) = series.get(i) {
-                    let value = value_from_any_value(val).unwrap_or(Value::Null);
-                    mask.push(value == filter_value);
-                } else {
-                    mask.push(false);
+                match series.get(i) {
+                    Ok(val) => {
+                        let value = value_from_any_value(val).unwrap_or(Value::Null);
+                        mask.push(value == filter_value);
+                    }
+                    _ => {
+                        mask.push(false);
+                    }
                 }
             }
             let mask_chunked = BooleanChunked::from_slice("mask".into(), &mask);
@@ -137,8 +143,8 @@ mod tests {
     #[test]
     fn test_filter_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1".into().into(), vec![1, 2, 1, 3]),
-            Series::new("col2".into().into(), vec!["a", "b", "c", "d"]),
+            Series::new(PlSmallStr::from("col1"), vec![1, 2, 1, 3]).into(),
+            Series::new(PlSmallStr::from("col2"), vec!["a", "b", "c", "d"]).into(),
         ])
         .unwrap();
         let result = builtin_filter(&[Value::DataFrame(df), Value::Int(1)]).unwrap();
@@ -157,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_filter_series() {
-        let series = Series::new("test".into().into(), vec![1, 2, 1, 3]);
+        let series = Series::new(PlSmallStr::from("test"), vec![1, 2, 1, 3]);
         let result = builtin_filter(&[Value::Series(series), Value::Int(1)]).unwrap();
         match result {
             Value::Series(filtered_series) => {

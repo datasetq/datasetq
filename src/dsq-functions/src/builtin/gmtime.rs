@@ -49,24 +49,31 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut gmtime_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(gmtime_obj) = builtin_gmtime(&[value]) {
-                                        // For DataFrame, we might want to flatten or select a field
-                                        // For now, just store as string representation
-                                        gmtime_values.push(format!("{:?}", gmtime_obj));
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value =
+                                        crate::value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match builtin_gmtime(&[value]) {
+                                            Ok(gmtime_obj) => {
+                                                // For DataFrame, we might want to flatten or select a field
+                                                // For now, just store as string representation
+                                                gmtime_values.push(format!("{:?}", gmtime_obj));
+                                            }
+                                            _ => {
+                                                gmtime_values.push("null".to_string());
+                                            }
+                                        }
                                     } else {
                                         gmtime_values.push("null".to_string());
                                     }
-                                } else {
+                                }
+                                _ => {
                                     gmtime_values.push("null".to_string());
                                 }
-                            } else {
-                                gmtime_values.push("null".to_string());
                             }
                         }
                         let new_s =
@@ -90,19 +97,25 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
         Value::Series(series) => {
             let mut gmtime_values = Vec::new();
             for i in 0..series.len() {
-                if let Ok(val) = series.get(i) {
-                    let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                    if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                        if let Ok(gmtime_obj) = builtin_gmtime(&[value]) {
-                            gmtime_values.push(format!("{:?}", gmtime_obj));
+                match series.get(i) {
+                    Ok(val) => {
+                        let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
+                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                            match builtin_gmtime(&[value]) {
+                                Ok(gmtime_obj) => {
+                                    gmtime_values.push(format!("{:?}", gmtime_obj));
+                                }
+                                _ => {
+                                    gmtime_values.push("null".to_string());
+                                }
+                            }
                         } else {
                             gmtime_values.push("null".to_string());
                         }
-                    } else {
+                    }
+                    _ => {
                         gmtime_values.push("null".to_string());
                     }
-                } else {
-                    gmtime_values.push("null".to_string());
                 }
             }
             let new_series = Series::new("gmtime".into(), gmtime_values);

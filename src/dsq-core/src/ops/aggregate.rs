@@ -1576,8 +1576,10 @@ mod tests {
         match pivoted {
             Value::DataFrame(df) => {
                 // Should have id and value_sum columns
-                assert!(df.get_column_names().contains(&"id".into()));
-                assert!(df.get_column_names().contains(&"value_sum".into()));
+                assert!(df.get_column_names().contains(&PlSmallStr::from("id")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&PlSmallStr::from("value_sum")));
             }
             _ => panic!("Expected DataFrame"),
         }

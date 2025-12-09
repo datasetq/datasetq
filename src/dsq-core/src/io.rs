@@ -412,15 +412,11 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
 
     for header in &header_fields {
         let values = columns.get(header).unwrap();
-        let series = Series::new(header.into(), values);
-        df_columns.push(series);
+        let column = Column::new(header.into(), values);
+        df_columns.push(column);
     }
 
-    let columns: Vec<_> = df_columns
-        .into_iter()
-        .map(std::convert::Into::into)
-        .collect();
-    let df = DataFrame::new(columns)
+    let df = DataFrame::new(df_columns)
         .map_err(|e| Error::operation(format!("Failed to create DataFrame: {e}")))?;
 
     Ok(Value::DataFrame(df))
@@ -543,8 +539,14 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 2);
                 assert_eq!(df.width(), 2);
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"age".into()));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "name"));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "age"));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -565,8 +567,14 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 1);
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"age".into()));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "name"));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "age"));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -608,9 +616,18 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 4);
                 assert_eq!(df.width(), 3);
-                assert!(df.get_column_names().contains(&"genre".into()));
-                assert!(df.get_column_names().contains(&"title".into()));
-                assert!(df.get_column_names().contains(&"price".into()));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "genre"));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "title"));
+                assert!(df
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "price"));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -699,9 +716,9 @@ mod tests {
     fn test_group_by_io_parquet() {
         // Create a DataFrame that represents group_by results
         let df = DataFrame::new(vec![
-            Series::new("genre".into(), vec!["Fiction", "Non-Fiction"]),
-            Series::new("count".into(), vec![3i64, 1i64]),
-            Series::new("avg_price".into(), vec![10.33, 15.0]),
+            Column::new("genre".into(), vec!["Fiction", "Non-Fiction"]),
+            Column::new("count".into(), vec![3i64, 1i64]),
+            Column::new("avg_price".into(), vec![10.33, 15.0]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -726,9 +743,18 @@ mod tests {
             Value::DataFrame(df_back) => {
                 assert_eq!(df_back.height(), 2);
                 assert_eq!(df_back.width(), 3);
-                assert!(df_back.get_column_names().contains(&"genre".into()));
-                assert!(df_back.get_column_names().contains(&"count".into()));
-                assert!(df_back.get_column_names().contains(&"avg_price".into()));
+                assert!(df_back
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "genre"));
+                assert!(df_back
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "count"));
+                assert!(df_back
+                    .get_column_names()
+                    .iter()
+                    .any(|name| name.as_str() == "avg_price"));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -751,9 +777,15 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 3);
                 assert_eq!(df.width(), 3);
-                assert!(df.get_column_names().contains(&"genre".into()));
-                assert!(df.get_column_names().contains(&"title".into()));
-                assert!(df.get_column_names().contains(&"price".into()));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("genre")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("title")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("price")));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -859,17 +891,20 @@ mod tests {
                     assert_eq!(df.height(), 3, "Wrong row count for {}", format_name);
                     assert_eq!(df.width(), 3, "Wrong column count for {}", format_name);
                     assert!(
-                        df.get_column_names().contains(&"name".into()),
+                        df.get_column_names()
+                            .contains(&&polars::datatypes::PlSmallStr::from("name")),
                         "Missing 'name' column for {}",
                         format_name
                     );
                     assert!(
-                        df.get_column_names().contains(&"age".into()),
+                        df.get_column_names()
+                            .contains(&&polars::datatypes::PlSmallStr::from("age")),
                         "Missing 'age' column for {}",
                         format_name
                     );
                     assert!(
-                        df.get_column_names().contains(&"active".into()),
+                        df.get_column_names()
+                            .contains(&&polars::datatypes::PlSmallStr::from("active")),
                         "Missing 'active' column for {}",
                         format_name
                     );
@@ -936,9 +971,15 @@ mod tests {
             Value::DataFrame(read_df) => {
                 assert_eq!(read_df.height(), 3);
                 assert_eq!(read_df.width(), 3);
-                assert!(read_df.get_column_names().contains(&"name".into()));
-                assert!(read_df.get_column_names().contains(&"age".into()));
-                assert!(read_df.get_column_names().contains(&"active".into()));
+                assert!(read_df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("name")));
+                assert!(read_df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("age")));
+                assert!(read_df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("active")));
             }
             _ => panic!("Expected DataFrame after reading NDJSON"),
         }
@@ -1050,8 +1091,12 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 3);
                 assert_eq!(df.width(), 2);
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"age".into()));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("name")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("age")));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1103,8 +1148,12 @@ mod tests {
             Value::DataFrame(read_df) => {
                 assert_eq!(read_df.height(), 2);
                 assert_eq!(read_df.width(), 2);
-                assert!(read_df.get_column_names().contains(&"name".into()));
-                assert!(read_df.get_column_names().contains(&"age".into()));
+                assert!(read_df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("name")));
+                assert!(read_df
+                    .get_column_names()
+                    .contains(&&polars::datatypes::PlSmallStr::from("age")));
             }
             _ => panic!("Expected DataFrame"),
         }

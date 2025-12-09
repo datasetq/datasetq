@@ -39,22 +39,29 @@ pub fn builtin_month(args: &[Value]) -> Result<Value> {
                     if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut month_values = Vec::new();
                         for i in 0..series.len() {
-                            if let Ok(val) = series.get(i) {
-                                let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                                if matches!(
-                                    value,
-                                    Value::Int(_) | Value::Float(_) | Value::String(_)
-                                ) {
-                                    if let Ok(dt) = crate::extract_timestamp(&value) {
-                                        month_values.push(dt.month() as i64);
+                            match series.get(i) {
+                                Ok(val) => {
+                                    let value =
+                                        crate::value_from_any_value(val).unwrap_or(Value::Null);
+                                    if matches!(
+                                        value,
+                                        Value::Int(_) | Value::Float(_) | Value::String(_)
+                                    ) {
+                                        match crate::extract_timestamp(&value) {
+                                            Ok(dt) => {
+                                                month_values.push(dt.month() as i64);
+                                            }
+                                            _ => {
+                                                month_values.push(0i64);
+                                            }
+                                        }
                                     } else {
                                         month_values.push(0i64);
                                     }
-                                } else {
+                                }
+                                _ => {
                                     month_values.push(0i64);
                                 }
-                            } else {
-                                month_values.push(0i64);
                             }
                         }
                         let month_series = Series::new(col_name.clone(), month_values);
@@ -78,19 +85,25 @@ pub fn builtin_month(args: &[Value]) -> Result<Value> {
             if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut month_values = Vec::new();
                 for i in 0..series.len() {
-                    if let Ok(val) = series.get(i) {
-                        let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
-                        if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
-                            if let Ok(dt) = crate::extract_timestamp(&value) {
-                                month_values.push(dt.month() as i64);
+                    match series.get(i) {
+                        Ok(val) => {
+                            let value = crate::value_from_any_value(val).unwrap_or(Value::Null);
+                            if matches!(value, Value::Int(_) | Value::Float(_) | Value::String(_)) {
+                                match crate::extract_timestamp(&value) {
+                                    Ok(dt) => {
+                                        month_values.push(dt.month() as i64);
+                                    }
+                                    _ => {
+                                        month_values.push(0i64);
+                                    }
+                                }
                             } else {
                                 month_values.push(0i64);
                             }
-                        } else {
+                        }
+                        _ => {
                             month_values.push(0i64);
                         }
-                    } else {
-                        month_values.push(0i64);
                     }
                 }
                 Ok(Value::Series(Series::new(

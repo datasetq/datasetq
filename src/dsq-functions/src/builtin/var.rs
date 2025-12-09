@@ -2,6 +2,7 @@ use crate::FunctionRegistration;
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
+use polars::datatypes::PlSmallStr;
 use polars::prelude::*;
 
 inventory::submit! {
@@ -188,7 +189,7 @@ mod tests {
     #[test]
     fn test_builtin_var_series_non_numeric() {
         // Create a non-numeric series
-        let series = Series::new("strings".into().into(), vec!["a", "b", "c"]);
+        let series = Series::<&str>::new("strings".into().into(), vec!["a", "b", "c"]);
         let result = builtin_var(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Null);
     }
@@ -198,7 +199,7 @@ mod tests {
         // Create a DataFrame with numeric column
         let series1 = Series::new("numbers".into().into(), vec![1i64, 2, 3, 4, 5]);
         let series2 = Series::new("strings".into().into(), vec!["a", "b", "c", "d", "e"]);
-        let df = DataFrame::new(vec![series1, series2]).unwrap();
+        let df = DataFrame::new(vec![series1.into(), series2.into()]).unwrap();
         let result = builtin_var(&[Value::DataFrame(df)]).unwrap();
 
         if let Value::Object(obj) = result {

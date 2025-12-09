@@ -1,6 +1,7 @@
 use dsq_shared::value::{value_from_any_value, Value};
 use dsq_shared::Result;
 use inventory;
+use polars::datatypes::PlSmallStr;
 use polars::prelude::{DataFrame, NamedFrom, Series};
 
 pub fn builtin_melt(args: &[Value]) -> Result<Value> {
@@ -77,22 +78,28 @@ pub fn builtin_melt(args: &[Value]) -> Result<Value> {
                         variable_values.push(value_var.clone());
 
                         // Add value as string
-                        if let Ok(val) = series.get(i) {
-                            let value = value_from_any_value(val).unwrap_or(Value::Null);
-                            value_values.push(format!("{}", value));
-                        } else {
-                            value_values.push("null".to_string());
+                        match series.get(i) {
+                            Ok(val) => {
+                                let value = value_from_any_value(val).unwrap_or(Value::Null);
+                                value_values.push(format!("{}", value));
+                            }
+                            _ => {
+                                value_values.push("null".to_string());
+                            }
                         }
 
                         // Add id values
                         for (j, id_var) in id_vars.iter().enumerate() {
                             if let Ok(id_series) = df.column(id_var) {
-                                if let Ok(id_val) = id_series.get(i) {
-                                    let id_value =
-                                        value_from_any_value(id_val).unwrap_or(Value::Null);
-                                    id_columns_data[j].push(format!("{}", id_value));
-                                } else {
-                                    id_columns_data[j].push("null".to_string());
+                                match id_series.get(i) {
+                                    Ok(id_val) => {
+                                        let id_value =
+                                            value_from_any_value(id_val).unwrap_or(Value::Null);
+                                        id_columns_data[j].push(format!("{}", id_value));
+                                    }
+                                    _ => {
+                                        id_columns_data[j].push("null".to_string());
+                                    }
                                 }
                             }
                         }
@@ -105,14 +112,14 @@ pub fn builtin_melt(args: &[Value]) -> Result<Value> {
 
             // Add id columns
             for (i, id_var) in id_vars.iter().enumerate() {
-                new_series.push(Series::new(id_var.into(), &id_columns_data[i]).into());
+                new_series.push(Series::new(id_var.clone().into(), &id_columns_data[i]).into());
             }
 
             // Add variable column
-            new_series.push(Series::new("variable".into(), &variable_values).into());
+            new_series.push(Series::new(PlSmallStr::from("variable"), &variable_values).into());
 
             // Add value column
-            new_series.push(Series::new("value".into(), &value_values).into());
+            new_series.push(Series::new(PlSmallStr::from("value"), &value_values).into());
 
             match DataFrame::new(new_series) {
                 Ok(melted_df) => Ok(Value::DataFrame(melted_df)),
@@ -139,15 +146,15 @@ inventory::submit! {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::{DataFrame, NamedFrom, Series};
+    use polars::prelude::{Column, DataFrame, NamedFrom, Series};
 
     #[test]
     fn test_builtin_melt_basic() {
         // Create a simple DataFrame
-        let series1 = Series::new("id".into().into(), vec![1i64, 2]);
-        let series2 = Series::new("A".into().into(), vec![10i64, 20]);
-        let series3 = Series::new("B".into().into(), vec![100i64, 200]);
-        let df = DataFrame::new(vec![series1, series2, series3]).unwrap();
+        let series1 = Series::new(PlSmallStr::from("id"), &[1i64, 2i64]);
+        let series2 = Series::new(PlSmallStr::from("A"), &[10i64, 20i64]);
+        let series3 = Series::new(PlSmallStr::from("B"), &[100i64, 200i64]);
+        let df = DataFrame::new(vec![series1.into(), series2.into(), series3.into()]).unwrap();
 
         let result = builtin_melt(&[Value::DataFrame(df)]).unwrap();
 
@@ -159,9 +166,9 @@ mod tests {
 
             // Check column names
             let col_names = melted_df.get_column_names();
-            assert!(col_names.contains(&"id".into()));
-            assert!(col_names.contains(&"variable".into()));
-            assert!(col_names.contains(&"value".into()));
+            assert!(col_names.contains(&&"id".into()));
+            assert!(col_names.contains(&&"variable".into()));
+            assert!(col_names.contains(&&"value".into()));
         } else {
             panic!("Expected DataFrame");
         }
@@ -193,7 +200,13 @@ mod tests {
         let series2 = Series::new("A".into().into(), vec![10i64, 20]);
         let series3 = Series::new("B".into().into(), vec![100i64, 200]);
         let series4 = Series::new("C".into().into(), vec![1000i64, 2000]);
-        let df = DataFrame::new(vec![series1, series2, series3, series4]).unwrap();
+        let df = DataFrame::new(vec![
+            series1.into(),
+            series2.into(),
+            series3.into(),
+            series4.into(),
+        ])
+        .unwrap();
 
         let result = builtin_melt(&[
             Value::DataFrame(df),
@@ -225,7 +238,7 @@ mod tests {
             .contains("expects 1-3 arguments"));
 
         // Too many arguments
-        let df = DataFrame::new(vec![Series::new("col".into().into(), vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("col".into(), vec![1i64])]).unwrap();
         let result = builtin_melt(&[
             Value::DataFrame(df),
             Value::String("id".to_string()),
@@ -241,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_builtin_melt_invalid_id_vars() {
-        let df = DataFrame::new(vec![Series::new("col".into().into(), vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("col".into(), vec![1i64])]).unwrap();
         let result = builtin_melt(&[
             Value::DataFrame(df),
             Value::Int(123), // Invalid id_vars type
@@ -255,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_builtin_melt_invalid_value_vars() {
-        let df = DataFrame::new(vec![Series::new("col".into().into(), vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("col".into(), vec![1i64])]).unwrap();
         let result = builtin_melt(&[
             Value::DataFrame(df),
             Value::String("id".to_string()),

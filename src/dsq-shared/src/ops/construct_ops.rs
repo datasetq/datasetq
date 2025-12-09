@@ -61,7 +61,7 @@ impl Operation for ObjectConstructOperation {
                 _ => return Err(crate::error::operation_error("Object key must be a string")),
             };
 
-            let field_value = if let Some(ref ops) = value_op {
+            let field_value = if let Some(ops) = value_op {
                 let mut current = value.clone();
                 for op in ops {
                     current = op.apply_with_context(&current, context)?;

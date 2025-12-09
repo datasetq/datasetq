@@ -46,8 +46,8 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
     for col_name in &columns {
         if let Ok(series) = df.column(col_name) {
             let mut s = series.clone();
-            s.rename(col_name.clone().into());
-            selected_series.push(s);
+            s.rename(PlSmallStr::from(col_name));
+            selected_series.push(s.into());
         }
         // Ignore non-existent columns
     }
@@ -85,9 +85,9 @@ mod tests {
     use dsq_shared::value::Value;
 
     fn create_test_dataframe() -> DataFrame {
-        let s1 = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
-        let s2 = Series::new("age".into().into(), &[25, 30, 35]);
-        let s3 = Series::new("city".into().into(), &["NYC", "LA", "Chicago"]);
+        let s1 = Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]).into();
+        let s2 = Series::new(PlSmallStr::from("age"), &[25, 30, 35]).into();
+        let s3 = Series::new(PlSmallStr::from("city"), &["NYC", "LA", "Chicago"]).into();
         DataFrame::new(vec![s1, s2, s3]).unwrap()
     }
 
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn test_cut_empty_dataframe() {
-        let empty_df = DataFrame::new(Vec::<Series>::new()).unwrap();
+        let empty_df = DataFrame::new(Vec::<Column>::new()).unwrap();
         let df_value = Value::DataFrame(empty_df);
         let columns = Value::Array(vec![Value::String("name".to_string())]);
 

@@ -2,6 +2,7 @@ use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
 use polars::prelude::*;
+
 use uuid;
 
 pub fn builtin_generate_uuidv7(args: &[Value]) -> Result<Value> {
@@ -123,15 +124,18 @@ mod tests {
     #[test]
     fn test_builtin_generate_uuidv7_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1".into().into(), vec![1, 2, 3]),
-            Series::new("col2".into().into(), vec!["a", "b", "c"]),
+            Series::new("col1".into(), vec![1i32, 2, 3]).into(),
+            Series::new("col2".into(), vec!["a", "b", "c"]).into(),
         ])
         .unwrap();
         let result = builtin_generate_uuidv7(&[Value::DataFrame(df.clone())]).unwrap();
         match result {
             Value::DataFrame(result_df) => {
                 assert_eq!(result_df.height(), 3);
-                assert!(result_df.get_column_names().contains(&"uuid_v7".into()));
+                assert!(result_df
+                    .get_column_names()
+                    .iter()
+                    .any(|s| s.as_str() == "uuid_v7"));
                 let uuid_col = result_df.column("uuid_v7").unwrap();
                 assert_eq!(uuid_col.dtype(), &DataType::String);
                 for i in 0..uuid_col.len() {
@@ -141,8 +145,14 @@ mod tests {
                     }
                 }
                 // Original columns should remain
-                assert!(result_df.get_column_names().contains(&"col1".into()));
-                assert!(result_df.get_column_names().contains(&"col2".into()));
+                assert!(result_df
+                    .get_column_names()
+                    .iter()
+                    .any(|s| s.as_str() == "col1"));
+                assert!(result_df
+                    .get_column_names()
+                    .iter()
+                    .any(|s| s.as_str() == "col2"));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -150,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_builtin_generate_uuidv7_with_series() {
-        let series = Series::new("test".into().into(), vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1i32, 2, 3]);
         let result = builtin_generate_uuidv7(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(result_series) => {

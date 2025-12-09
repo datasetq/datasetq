@@ -410,7 +410,7 @@ pub fn filter_rows(value: &Value, mask: &Value) -> Result<Value> {
                         _ => Err(Error::operation("Filter mask must be boolean")),
                     })
                     .collect();
-                let mask_series = Series::new("mask".into().into(), bool_mask?);
+                let mask_series = Series::new("mask".into(), bool_mask?);
                 let filtered = filter(df, &mask_series)?;
                 Ok(Value::DataFrame(filtered))
             } else {
@@ -468,7 +468,7 @@ where
                 let row_value = df_row_to_value(df, i)?;
                 mask.push(predicate(&row_value)?);
             }
-            let mask_series = Series::new("mask".into().into(), mask);
+            let mask_series = Series::new("mask".into(), mask);
             let filtered = filter(df, &mask_series)?;
             Ok(Value::DataFrame(filtered))
         }
@@ -873,23 +873,29 @@ mod tests {
     #[test]
     fn test_select() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), vec![1, 2, 3]).into(),
-            Series::new("b".into().into(), vec![4, 5, 6]).into(),
-            Series::new("c".into().into(), vec![7, 8, 9]).into(),
+            Series::<i32>::new("a".to_string(), vec![1, 2, 3]).into(),
+            Series::<i32>::new("b".to_string(), vec![4, 5, 6]).into(),
+            Series::<i32>::new("c".to_string(), vec![7, 8, 9]).into(),
         ])
         .unwrap();
 
         let selected = select(&df, &["a".to_string(), "c".to_string()]).unwrap();
         assert_eq!(selected.width(), 2);
-        assert!(selected.get_column_names().contains(&"a".into()));
-        assert!(selected.get_column_names().contains(&"c".into()));
+        assert!(selected
+            .get_column_names()
+            .iter()
+            .any(|name| name.as_str() == "a"));
+        assert!(selected
+            .get_column_names()
+            .iter()
+            .any(|name| name.as_str() == "c"));
     }
 
     #[test]
     fn test_filter() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), vec![1, 2, 3, 4, 5]).into(),
-            Series::new("b".into().into(), vec![10, 20, 30, 40, 50]).into(),
+            Series::<i32>::new("a".to_string(), vec![1, 2, 3, 4, 5]).into(),
+            Series::<i32>::new("b".to_string(), vec![10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
@@ -905,8 +911,8 @@ mod tests {
     #[test]
     fn test_sort() {
         let df = DataFrame::new(vec![
-            Series::new("a".into().into(), vec![3, 1, 4, 1, 5]).into(),
-            Series::new("b".into().into(), vec!["c", "a", "d", "b", "e"]).into(),
+            Series::<i32>::new("a".to_string(), vec![3, 1, 4, 1, 5]).into(),
+            Series::<&str>::new("b".to_string(), vec!["c", "a", "d", "b", "e"]).into(),
         ])
         .unwrap();
 
@@ -923,8 +929,8 @@ mod tests {
     #[test]
     fn test_rename() {
         let df = DataFrame::new(vec![
-            Series::new("old_name".into().into(), vec![1, 2, 3]).into(),
-            Series::new("keep_name".into().into(), vec![4, 5, 6]).into(),
+            Series::<i32>::new("old_name".to_string(), vec![1, 2, 3]).into(),
+            Series::<i32>::new("keep_name".to_string(), vec![4, 5, 6]).into(),
         ])
         .unwrap();
 
@@ -932,8 +938,17 @@ mod tests {
         mapping.insert("old_name".to_string(), "new_name".to_string());
 
         let renamed = rename(&df, &mapping).unwrap();
-        assert!(renamed.get_column_names().contains(&"new_name".into()));
-        assert!(renamed.get_column_names().contains(&"keep_name".into()));
-        assert!(!renamed.get_column_names().contains(&"old_name".into()));
+        assert!(renamed
+            .get_column_names()
+            .iter()
+            .any(|name| name == &PlSmallStr::from("new_name")));
+        assert!(renamed
+            .get_column_names()
+            .iter()
+            .any(|name| name == &PlSmallStr::from("keep_name")));
+        assert!(!renamed
+            .get_column_names()
+            .iter()
+            .any(|name| name == &PlSmallStr::from("old_name")));
     }
 }
