@@ -16,9 +16,10 @@ categories = ["command-line-utilities", "data-structures", "parsing"]
 members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli"]
 
 [workspace.lints.clippy]
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
+pedantic = "allow"
+nursery = "allow"
+cargo = {priority = -1, level = "warn"}
+approx_constant = {priority = 2, level = "allow" }
 
 [workspace.dependencies]
 # Core dependencies shared across workspace

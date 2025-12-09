@@ -905,7 +905,7 @@ impl Config {
                 options.infer_schema = true;
                 // Could add CSV-specific options like encoding, etc.
             }
-            DataFormat::Json | DataFormat::JsonLines | DataFormat::Json5 => {
+            DataFormat::Json | DataFormat::JsonLines => {
                 options.infer_schema = true;
                 // Could add JSON-specific options
             }
@@ -933,7 +933,7 @@ impl Config {
                 options.include_header = self.formats.csv.has_header;
                 // Could add CSV-specific options like separator, quote_char, etc.
             }
-            DataFormat::Json | DataFormat::JsonLines | DataFormat::Json5 => {
+            DataFormat::Json | DataFormat::JsonLines => {
                 // JSON-specific write options could include pretty_print, etc.
                 options.include_header = false; // JSON doesn't have headers
             }

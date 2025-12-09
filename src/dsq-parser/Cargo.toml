@@ -9,6 +9,9 @@ repository = "https://github.com/durableprogramming/dsq"
 keywords = ["data", "jq", "query", "parser", "ast"]
 categories = ["parsing", "data-structures"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Shared utilities
 dsq-shared = { path = "../dsq-shared" }

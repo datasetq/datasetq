@@ -12,6 +12,9 @@ readme = "README.md"
 keywords = ["jq", "data", "functions", "builtin"]
 categories = ["data-structures", "command-line-utilities"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core dependencies
 dsq-shared = { path = "../dsq-shared" }

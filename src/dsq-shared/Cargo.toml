@@ -9,6 +9,9 @@ repository = "https://github.com/durableprogramming/dsq"
 keywords = ["data", "shared", "utilities"]
 categories = ["data-structures"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Error handling
 thiserror = { workspace = true }

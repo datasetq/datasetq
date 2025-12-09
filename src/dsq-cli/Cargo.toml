@@ -12,6 +12,9 @@ readme = "README.md"
 keywords = ["jq", "data", "cli", "query", "dataframe"]
 categories = ["command-line-utilities", "data-structures"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Core DSQ crates (shared across all targets)
 dsq-core = { path = "../dsq-core", features = ["filter", "io"] }

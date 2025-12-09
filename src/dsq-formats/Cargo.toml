@@ -9,6 +9,9 @@ repository = "https://github.com/durableprogramming/dsq"
 keywords = ["data", "formats", "csv", "json", "parquet"]
 categories = ["data-structures", "parsing"]
 
+[lints]
+workspace = true
+
 [dependencies]
 # Data processing
 arrow = { workspace = true }
