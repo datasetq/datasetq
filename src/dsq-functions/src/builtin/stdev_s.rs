@@ -39,12 +39,8 @@ pub fn builtin_stdev_s(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Object(stds))
         }
-        Value::Series(series) => {
-            if series.dtype().is_numeric() {
-                Ok(Value::Null) // Placeholder - std calculation for series
-            } else {
-                Ok(Value::Null)
-            }
+        Value::Series(_series) => {
+            Ok(Value::Null) // Placeholder - std calculation for series
         }
         _ => Err(dsq_shared::error::operation_error(
             "stdev_s() requires array, DataFrame, or Series",
