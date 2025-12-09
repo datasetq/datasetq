@@ -116,8 +116,8 @@ pub fn deserialize_adt<R: Read>(
 
     for header in &header_fields {
         let values = columns.get(header).unwrap();
-        let series = Series::new(header, values);
-        df_columns.push(series);
+        let series = Series::new(header.as_str().into(), values);
+        df_columns.push(series.into());
     }
 
     let df = DataFrame::new(df_columns).map_err(Error::from)?;
@@ -140,7 +140,7 @@ pub fn serialize_adt<W: Write>(
 
     // Write header if requested
     if options.include_header {
-        let headers: Vec<&str> = df.get_column_names().iter().copied().collect();
+        let headers: Vec<&str> = df.get_column_names().iter().map(|s| s.as_str()).collect();
         for (i, header) in headers.iter().enumerate() {
             if i > 0 {
                 writer.write_all(&[FIELD_SEPARATOR]).map_err(Error::from)?;
@@ -160,7 +160,7 @@ pub fn serialize_adt<W: Write>(
 
             // Get value and convert to string
             let value_str = match column.get(row_idx).map_err(Error::from)? {
-                AnyValue::Utf8(s) => s.to_string(),
+                AnyValue::String(s) => s.to_string(),
                 AnyValue::Int64(i) => i.to_string(),
                 AnyValue::Float64(f) => f.to_string(),
                 AnyValue::Boolean(b) => b.to_string(),

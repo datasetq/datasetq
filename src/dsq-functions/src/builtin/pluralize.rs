@@ -27,19 +27,19 @@ pub fn builtin_pluralize(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let pluralized_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| s.map(|s| Cow::Owned(pluralize_word(s))))
                             .into_series();
                         let mut s = pluralized_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -52,9 +52,9 @@ pub fn builtin_pluralize(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let pluralized_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| s.map(|s| Cow::Owned(pluralize_word(s))))
                     .into_series();
@@ -254,8 +254,8 @@ mod tests {
     #[test]
     fn test_pluralize_dataframe() {
         use polars::prelude::*;
-        let s1 = Series::new("words", &["cat", "dog", "child"]);
-        let s2 = Series::new("numbers", &[1, 2, 3]);
+        let s1 = Series::new("words".into(), &["cat", "dog", "child"]);
+        let s2 = Series::new("numbers".into(), &[1, 2, 3]);
         let df = DataFrame::new(vec![s1, s2]).unwrap();
 
         let args = vec![Value::DataFrame(df)];
@@ -264,7 +264,7 @@ mod tests {
         if let Value::DataFrame(result_df) = result {
             let words_series = result_df.column("words").unwrap();
             let words: Vec<String> = words_series
-                .utf8()
+                .str()
                 .unwrap()
                 .into_iter()
                 .map(|s| s.unwrap().to_string())
@@ -272,7 +272,7 @@ mod tests {
             assert_eq!(words, vec!["cats", "dogs", "children"]);
 
             let numbers_series = result_df.column("numbers").unwrap();
-            assert_eq!(numbers_series, &Series::new("numbers", &[1, 2, 3]));
+            assert_eq!(numbers_series, &Series::new("numbers".into(), &[1, 2, 3]));
         } else {
             panic!("Expected DataFrame");
         }
@@ -281,14 +281,14 @@ mod tests {
     #[test]
     fn test_pluralize_series() {
         use polars::prelude::*;
-        let series = Series::new("words", &["cat", "dog", "child"]);
+        let series = Series::new("words".into(), &["cat", "dog", "child"]);
 
         let args = vec![Value::Series(series.clone())];
         let result = builtin_pluralize(&args).unwrap();
 
         if let Value::Series(result_series) = result {
             let words: Vec<String> = result_series
-                .utf8()
+                .str()
                 .unwrap()
                 .into_iter()
                 .map(|s| s.unwrap().to_string())
@@ -302,7 +302,7 @@ mod tests {
     #[test]
     fn test_pluralize_series_non_string() {
         use polars::prelude::*;
-        let series = Series::new("numbers", &[1, 2, 3]);
+        let series = Series::new("numbers".into(), &[1, 2, 3]);
 
         let args = vec![Value::Series(series.clone())];
         let result = builtin_pluralize(&args).unwrap();

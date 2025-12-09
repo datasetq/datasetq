@@ -24,7 +24,7 @@ pub fn builtin_unique(args: &[Value]) -> Result<Value> {
         }
         Value::DataFrame(df) => {
             // Remove duplicate rows
-            match df.unique(None, UniqueKeepStrategy::First, None) {
+            match df.unique::<String, &str>(None, UniqueKeepStrategy::First, None) {
                 Ok(unique_df) => Ok(Value::DataFrame(unique_df)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
                     "unique() failed: {}",

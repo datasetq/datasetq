@@ -5,6 +5,7 @@ use dsq_shared::value::Value;
 use polars::prelude::*;
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::Arc;
 
 /// File-based data reader
 pub struct FileReader {
@@ -71,43 +72,57 @@ impl FileReader {
 
         let file = std::fs::File::open(&self.path).map_err(Error::from)?;
         let buf_reader = std::io::BufReader::with_capacity(128 * 1024, file); // 128KB buffer
-        let mut reader = CsvReader::new(buf_reader)
-            .with_separator(csv_opts.0)
-            .has_header(csv_opts.1);
+
+        let mut parse_options = CsvParseOptions::default().with_separator(csv_opts.0);
 
         if let Some(quote) = csv_opts.2 {
-            reader = reader.with_quote_char(Some(quote));
+            parse_options = parse_options.with_quote_char(Some(quote));
         }
 
         if let Some(comment) = csv_opts.3 {
-            reader = reader.with_comment_char(Some(comment));
+            parse_options = parse_options
+                .with_comment_prefix(Some(polars::prelude::CommentPrefix::Single(comment)));
         }
 
         if let Some(null_vals) = csv_opts.4 {
-            reader = reader.with_null_values(Some(NullValues::AllColumns(null_vals)));
+            let null_vals_converted: Vec<_> = null_vals.iter().map(|s| s.as_str().into()).collect();
+            parse_options =
+                parse_options.with_null_values(Some(NullValues::AllColumns(null_vals_converted)));
         }
 
+        let mut read_options = polars::prelude::CsvReadOptions::default()
+            .with_parse_options(parse_options)
+            .with_has_header(csv_opts.1);
+
         if let Some(max_rows) = options.max_rows {
-            reader = reader.with_n_rows(Some(max_rows));
+            read_options = read_options.with_n_rows(Some(max_rows));
         }
 
         if let Some(schema) = &options.schema {
-            reader = reader.with_schema(Some(std::sync::Arc::new(schema.clone())));
+            read_options = read_options.with_schema(Some(Arc::new(schema.clone())));
         } else if options.infer_schema {
             if let Some(infer_len) = options.infer_schema_length {
-                reader = reader.infer_schema(Some(infer_len));
+                read_options = read_options.with_infer_schema_length(Some(infer_len));
             }
         }
 
         if options.skip_rows > 0 {
-            reader = reader.with_skip_rows(options.skip_rows);
+            read_options = read_options.with_skip_rows(options.skip_rows);
         }
 
-        if let Some(cols) = &options.columns {
-            reader = reader.with_columns(Some(cols.clone()));
+        // Note: with_projection expects column indices, not names
+        // We'll handle column selection after reading
+        let selected_columns = options.columns.clone();
+
+        let reader = CsvReader::new(buf_reader).with_options(read_options);
+
+        let mut df = reader.finish().map_err(Error::from)?;
+
+        // Apply column selection if specified
+        if let Some(cols) = selected_columns {
+            df = df.select(&cols).map_err(Error::from)?;
         }
 
-        let df = reader.finish().map_err(Error::from)?;
         if options.lazy {
             Ok(Value::LazyFrame(Box::new(df.lazy())))
         } else {
@@ -127,8 +142,11 @@ impl FileReader {
             _ => (true, true, None),
         };
 
+        use polars::prelude::PlPath;
+
         let mut reader =
-            LazyFrame::scan_parquet(&self.path, ScanArgsParquet::default()).map_err(Error::from)?;
+            LazyFrame::scan_parquet(PlPath::new(self.path.as_str()), ScanArgsParquet::default())
+                .map_err(Error::from)?;
 
         if let Some(cols) = parquet_opts.2.or_else(|| options.columns.clone()) {
             reader = reader.select(cols.iter().map(|s| col(s)).collect::<Vec<_>>());
@@ -449,15 +467,27 @@ impl FileReader {
 
             for field in &record_schema.fields {
                 let series = match &field.schema {
-                    apache_avro::Schema::String => Series::new(&field.name, Vec::<String>::new()),
-                    apache_avro::Schema::Int => Series::new(&field.name, Vec::<i32>::new()),
-                    apache_avro::Schema::Long => Series::new(&field.name, Vec::<i64>::new()),
-                    apache_avro::Schema::Float => Series::new(&field.name, Vec::<f32>::new()),
-                    apache_avro::Schema::Double => Series::new(&field.name, Vec::<f64>::new()),
-                    apache_avro::Schema::Boolean => Series::new(&field.name, Vec::<bool>::new()),
-                    _ => Series::new(&field.name, Vec::<String>::new()), // Default to string for complex types
+                    apache_avro::Schema::String => {
+                        Series::new(field.name.as_str().into(), Vec::<String>::new())
+                    }
+                    apache_avro::Schema::Int => {
+                        Series::new(field.name.as_str().into(), Vec::<i32>::new())
+                    }
+                    apache_avro::Schema::Long => {
+                        Series::new(field.name.as_str().into(), Vec::<i64>::new())
+                    }
+                    apache_avro::Schema::Float => {
+                        Series::new(field.name.as_str().into(), Vec::<f32>::new())
+                    }
+                    apache_avro::Schema::Double => {
+                        Series::new(field.name.as_str().into(), Vec::<f64>::new())
+                    }
+                    apache_avro::Schema::Boolean => {
+                        Series::new(field.name.as_str().into(), Vec::<bool>::new())
+                    }
+                    _ => Series::new(field.name.as_str().into(), Vec::<String>::new()), // Default to string for complex types
                 };
-                columns.push(series);
+                columns.push(series.into());
             }
 
             DataFrame::new(columns).map_err(Error::from)
@@ -502,7 +532,7 @@ impl FileReader {
             for field in &record_schema.fields {
                 if let Some(values) = column_data.get(&field.name) {
                     let series = self.avro_values_to_series(&field.name, values, &field.schema)?;
-                    series_vec.push(series);
+                    series_vec.push(series.into());
                 }
             }
 
@@ -541,7 +571,7 @@ impl FileReader {
                         _ => "".to_string(),
                     })
                     .collect();
-                Ok(Series::new(name, strings))
+                Ok(Series::new(name.into(), strings))
             }
             apache_avro::Schema::Int => {
                 let ints: Vec<Option<i32>> = values
@@ -558,7 +588,7 @@ impl FileReader {
                         _ => None,
                     })
                     .collect();
-                Ok(Series::new(name, ints))
+                Ok(Series::new(name.into(), ints))
             }
             apache_avro::Schema::Long => {
                 let longs: Vec<Option<i64>> = values
@@ -575,7 +605,7 @@ impl FileReader {
                         _ => None,
                     })
                     .collect();
-                Ok(Series::new(name, longs))
+                Ok(Series::new(name.into(), longs))
             }
             apache_avro::Schema::Float => {
                 let floats: Vec<Option<f32>> = values
@@ -592,7 +622,7 @@ impl FileReader {
                         _ => None,
                     })
                     .collect();
-                Ok(Series::new(name, floats))
+                Ok(Series::new(name.into(), floats))
             }
             apache_avro::Schema::Double => {
                 let doubles: Vec<Option<f64>> = values
@@ -609,7 +639,7 @@ impl FileReader {
                         _ => None,
                     })
                     .collect();
-                Ok(Series::new(name, doubles))
+                Ok(Series::new(name.into(), doubles))
             }
             apache_avro::Schema::Boolean => {
                 let bools: Vec<Option<bool>> = values
@@ -626,12 +656,12 @@ impl FileReader {
                         _ => None,
                     })
                     .collect();
-                Ok(Series::new(name, bools))
+                Ok(Series::new(name.into(), bools))
             }
             _ => {
                 // For complex types, convert to string representation
                 let strings: Vec<String> = values.iter().map(|v| format!("{:?}", v)).collect();
-                Ok(Series::new(name, strings))
+                Ok(Series::new(name.into(), strings))
             }
         }
     }

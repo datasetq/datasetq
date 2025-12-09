@@ -1,6 +1,7 @@
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
+use polars::prelude::*;
 
 use crate::compare_values_for_sorting;
 
@@ -20,7 +21,7 @@ pub fn builtin_sort(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             // Sort by first column by default
             if let Some(first_col) = df.get_column_names().first() {
-                match df.sort([first_col], false, false) {
+                match df.sort([first_col.as_str()], SortMultipleOptions::default()) {
                     Ok(sorted_df) => Ok(Value::DataFrame(sorted_df)),
                     Err(e) => Err(dsq_shared::error::operation_error(format!(
                         "sort() failed: {}",
@@ -33,8 +34,13 @@ pub fn builtin_sort(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             // Sort the series
-            let sorted_series = series.sort(false);
-            Ok(Value::Series(sorted_series))
+            match series.sort(SortOptions::default()) {
+                Ok(sorted_series) => Ok(Value::Series(sorted_series)),
+                Err(e) => Err(dsq_shared::error::operation_error(format!(
+                    "sort() failed on series: {}",
+                    e
+                ))),
+            }
         }
         _ => Ok(args[0].clone()),
     }

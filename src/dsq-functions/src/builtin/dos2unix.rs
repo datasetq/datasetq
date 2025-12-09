@@ -40,19 +40,19 @@ pub fn builtin_dos2unix(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let converted_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| s.map(|s| Cow::Owned(s.replace("\r\n", "\n"))))
                             .into_series();
                         let mut s = converted_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -65,9 +65,9 @@ pub fn builtin_dos2unix(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let converted_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| s.map(|s| Cow::Owned(s.replace("\r\n", "\n"))))
                     .into_series();
@@ -210,7 +210,7 @@ mod tests {
     #[test]
     fn test_dos2unix_dataframe() {
         // Create a test DataFrame with string columns
-        let names = Series::new("name", &["Alice", "Bob", "Charlie"]);
+        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
         let descriptions = Series::new(
             "description",
             &["Line1\r\nLine2", "Single line", "Another\r\nline"],
@@ -227,7 +227,7 @@ mod tests {
 
             // Check the converted description column
             let desc_series = result_df.column("description").unwrap();
-            let desc_chunked = desc_series.utf8().unwrap();
+            let desc_chunked = desc_series.str().unwrap();
 
             assert_eq!(desc_chunked.get(0).unwrap(), "Line1\nLine2");
             assert_eq!(desc_chunked.get(1).unwrap(), "Single line");
@@ -240,15 +240,18 @@ mod tests {
     #[test]
     fn test_dos2unix_series() {
         // Create a test Series with strings containing CRLF
-        let series = Series::new("test", &["line1\r\nline2", "no crlf", "another\r\nline"]);
+        let series = Series::new(
+            "test".into(),
+            &["line1\r\nline2", "no crlf", "another\r\nline"],
+        );
 
         let result = builtin_dos2unix(&[Value::Series(series.clone())]);
         assert!(result.is_ok());
 
         if let Value::Series(result_series) = result.unwrap() {
-            assert_eq!(result_series.dtype(), &DataType::Utf8);
+            assert_eq!(result_series.dtype(), &DataType::String);
 
-            let chunked = result_series.utf8().unwrap();
+            let chunked = result_series.str().unwrap();
             assert_eq!(chunked.get(0).unwrap(), "line1\nline2");
             assert_eq!(chunked.get(1).unwrap(), "no crlf");
             assert_eq!(chunked.get(2).unwrap(), "another\nline");
@@ -260,7 +263,7 @@ mod tests {
     #[test]
     fn test_dos2unix_series_non_utf8() {
         // Create a test Series with integers (should remain unchanged)
-        let series = Series::new("numbers", &[1, 2, 3]);
+        let series = Series::new("numbers".into(), &[1, 2, 3]);
 
         let result = builtin_dos2unix(&[Value::Series(series.clone())]);
         assert!(result.is_ok());

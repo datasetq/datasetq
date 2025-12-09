@@ -28,19 +28,19 @@ pub fn builtin_camel_case(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let camel_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| s.map(|s| Cow::Owned(s.to_lower_camel_case())))
                             .into_series();
                         let mut s = camel_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -55,9 +55,9 @@ pub fn builtin_camel_case(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let camel_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| s.map(|s| Cow::Owned(s.to_lower_camel_case())))
                     .into_series();
@@ -121,15 +121,15 @@ mod tests {
     #[test]
     fn test_builtin_camel_case_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1", &["hello_world", "snake_case"]),
-            Series::new("col2", &[1, 2]),
+            Series::new("col1".into(), &["hello_world", "snake_case"]),
+            Series::new("col2".into(), &[1, 2]),
         ])
         .unwrap();
 
         let result = builtin_camel_case(&[Value::DataFrame(df)]).unwrap();
         match result {
             Value::DataFrame(result_df) => {
-                let col1 = result_df.column("col1").unwrap().utf8().unwrap();
+                let col1 = result_df.column("col1").unwrap().str().unwrap();
                 assert_eq!(col1.get(0).unwrap(), "helloWorld");
                 assert_eq!(col1.get(1).unwrap(), "snakeCase");
 
@@ -143,12 +143,12 @@ mod tests {
 
     #[test]
     fn test_builtin_camel_case_series() {
-        let series = Series::new("test", &["hello_world", "snake_case"]);
+        let series = Series::new("test".into(), &["hello_world", "snake_case"]);
 
         let result = builtin_camel_case(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(result_series) => {
-                let utf8_series = result_series.utf8().unwrap();
+                let utf8_series = result_series.str().unwrap();
                 assert_eq!(utf8_series.get(0).unwrap(), "helloWorld");
                 assert_eq!(utf8_series.get(1).unwrap(), "snakeCase");
             }

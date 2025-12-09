@@ -35,9 +35,9 @@ pub fn builtin_url_extract_domain(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let extracted_series = series
-                            .utf8()
+                            .str()
                             .map_err(|e| {
                                 dsq_shared::error::operation_error(format!(
                                     "url_extract_domain() failed to cast series to utf8: {}",
@@ -52,12 +52,12 @@ pub fn builtin_url_extract_domain(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = extracted_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -70,9 +70,9 @@ pub fn builtin_url_extract_domain(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let extracted_series = series
-                    .utf8()
+                    .str()
                     .map_err(|e| {
                         dsq_shared::error::operation_error(format!(
                             "url_extract_domain() failed to cast series to utf8: {}",

@@ -75,8 +75,8 @@ mod tests {
 
     #[test]
     fn test_first_dataframe_with_rows() {
-        let series1 = Series::new("col1", vec![1i64, 2]);
-        let series2 = Series::new("col2", vec!["a", "b"]);
+        let series1 = Series::new("col1".into(), vec![1i64, 2]);
+        let series2 = Series::new("col2".into(), vec!["a", "b"]);
         let df = DataFrame::new(vec![series1, series2]).unwrap();
         let result = builtin_first(&[Value::DataFrame(df)]).unwrap();
 

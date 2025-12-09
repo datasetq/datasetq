@@ -47,7 +47,7 @@ pub fn builtin_is_valid_utf8(args: &[Value]) -> Result<Value> {
         Value::Series(series) => {
             // For Series, check based on type
             match series.dtype() {
-                DataType::Utf8 => Ok(Value::Bool(true)), // String series are valid
+                DataType::String => Ok(Value::Bool(true)), // String series are valid
                 DataType::Binary => {
                     // Check if binary data is valid UTF-8
                     let is_valid = series.binary().unwrap().into_iter().all(|opt_bytes| {

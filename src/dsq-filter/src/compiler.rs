@@ -34,7 +34,7 @@ fn value_from_any_value(any_val: AnyValue) -> Result<Value> {
         AnyValue::UInt64(i) => Ok(Value::Int(i as i64)),
         AnyValue::Float32(f) => Ok(Value::Float(f as f64)),
         AnyValue::Float64(f) => Ok(Value::Float(f)),
-        AnyValue::Utf8(s) => Ok(Value::String(s.to_string())),
+        AnyValue::String(s) => Ok(Value::String(s.to_string())),
         _ => Ok(Value::String(any_val.to_string())),
     }
 }
@@ -42,7 +42,7 @@ fn value_from_any_value(any_val: AnyValue) -> Result<Value> {
 /// Convert Values to Series
 fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
     if values.is_empty() {
-        return Ok(Series::new_empty(name, &DataType::Null));
+        return Ok(Series::new_empty(name.into(), &DataType::Null));
     }
 
     // Determine the data type from the first non-null value
@@ -53,7 +53,7 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
             Value::Bool(_) => DataType::Boolean,
             Value::Int(_) => DataType::Int64,
             Value::Float(_) => DataType::Float64,
-            Value::String(_) => DataType::Utf8,
+            Value::String(_) => DataType::String,
             _ => DataType::Null,
         })
         .unwrap_or(DataType::Null);
@@ -68,7 +68,7 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
         DataType::Int64 => {
             let vec: Vec<Option<i64>> = values
@@ -79,7 +79,7 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
         DataType::Float64 => {
             let vec: Vec<Option<f64>> = values
@@ -91,9 +91,9 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
-        DataType::Utf8 => {
+        DataType::String => {
             let vec: Vec<Option<&str>> = values
                 .iter()
                 .map(|v| match v {
@@ -102,9 +102,9 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
-        _ => Ok(Series::new_null(name, values.len())),
+        _ => Ok(Series::new_null(name.into(), values.len())),
     }
 }
 
@@ -1960,7 +1960,7 @@ impl Operation for FunctionCallOperation {
                             mask_values.push(dsq_shared::value::is_truthy(&predicate_result));
                         }
 
-                        let mask_series = Series::new("mask", mask_values);
+                        let mask_series = Series::new("mask".into(), mask_values);
                         let boolean_chunked = mask_series.bool().map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "Failed to create boolean mask: {}",
@@ -2067,7 +2067,8 @@ impl Operation for FunctionCallOperation {
                                 new_series.push(new_series_data);
                             }
                         }
-                        match DataFrame::new(new_series) {
+                        let columns: Vec<_> = new_series.into_iter().map(|s| s.into()).collect();
+                        match DataFrame::new(columns) {
                             Ok(new_df) => Ok(Value::DataFrame(new_df)),
                             Err(e) => Err(dsq_shared::error::operation_error(format!(
                                 "map_values() failed on DataFrame: {}",
@@ -2146,7 +2147,7 @@ impl Operation for FunctionCallOperation {
                             mask_values.push(is_truthy(&condition_val));
                         }
 
-                        let mask_series = Series::new("mask", mask_values);
+                        let mask_series = Series::new("mask".into(), mask_values);
                         let boolean_chunked = mask_series.bool().map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "Failed to create boolean mask: {}",
@@ -2275,7 +2276,7 @@ impl Operation for FunctionCallOperation {
                                 mask.push(is_truthy(&condition));
                             }
                             let mask_chunked =
-                                polars::prelude::BooleanChunked::from_slice("", &mask);
+                                polars::prelude::BooleanChunked::from_slice("".into(), &mask);
                             match df.filter(&mask_chunked) {
                                 Ok(filtered_df) => Ok(Value::DataFrame(filtered_df)),
                                 Err(e) => Err(dsq_shared::error::operation_error(format!(

@@ -87,9 +87,9 @@ pub fn builtin_strptime(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let parsed_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| {
                                 s.and_then(|s| {
@@ -112,12 +112,12 @@ pub fn builtin_strptime(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = parsed_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -138,9 +138,9 @@ pub fn builtin_strptime(args: &[Value]) -> Result<Value> {
                     ));
                 }
             };
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let parsed_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| {
                         s.and_then(|s| {

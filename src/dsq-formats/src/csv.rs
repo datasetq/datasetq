@@ -1,8 +1,8 @@
 use crate::error::{Error, FormatError, Result};
 
-use polars::{
-    io::csv::CsvReader as PolarsCsvReader,
-    prelude::{DataFrame, LazyFrame, NullValues, SerReader, SerWriter, Series},
+use polars::prelude::{
+    CsvParseOptions, CsvReadOptions, CsvReader as PolarsCsvReader, DataFrame, LazyFrame,
+    NullValues, SerReader, SerWriter, Series,
 };
 
 use std::fs::File;
@@ -11,7 +11,7 @@ use std::path::Path;
 
 /// CSV-specific reading options
 #[derive(Debug, Clone)]
-pub struct CsvReadOptions {
+pub struct DsqCsvReadOptions {
     /// Field separator character
     pub separator: u8,
     /// Whether the first row contains column headers
@@ -38,7 +38,7 @@ pub struct CsvReadOptions {
     pub buffer_size: usize,
 }
 
-impl Default for CsvReadOptions {
+impl Default for DsqCsvReadOptions {
     fn default() -> Self {
         Self {
             separator: b',',
@@ -127,7 +127,7 @@ pub enum QuoteStyle {
 /// CSV reader that provides format-specific optimizations
 pub struct CsvReader<R> {
     reader: R,
-    options: CsvReadOptions,
+    options: DsqCsvReadOptions,
     detected_separator: Option<u8>,
     detected_headers: Option<Vec<String>>,
 }
@@ -137,14 +137,14 @@ impl<R: Read> CsvReader<R> {
     pub fn new(reader: R) -> Self {
         Self {
             reader,
-            options: CsvReadOptions::default(),
+            options: DsqCsvReadOptions::default(),
             detected_separator: None,
             detected_headers: None,
         }
     }
 
     /// Create a CSV reader with custom options
-    pub fn with_options(reader: R, options: CsvReadOptions) -> Self {
+    pub fn with_options(reader: R, options: DsqCsvReadOptions) -> Self {
         Self {
             reader,
             options,
@@ -261,35 +261,43 @@ impl<R: Read> CsvReader<R> {
         } else {
             self.options.has_header
         };
-        let mut csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer))
-            .with_separator(separator)
-            .has_header(has_header);
+
+        let mut parse_options = CsvParseOptions::default().with_separator(separator);
 
         if let Some(quote) = self.options.quote_char {
-            csv_reader = csv_reader.with_quote_char(Some(quote));
+            parse_options = parse_options.with_quote_char(Some(quote));
         }
 
         if let Some(comment) = self.options.comment_char {
-            csv_reader = csv_reader.with_comment_char(Some(comment));
+            parse_options = parse_options
+                .with_comment_prefix(Some(polars::prelude::CommentPrefix::Single(comment)));
         }
 
         if let Some(null_vals) = &self.options.null_values {
-            csv_reader =
-                csv_reader.with_null_values(Some(NullValues::AllColumns(null_vals.clone())));
+            let null_vals_converted: Vec<_> = null_vals.iter().map(|s| s.as_str().into()).collect();
+            parse_options =
+                parse_options.with_null_values(Some(NullValues::AllColumns(null_vals_converted)));
         }
 
+        let mut read_options = CsvReadOptions::default()
+            .with_parse_options(parse_options)
+            .with_has_header(has_header);
+
         if let Some(infer_len) = self.options.infer_schema_length {
-            csv_reader = csv_reader.infer_schema(Some(infer_len));
+            read_options = read_options.with_infer_schema_length(Some(infer_len));
         }
 
         if self.options.skip_rows > 0 {
-            csv_reader = csv_reader.with_skip_rows(self.options.skip_rows);
+            read_options = read_options.with_skip_rows(self.options.skip_rows);
         }
 
         if self.options.skip_rows_after_header > 0 {
-            csv_reader =
-                csv_reader.with_skip_rows_after_header(self.options.skip_rows_after_header);
+            read_options =
+                read_options.with_skip_rows_after_header(self.options.skip_rows_after_header);
         }
+
+        let csv_reader =
+            PolarsCsvReader::new(std::io::Cursor::new(buffer)).with_options(read_options);
 
         let result = match self.options.encoding {
             CsvEncoding::Utf8 => csv_reader.finish().map_err(Error::from),
@@ -324,14 +332,19 @@ impl<R: Read> CsvReader<R> {
         let mut buffer = Vec::new();
         self.reader.read_to_end(&mut buffer)?;
 
-        let mut csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer))
-            .with_separator(separator)
-            .has_header(self.options.has_header)
-            .with_n_rows(Some(rows));
+        let mut parse_options = CsvParseOptions::default().with_separator(separator);
 
         if let Some(quote) = self.options.quote_char {
-            csv_reader = csv_reader.with_quote_char(Some(quote));
+            parse_options = parse_options.with_quote_char(Some(quote));
         }
+
+        let read_options = CsvReadOptions::default()
+            .with_parse_options(parse_options)
+            .with_has_header(self.options.has_header)
+            .with_n_rows(Some(rows));
+
+        let csv_reader =
+            PolarsCsvReader::new(std::io::Cursor::new(buffer)).with_options(read_options);
 
         csv_reader.finish().map_err(Error::from)
     }
@@ -465,7 +478,8 @@ impl<W: Write> CsvWriter<W> {
     pub fn write_dataframe(&mut self, df: &DataFrame) -> Result<()> {
         // Write headers if needed
         if self.options.include_header && !self.headers_written {
-            self.write_headers(df.get_column_names())?;
+            let headers: Vec<&str> = df.get_column_names().iter().map(|s| s.as_str()).collect();
+            self.write_headers(headers)?;
             self.headers_written = true;
         }
 
@@ -499,7 +513,7 @@ impl<W: Write> CsvWriter<W> {
             if i > 0 {
                 self.writer.write_all(&[self.options.separator])?;
             }
-            self.write_series_value(series, row_idx)?;
+            self.write_series_value(series.as_materialized_series(), row_idx)?;
         }
 
         self.writer
@@ -584,12 +598,12 @@ impl<W: Write> CsvWriter<W> {
                 };
                 self.write_field(&field_str, true)?;
             }
-            DataType::Utf8 => {
-                let val = series.utf8().map_err(Error::from)?.get(index).unwrap_or("");
+            DataType::String => {
+                let val = series.str().map_err(Error::from)?.get(index).unwrap_or("");
                 self.write_field(val, false)?;
             }
             DataType::Date => {
-                let val = series.date().map_err(Error::from)?.get(index);
+                let val = series.date().map_err(Error::from)?.phys.get(index);
                 if let Some(date_val) = val {
                     use chrono::NaiveDate;
                     let days_since_epoch = date_val;
@@ -609,7 +623,7 @@ impl<W: Write> CsvWriter<W> {
                 }
             }
             DataType::Datetime(_, _) => {
-                let val = series.datetime().map_err(Error::from)?.get(index);
+                let val = series.datetime().map_err(Error::from)?.phys.get(index);
                 if let Some(dt_val) = val {
                     use chrono::DateTime;
                     let default_datetime = DateTime::from_timestamp(0, 0)
@@ -701,7 +715,7 @@ pub fn read_csv_file<P: AsRef<Path>>(path: P) -> Result<DataFrame> {
 /// Convenience function to read CSV from a file path with options
 pub fn read_csv_file_with_options<P: AsRef<Path>>(
     path: P,
-    mut options: CsvReadOptions,
+    mut options: DsqCsvReadOptions,
 ) -> Result<DataFrame> {
     // Auto-detect TSV files
     if path.as_ref().extension() == Some(std::ffi::OsStr::new("tsv")) {
@@ -731,7 +745,7 @@ pub fn write_csv_file_with_options<P: AsRef<Path>>(
 }
 
 /// Detect CSV dialect (separator, quote char, etc.) from sample data
-pub fn detect_csv_dialect<R: Read>(mut reader: R) -> Result<CsvReadOptions> {
+pub fn detect_csv_dialect<R: Read>(mut reader: R) -> Result<DsqCsvReadOptions> {
     let mut buffer = Vec::new();
     reader.read_to_end(&mut buffer)?;
 
@@ -739,7 +753,7 @@ pub fn detect_csv_dialect<R: Read>(mut reader: R) -> Result<CsvReadOptions> {
     let lines: Vec<&str> = sample.lines().take(10).collect();
 
     if lines.is_empty() {
-        return Ok(CsvReadOptions::default());
+        return Ok(DsqCsvReadOptions::default());
     }
 
     // Detect separator
@@ -789,7 +803,7 @@ pub fn detect_csv_dialect<R: Read>(mut reader: R) -> Result<CsvReadOptions> {
         true // Default assumption
     };
 
-    Ok(CsvReadOptions {
+    Ok(DsqCsvReadOptions {
         separator: detected_separator,
         has_header,
         quote_char,
@@ -827,8 +841,8 @@ pub fn detect_csv_format(bytes: &[u8]) -> bool {
 mod tests {
     use super::{
         detect_csv_dialect, detect_csv_format, read_csv_file, read_csv_file_with_options,
-        write_csv_file, write_csv_file_with_options, CsvEncoding, CsvReadOptions, CsvReader,
-        CsvWriteOptions, Error, FormatError, QuoteStyle,
+        write_csv_file, write_csv_file_with_options, CsvEncoding, CsvReader, CsvWriteOptions,
+        DsqCsvReadOptions, Error, FormatError, QuoteStyle,
     };
     use crate::csv::CsvWriter;
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
@@ -926,7 +940,7 @@ mod tests {
         let csv_data = "name,age,city\nAlice,30,\nBob,,Boston\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             null_values: Some(vec!["".to_string()]),
             ..Default::default()
         };
@@ -945,7 +959,7 @@ mod tests {
         let csv_data = "Alice,30,true\nBob,25,false\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             has_header: false,
             ..Default::default()
         };
@@ -967,7 +981,7 @@ mod tests {
         let csv_data = "name;age;active\nAlice;30;true\nBob;25;false\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             separator: b';',
             ..Default::default()
         };
@@ -1157,7 +1171,7 @@ mod tests {
         assert_eq!(fields, vec!["Alice", "30", ""]);
 
         // Test with whitespace trimming
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             trim_whitespace: true,
             ..Default::default()
         };
@@ -1193,7 +1207,7 @@ mod tests {
         // Test with no header
         let csv_data = "Alice,30,true\nBob,25,false\n";
         let cursor = Cursor::new(csv_data.as_bytes());
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             has_header: false,
             ..Default::default()
         };
@@ -1247,7 +1261,7 @@ mod tests {
             "# Comment line\n# Another comment\nname,age,active\nAlice,30,true\nBob,25,false\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             skip_rows: 2, // Skip the comment lines
             ..Default::default()
         };
@@ -1264,7 +1278,7 @@ mod tests {
         let csv_data = "name,age,active\n# Skip this\nAlice,30,true\nBob,25,false\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             skip_rows_after_header: 1, // Skip one row after header
             ..Default::default()
         };
@@ -1283,7 +1297,7 @@ mod tests {
         let csv_data = "name,age,active\nAlice,30,true\nBob,25,false\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             ignore_header: true,
             ..Default::default()
         };
@@ -1303,7 +1317,7 @@ mod tests {
         let csv_data = "name,age,active\nAlice,30,true\n# Bob,25,false\nCharlie,35,true\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             comment_char: Some(b'#'),
             ..Default::default()
         };
@@ -1323,7 +1337,7 @@ mod tests {
         let csv_data = "name,age\nAlice,30\nBob,25\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             encoding: CsvEncoding::Utf8Lossy,
             ..Default::default()
         };
@@ -1340,7 +1354,7 @@ mod tests {
         let csv_data = "name,age,active\nAlice,30,true\nBob,25,false\nCharlie,35,true\n";
         let cursor = Cursor::new(csv_data.as_bytes());
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             infer_schema_length: Some(2), // Only look at first 2 rows for schema
             ..Default::default()
         };
@@ -1510,7 +1524,7 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         fs::write(&temp_file, csv_content).unwrap();
 
-        let options = CsvReadOptions {
+        let options = DsqCsvReadOptions {
             separator: b';',
             ..Default::default()
         };
@@ -1765,35 +1779,48 @@ pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
         ),
     };
 
-    let mut csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer))
-        .with_separator(csv_opts.0)
-        .has_header(csv_opts.1);
+    let mut parse_options = CsvParseOptions::default().with_separator(csv_opts.0);
 
     if let Some(quote) = csv_opts.2 {
-        csv_reader = csv_reader.with_quote_char(Some(quote));
+        parse_options = parse_options.with_quote_char(Some(quote));
     }
 
     if let Some(comment) = csv_opts.3 {
-        csv_reader = csv_reader.with_comment_char(Some(comment));
+        parse_options = parse_options
+            .with_comment_prefix(Some(polars::prelude::CommentPrefix::Single(comment)));
     }
 
     if let Some(null_vals) = csv_opts.4 {
-        csv_reader = csv_reader.with_null_values(Some(NullValues::AllColumns(null_vals)));
+        let null_vals_converted: Vec<_> = null_vals.iter().map(|s| s.as_str().into()).collect();
+        parse_options =
+            parse_options.with_null_values(Some(NullValues::AllColumns(null_vals_converted)));
     }
 
+    let mut read_options = CsvReadOptions::default()
+        .with_parse_options(parse_options)
+        .with_has_header(csv_opts.1);
+
     if let Some(max_rows) = options.max_rows {
-        csv_reader = csv_reader.with_n_rows(Some(max_rows));
+        read_options = read_options.with_n_rows(Some(max_rows));
     }
 
     if options.skip_rows > 0 {
-        csv_reader = csv_reader.with_skip_rows(options.skip_rows);
+        read_options = read_options.with_skip_rows(options.skip_rows);
     }
 
-    if let Some(columns) = &options.columns {
-        csv_reader = csv_reader.with_columns(Some(columns.clone()));
+    // Note: with_projection expects column indices, not names
+    // We'll handle column selection after reading
+    let selected_columns = options.columns.clone();
+
+    let csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer)).with_options(read_options);
+
+    let mut df = csv_reader.finish().map_err(Error::from)?;
+
+    // Apply column selection if specified
+    if let Some(cols) = selected_columns {
+        df = df.select(&cols).map_err(Error::from)?;
     }
 
-    let df = csv_reader.finish().map_err(Error::from)?;
     Ok(Value::DataFrame(df))
 }
 

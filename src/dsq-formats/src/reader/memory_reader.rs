@@ -41,13 +41,17 @@ impl crate::reader::data_reader::DataReader for MemoryReader {
                     b','
                 };
 
-                let mut reader = CsvReader::new(cursor)
-                    .with_separator(separator)
-                    .has_header(true);
+                let parse_options = CsvParseOptions::default().with_separator(separator);
+
+                let mut read_options = polars::prelude::CsvReadOptions::default()
+                    .with_parse_options(parse_options)
+                    .with_has_header(true);
 
                 if let Some(max_rows) = options.max_rows {
-                    reader = reader.with_n_rows(Some(max_rows));
+                    read_options = read_options.with_n_rows(Some(max_rows));
                 }
+
+                let reader = CsvReader::new(cursor).with_options(read_options);
 
                 let df = reader.finish().map_err(Error::from)?;
 

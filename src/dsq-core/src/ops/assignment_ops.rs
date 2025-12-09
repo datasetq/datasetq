@@ -40,16 +40,19 @@ impl AssignAddOperation {
         add_val: &Value,
     ) -> Result<Value> {
         // Get the current column
-        let current_series = df
+        let current_column = df
             .column(field_name)
             .map_err(|_| Error::operation(format!("Field '{field_name}' not found")))?;
 
-        // Add the value to the series
-        let new_series = match add_val {
-            Value::Int(i) => current_series + *i,
-            Value::Float(f) => current_series + *f,
+        // Add the value to the column
+        let new_column = match add_val {
+            Value::Int(i) => current_column + *i,
+            Value::Float(f) => current_column + *f,
             _ => return Err(Error::operation("Can only add numeric values to columns")),
         };
+
+        // Convert column to series for replacement
+        let new_series = new_column.as_materialized_series().clone();
 
         // Create new DataFrame with the modified column
         let mut new_df = df.clone();

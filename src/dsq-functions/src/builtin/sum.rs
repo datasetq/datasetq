@@ -86,16 +86,18 @@ pub fn builtin_sum(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                let sum_result = series.sum::<f64>();
-                match sum_result {
-                    Some(sum) => {
+                match series.sum::<f64>() {
+                    Ok(sum) => {
                         if sum.fract() == 0.0 && sum <= i64::MAX as f64 && sum >= i64::MIN as f64 {
                             Ok(Value::Int(sum as i64))
                         } else {
                             Ok(Value::Float(sum))
                         }
                     }
-                    None => Ok(Value::Null),
+                    Err(e) => Err(dsq_shared::error::operation_error(format!(
+                        "sum() failed to sum series: {}",
+                        e
+                    ))),
                 }
             } else {
                 Err(dsq_shared::error::operation_error(
@@ -192,29 +194,29 @@ mod tests {
 
     #[test]
     fn test_sum_series_numeric() {
-        let series = Series::new("col", vec![1i64, 2, 3]);
+        let series = Series::new("col".into(), vec![1i64, 2, 3]);
         let result = builtin_sum(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Int(6));
     }
 
     #[test]
     fn test_sum_series_float() {
-        let series = Series::new("col", vec![1.1f64, 2.2, 3.3]);
+        let series = Series::new("col".into(), vec![1.1f64, 2.2, 3.3]);
         let result = builtin_sum(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Float(6.6));
     }
 
     #[test]
     fn test_sum_series_non_numeric() {
-        let series = Series::new("col", vec!["a", "b", "c"]);
+        let series = Series::new("col".into(), vec!["a", "b", "c"]);
         let result = builtin_sum(&[Value::Series(series)]);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_sum_dataframe() {
-        let series1 = Series::new("col1", vec![1i64, 2, 3]);
-        let series2 = Series::new("col2", vec![4i64, 5, 6]);
+        let series1 = Series::new("col1".into(), vec![1i64, 2, 3]);
+        let series2 = Series::new("col2".into(), vec![4i64, 5, 6]);
         let df = DataFrame::new(vec![series1, series2]).unwrap();
         let result = builtin_sum(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Int(21)); // 1+2+3+4+5+6=21
@@ -222,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_sum_dataframe_no_numeric() {
-        let series = Series::new("col", vec!["a", "b", "c"]);
+        let series = Series::new("col".into(), vec!["a", "b", "c"]);
         let df = DataFrame::new(vec![series]).unwrap();
         let result = builtin_sum(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Null);

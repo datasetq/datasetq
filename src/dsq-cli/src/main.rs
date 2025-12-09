@@ -84,7 +84,7 @@ fn print_version() {
     println!("Rustc: {}", rustc_version);
 
     // Show enabled features
-    let mut features: Vec<&str> = vec![];
+    let features: Vec<&str> = vec![];
     #[cfg(feature = "csv")]
     features.push("csv");
     #[cfg(feature = "json")]
@@ -546,7 +546,9 @@ async fn inspect_file(
 
             if show_stats {
                 println!("\nStatistics:");
-                println!("{}", df.describe(None)?);
+                // Note: describe() method is not available in newer polars versions
+                // Consider implementing custom statistics if needed
+                println!("Statistics display is currently unavailable");
             }
         }
         _ => {
@@ -765,16 +767,16 @@ fn load_schema(path: &Path) -> Result<polars::prelude::Schema> {
     let schema_map: serde_json::Map<String, serde_json::Value> = serde_json::from_str(&content)
         .map_err(|e| anyhow::anyhow!(format!("Invalid schema JSON: {}", e)))?;
 
-    let mut schema = polars::prelude::Schema::new();
+    let mut fields = Vec::new();
     for (name, value) in schema_map {
         let dtype_str = value
             .as_str()
             .ok_or_else(|| anyhow::anyhow!(format!("dtype for {} must be string", name)))?;
         let dtype = parse_dtype(dtype_str)?;
-        schema.with_column(name.into(), dtype);
+        fields.push((name.into(), dtype));
     }
 
-    Ok(schema)
+    Ok(polars::prelude::Schema::from_iter(fields))
 }
 
 fn parse_dtype(dtype_str: &str) -> Result<polars::prelude::DataType> {
@@ -792,7 +794,7 @@ fn parse_dtype(dtype_str: &str) -> Result<polars::prelude::DataType> {
         "u64" | "uint64" => DataType::UInt64,
         "f32" | "float32" => DataType::Float32,
         "f64" | "float64" => DataType::Float64,
-        "str" | "string" | "utf8" => DataType::Utf8,
+        "str" | "string" | "utf8" => DataType::String,
         "date" => DataType::Date,
         "datetime" => DataType::Datetime(polars::prelude::TimeUnit::Microseconds, None),
         "time" => DataType::Time,

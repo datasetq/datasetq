@@ -209,7 +209,7 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
             let temp_col_name = "__group_by_temp_col";
             let mut df_clone = df.clone();
             let mut temp_series = series.clone();
-            temp_series.rename(temp_col_name);
+            temp_series.rename(temp_col_name.into());
             match df_clone.with_column(temp_series) {
                 Ok(df_with_group) => {
                     match df_with_group.group_by([temp_col_name]) {
@@ -332,8 +332,11 @@ mod tests {
     #[test]
     fn test_builtin_group_by_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("department", &["Engineering", "Sales", "Engineering"]),
-            Series::new("salary", &[75000, 82000, 95000]),
+            Series::new(
+                "department".into(),
+                &["Engineering", "Sales", "Engineering"],
+            ),
+            Series::new("salary".into(), &[75000, 82000, 95000]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -400,8 +403,8 @@ mod tests {
 
         // Test DataFrame grouping
         let df = DataFrame::new(vec![
-            Series::new("name", &["Alice", "Bob", "Charlie"]),
-            Series::new("group", &["A", "B", "A"]),
+            Series::new("name".into(), &["Alice", "Bob", "Charlie"]),
+            Series::new("group".into(), &["A", "B", "A"]),
         ])
         .unwrap();
         let df_val = Value::DataFrame(df);
@@ -414,9 +417,13 @@ mod tests {
         }
 
         // Test DataFrame grouping by series
-        let df = DataFrame::new(vec![Series::new("name", &["Alice", "Bob", "Charlie"])]).unwrap();
+        let df = DataFrame::new(vec![Series::new(
+            "name".into(),
+            &["Alice", "Bob", "Charlie"],
+        )])
+        .unwrap();
         let df_val = Value::DataFrame(df);
-        let series = Series::new("group", &["A", "B", "A"]);
+        let series = Series::new("group".into(), &["A", "B", "A"]);
         let series_val = Value::Series(series);
         let result = builtin_group_by(&[df_val, series_val]).unwrap();
         match result {

@@ -47,7 +47,7 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
         }
         (Value::DataFrame(df), Value::String(column)) => {
             // Sort DataFrame by column name
-            match df.sort([column.as_str()], false, false) {
+            match df.sort([column.as_str()], SortMultipleOptions::default()) {
                 Ok(sorted_df) => Ok(Value::DataFrame(sorted_df)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
                     "sort_by() failed: {}",
@@ -75,9 +75,9 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             let temp_col_name = "__sort_by_temp_col";
             let mut df_clone = df.clone();
             let mut temp_series = series.clone();
-            temp_series.rename(temp_col_name);
+            temp_series.rename(temp_col_name.into());
             match df_clone.with_column(temp_series) {
-                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], false, false) {
+                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], SortMultipleOptions::default()) {
                     Ok(sorted_df) => match sorted_df.drop(temp_col_name) {
                         Ok(final_df) => Ok(Value::DataFrame(final_df)),
                         Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -99,17 +99,17 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
         (Value::Series(series), Value::Series(key_series)) => {
             // Sort series by key_series
             let temp_col_name = "__sort_by_temp_col";
-            let mut df = DataFrame::new(vec![series.clone()]).map_err(|e| {
+            let mut df = DataFrame::new(vec![series.clone().into()]).map_err(|e| {
                 dsq_shared::error::operation_error(format!("sort_by() failed to create df: {}", e))
             })?;
             let mut temp_series = key_series.clone();
-            temp_series.rename(temp_col_name);
+            temp_series.rename(temp_col_name.into());
             match df.with_column(temp_series) {
-                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], false, false) {
+                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], SortMultipleOptions::default()) {
                     Ok(sorted_df) => match sorted_df.drop(temp_col_name) {
                         Ok(final_df) => {
-                            if let Some(sorted_series) = final_df.get_columns().first() {
-                                Ok(Value::Series(sorted_series.clone()))
+                            if let Some(sorted_column) = final_df.get_columns().first() {
+                                Ok(Value::Series(sorted_column.as_materialized_series().clone()))
                             } else {
                                 Ok(Value::Series(series.clone()))
                             }
@@ -144,9 +144,9 @@ mod tests {
     use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {
-        let names = Series::new("name", &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age", &[25, 30, 35]);
-        let scores = Series::new("score", &[85.5, 92.0, 78.3]);
+        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
+        let ages = Series::new("age".into(), &[25, 30, 35]);
+        let scores = Series::new("score".into(), &[85.5, 92.0, 78.3]);
         DataFrame::new(vec![names, ages, scores]).unwrap()
     }
 
@@ -210,7 +210,7 @@ mod tests {
         let result =
             builtin_sort_by(&[Value::DataFrame(df), Value::String("age".to_string())]).unwrap();
         if let Value::DataFrame(sorted_df) = result {
-            let names = sorted_df.column("name").unwrap().utf8().unwrap();
+            let names = sorted_df.column("name").unwrap().str().unwrap();
             assert_eq!(names.get(0), Some("Alice"));
             assert_eq!(names.get(1), Some("Bob"));
             assert_eq!(names.get(2), Some("Charlie"));
@@ -225,7 +225,7 @@ mod tests {
         let keys = vec![Value::Int(30), Value::Int(25), Value::Int(35)];
         let result = builtin_sort_by(&[Value::DataFrame(df), Value::Array(keys)]).unwrap();
         if let Value::DataFrame(sorted_df) = result {
-            let names = sorted_df.column("name").unwrap().utf8().unwrap();
+            let names = sorted_df.column("name").unwrap().str().unwrap();
             assert_eq!(names.get(0), Some("Bob"));
             assert_eq!(names.get(1), Some("Alice"));
             assert_eq!(names.get(2), Some("Charlie"));
@@ -236,8 +236,8 @@ mod tests {
 
     #[test]
     fn test_sort_by_series_by_key_series() {
-        let series = Series::new("values", &[3, 1, 2]);
-        let key_series = Series::new("keys", &[30, 10, 20]);
+        let series = Series::new("values".into(), &[3, 1, 2]);
+        let key_series = Series::new("keys".into(), &[30, 10, 20]);
         let result = builtin_sort_by(&[Value::Series(series), Value::Series(key_series)]).unwrap();
         if let Value::Series(sorted_series) = result {
             let values = sorted_series.i32().unwrap();

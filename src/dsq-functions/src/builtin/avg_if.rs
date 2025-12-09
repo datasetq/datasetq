@@ -255,16 +255,16 @@ mod tests {
 
     #[test]
     fn test_avg_if_series() {
-        let series = Series::new("test", vec![1i64, 2, 3, 4]);
-        let mask_series = Series::new("mask", vec![true, false, true, false]);
+        let series = Series::new("test".into(), vec![1i64, 2, 3, 4]);
+        let mask_series = Series::new("mask".into(), vec![true, false, true, false]);
         let result = builtin_avg_if(&[Value::Series(series), Value::Series(mask_series)]).unwrap();
         assert_eq!(result, Value::Float(2.0));
     }
 
     #[test]
     fn test_avg_if_series_no_matches() {
-        let series = Series::new("test", vec![1i64, 2]);
-        let mask_series = Series::new("mask", vec![false, false]);
+        let series = Series::new("test".into(), vec![1i64, 2]);
+        let mask_series = Series::new("mask".into(), vec![false, false]);
         let result = builtin_avg_if(&[Value::Series(series), Value::Series(mask_series)]).unwrap();
         assert_eq!(result, Value::Null);
     }
@@ -272,11 +272,11 @@ mod tests {
     #[test]
     fn test_avg_if_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("a", vec![1i64, 2, 3]),
-            Series::new("b", vec![4i64, 5, 6]),
+            Series::new("a".into(), vec![1i64, 2, 3]),
+            Series::new("b".into(), vec![4i64, 5, 6]),
         ])
         .unwrap();
-        let mask_series = Series::new("mask", vec![true, false, true]);
+        let mask_series = Series::new("mask".into(), vec![true, false, true]);
         let result = builtin_avg_if(&[Value::DataFrame(df), Value::Series(mask_series)]).unwrap();
         if let Value::Object(obj) = result {
             assert_eq!(obj.get("a"), Some(&Value::Float(2.0))); // (1 + 3) / 2

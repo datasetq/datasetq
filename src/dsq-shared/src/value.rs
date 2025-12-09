@@ -241,7 +241,8 @@ impl Value {
 
                     for (col_idx, col_name) in columns.iter().enumerate() {
                         let series = &series_vec[col_idx];
-                        let value = Self::series_value_to_json(series, row_idx)?;
+                        let value =
+                            Self::series_value_to_json(series.as_materialized_series(), row_idx)?;
                         row_obj.insert((*col_name).to_string(), value);
                     }
 
@@ -256,7 +257,8 @@ impl Value {
 
                     for (col_idx, col_name) in columns.iter().enumerate() {
                         let series = &series_vec[col_idx];
-                        let value = Self::series_value_to_json(series, row_idx)?;
+                        let value =
+                            Self::series_value_to_json(series.as_materialized_series(), row_idx)?;
                         row_obj.insert((*col_name).to_string(), value);
                     }
 
@@ -291,7 +293,8 @@ impl Value {
 
                 for (col_idx, col_name) in columns.iter().enumerate() {
                     let series = &series_vec[col_idx];
-                    let value = Self::series_value_to_json(series, row_idx)?;
+                    let value =
+                        Self::series_value_to_json(series.as_materialized_series(), row_idx)?;
                     row_obj.insert((*col_name).to_string(), value);
                 }
 
@@ -359,9 +362,9 @@ impl Value {
                     .map(JsonValue::Number)
                     .ok_or_else(|| crate::error::operation_error("Invalid float value"))
             }
-            DataType::Utf8 => {
+            DataType::String => {
                 let val = series
-                    .utf8()
+                    .str()
                     .map_err(|e| {
                         crate::error::operation_error(format!("String access error: {e}"))
                     })?
@@ -387,6 +390,7 @@ impl Value {
                 let val = series
                     .date()
                     .map_err(|e| crate::error::operation_error(format!("Date access error: {e}")))?
+                    .phys
                     .get(index);
                 if let Some(days) = val {
                     let epoch = chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
@@ -404,6 +408,7 @@ impl Value {
                     .map_err(|e| {
                         crate::error::operation_error(format!("Datetime access error: {e}"))
                     })?
+                    .phys
                     .get(index);
                 if let Some(ns) = val {
                     let secs = ns / 1_000_000_000;
@@ -515,8 +520,8 @@ impl Value {
                 let mut series_vec = Vec::with_capacity(num_cols);
                 for (col_idx, col_name) in columns.into_iter().enumerate() {
                     let values = std::mem::take(&mut column_data[col_idx]);
-                    let series = Series::new(&col_name, values);
-                    series_vec.push(series);
+                    let series = Series::new(col_name.into(), values);
+                    series_vec.push(series.into());
                 }
 
                 DataFrame::new(series_vec).map_err(|e| {
@@ -540,7 +545,7 @@ impl Value {
                 "Cannot convert BigInt to AnyValue",
             )),
             Value::Float(f) => Ok(AnyValue::Float64(*f)),
-            Value::String(s) => Ok(AnyValue::Utf8(s)),
+            Value::String(s) => Ok(AnyValue::String(s)),
             _ => Err(crate::error::operation_error(format!(
                 "Cannot convert {} to AnyValue",
                 value.type_name()
@@ -637,7 +642,10 @@ impl Value {
                             crate::error::operation_error(format!("Column access error: {e}"))
                         })?;
                         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                        let value = Self::series_value_to_json(series, index as usize)?;
+                        let value = Self::series_value_to_json(
+                            series.as_materialized_series(),
+                            index as usize,
+                        )?;
                         row_obj.insert(col_name.to_string(), Value::from_json(value));
                     }
                     Ok(Value::Object(row_obj))
@@ -667,7 +675,7 @@ impl Value {
             Value::DataFrame(df) => {
                 // Return the column as a Series
                 match df.column(key) {
-                    Ok(series) => Ok(Value::Series(series.clone())),
+                    Ok(series) => Ok(Value::Series(series.as_materialized_series().clone())),
                     Err(_) => Ok(Value::Null),
                 }
             }
@@ -832,7 +840,7 @@ pub fn value_from_any_value(av: polars::prelude::AnyValue<'_>) -> Option<Value> 
     match av {
         AnyValue::Null => Some(Value::Null),
         AnyValue::Boolean(b) => Some(Value::Bool(b)),
-        AnyValue::Utf8(s) => Some(Value::String(s.to_string())),
+        AnyValue::String(s) => Some(Value::String(s.to_string())),
         AnyValue::Int8(i) => Some(Value::Int(i64::from(i))),
         AnyValue::Int16(i) => Some(Value::Int(i64::from(i))),
         AnyValue::Int32(i) => Some(Value::Int(i64::from(i))),
@@ -856,7 +864,7 @@ pub fn df_row_to_value(df: &polars::prelude::DataFrame, row_idx: usize) -> crate
         let series = df
             .column(col_name)
             .map_err(|e| crate::error::operation_error(format!("Failed to get column: {e}")))?;
-        let value = series_value_at(series, row_idx)?;
+        let value = series_value_at(series.as_materialized_series(), row_idx)?;
         obj.insert(col_name.to_string(), value);
     }
 
@@ -903,9 +911,9 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
                 .get(idx);
             Ok(Value::Float(val.unwrap_or(0.0)))
         }
-        DataType::Utf8 => {
+        DataType::String => {
             let val = series
-                .utf8()
+                .str()
                 .map_err(|e| crate::error::operation_error(format!("String access error: {e}")))?
                 .get(idx);
             Ok(Value::String(val.unwrap_or("").to_string()))
@@ -914,6 +922,7 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
             let val = series
                 .date()
                 .map_err(|e| crate::error::operation_error(format!("Date access error: {e}")))?
+                .phys
                 .get(idx);
             if let Some(days) = val {
                 let epoch = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
@@ -927,6 +936,7 @@ fn series_value_at(series: &polars::prelude::Series, idx: usize) -> crate::Resul
             let val = series
                 .datetime()
                 .map_err(|e| crate::error::operation_error(format!("Datetime access error: {e}")))?
+                .phys
                 .get(idx);
             if let Some(ns) = val {
                 let secs = ns / 1_000_000_000;

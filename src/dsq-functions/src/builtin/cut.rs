@@ -46,7 +46,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
     for col_name in &columns {
         if let Ok(series) = df.column(col_name) {
             let mut s = series.clone();
-            s.rename(col_name);
+            s.rename(col_name.clone().into());
             selected_series.push(s);
         }
         // Ignore non-existent columns
@@ -54,7 +54,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
 
     if selected_series.is_empty() {
         // Return empty DataFrame if no columns matched
-        match DataFrame::new(Vec::<Series>::new()) {
+        match DataFrame::new(Vec::<Column>::new()) {
             Ok(empty_df) => Ok(Value::DataFrame(empty_df)),
             Err(e) => Err(dsq_shared::error::operation_error(format!(
                 "cut() failed to create empty DataFrame: {}",
@@ -85,9 +85,9 @@ mod tests {
     use dsq_shared::value::Value;
 
     fn create_test_dataframe() -> DataFrame {
-        let s1 = Series::new("name", &["Alice", "Bob", "Charlie"]);
-        let s2 = Series::new("age", &[25, 30, 35]);
-        let s3 = Series::new("city", &["NYC", "LA", "Chicago"]);
+        let s1 = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
+        let s2 = Series::new("age".into(), &[25, 30, 35]);
+        let s3 = Series::new("city".into(), &["NYC", "LA", "Chicago"]);
         DataFrame::new(vec![s1, s2, s3]).unwrap()
     }
 

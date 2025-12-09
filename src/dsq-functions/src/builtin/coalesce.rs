@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     fn test_coalesce_with_dataframe() {
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3])]).unwrap();
         let result = builtin_coalesce(&[Value::Null, Value::DataFrame(df.clone())]).unwrap();
         match result {
             Value::DataFrame(res_df) => {

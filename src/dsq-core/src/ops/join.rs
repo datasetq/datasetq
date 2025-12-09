@@ -47,7 +47,7 @@ impl JoinType {
             JoinType::Right => Err(Error::operation(
                 "Right join not supported in this Polars version, so cannot convert to Polars",
             )),
-            JoinType::Outer => Ok(polars::prelude::JoinType::Outer),
+            JoinType::Outer => Ok(polars::prelude::JoinType::Full),
             JoinType::Cross => Ok(polars::prelude::JoinType::Cross),
             JoinType::Semi => Err(Error::operation(
                 "Semi join not supported in this Polars version, so cannot convert to Polars",
@@ -252,9 +252,12 @@ fn join_dataframes(
 
     let join_args = JoinArgs {
         how: options.join_type.to_polars()?,
-        suffix: Some(options.suffix.clone()),
+        suffix: Some(options.suffix.clone().into()),
         validation: options.validate.to_polars(),
         slice: None,
+        coalesce: polars::prelude::JoinCoalesce::KeepColumns,
+        maintain_order: polars::prelude::MaintainOrderJoin::None,
+        nulls_equal: false,
     };
 
     let mut join_builder =
@@ -270,12 +273,7 @@ fn join_dataframes(
             .iter()
             .map(|column_name| col(column_name))
             .collect();
-        join_builder = join_builder.sort_by_exprs(
-            sort_exprs,
-            vec![false; keys.left_columns().len()],
-            false,
-            true,
-        );
+        join_builder = join_builder.sort_by_exprs(sort_exprs, SortMultipleOptions::default());
     }
 
     let result_df = join_builder.collect().map_err(Error::from)?;
@@ -302,9 +300,12 @@ fn join_lazy_frames(
 
     let join_args = JoinArgs {
         how: options.join_type.to_polars()?,
-        suffix: Some(options.suffix.clone()),
+        suffix: Some(options.suffix.clone().into()),
         validation: options.validate.to_polars(),
         slice: None,
+        coalesce: polars::prelude::JoinCoalesce::KeepColumns,
+        maintain_order: polars::prelude::MaintainOrderJoin::None,
+        nulls_equal: false,
     };
 
     let mut join_builder = left_lf
@@ -318,12 +319,7 @@ fn join_lazy_frames(
             .iter()
             .map(|column_name| col(column_name))
             .collect();
-        join_builder = join_builder.sort_by_exprs(
-            sort_exprs,
-            vec![false; keys.left_columns().len()],
-            false,
-            true,
-        );
+        join_builder = join_builder.sort_by_exprs(sort_exprs, SortMultipleOptions::default());
     }
 
     Ok(Value::LazyFrame(Box::new(join_builder)))
@@ -877,9 +873,12 @@ pub fn join_with_condition(
             let how = JoinType::Cross.to_polars()?;
             let join_args = JoinArgs {
                 how,
-                suffix: Some("_right".to_string()),
+                suffix: Some("_right".to_string().into()),
                 validation: JoinValidation::None.to_polars(),
                 slice: None,
+                coalesce: polars::prelude::JoinCoalesce::KeepColumns,
+                maintain_order: polars::prelude::MaintainOrderJoin::None,
+                nulls_equal: false,
             };
 
             let cross_joined =
@@ -897,9 +896,12 @@ pub fn join_with_condition(
             let how = JoinType::Cross.to_polars()?;
             let join_args = JoinArgs {
                 how,
-                suffix: Some("_right".to_string()),
+                suffix: Some("_right".to_string().into()),
                 validation: JoinValidation::None.to_polars(),
                 slice: None,
+                coalesce: polars::prelude::JoinCoalesce::KeepColumns,
+                maintain_order: polars::prelude::MaintainOrderJoin::None,
+                nulls_equal: false,
             };
 
             let cross_joined = left_lf

@@ -30,11 +30,11 @@ indexmap = { workspace = true }
 base64 = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+polars = { version = "0.51", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 rayon = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
+polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
 chrono = { version = "0.4", features = ["serde", "wasmbind"] }
 
 

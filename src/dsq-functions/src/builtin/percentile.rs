@@ -42,15 +42,15 @@ pub fn builtin_percentile(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             let mut percentiles = HashMap::new();
             for col_name in df.get_column_names() {
-                if let Ok(series) = df.column(col_name) {
+                if let Ok(column) = df.column(col_name) {
+                    let series = column.as_materialized_series();
                     if series.dtype().is_numeric() {
-                        if let Ok(quant_series) = series
-                            .quantile_as_series(percentile, QuantileInterpolOptions::default())
+                        if let Ok(result) =
+                            series.quantile_reduce(percentile, QuantileMethod::default())
                         {
-                            if let Ok(av) = quant_series.get(0) {
-                                if let Ok(f) = av.try_extract::<f64>() {
-                                    percentiles.insert(col_name.to_string(), Value::Float(f));
-                                }
+                            let av = result.as_any_value();
+                            if let Ok(f) = av.try_extract::<f64>() {
+                                percentiles.insert(col_name.to_string(), Value::Float(f));
                             }
                         }
                     }
@@ -60,14 +60,14 @@ pub fn builtin_percentile(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                match series.quantile_as_series(percentile, QuantileInterpolOptions::default()) {
-                    Ok(quant_series) => match quant_series.get(0) {
-                        Ok(av) => match av.try_extract::<f64>() {
+                match series.quantile_reduce(percentile, QuantileMethod::default()) {
+                    Ok(result) => {
+                        let av = result.as_any_value();
+                        match av.try_extract::<f64>() {
                             Ok(f) => Ok(Value::Float(f)),
                             Err(_) => Ok(Value::Null),
-                        },
-                        Err(_) => Ok(Value::Null),
-                    },
+                        }
+                    }
                     Err(_) => Ok(Value::Null),
                 }
             } else {

@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 
 use polars::prelude::*;
+use polars_ops::prelude::UnpivotDF;
 #[cfg(feature = "rand")]
 use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 
@@ -101,7 +102,10 @@ pub fn slice_df(df: &DataFrame, offset: i64, length: usize) -> DataFrame {
 /// Sort `DataFrame` by columns
 pub fn sort(df: &DataFrame, by: &[String], descending: Vec<bool>) -> Result<DataFrame> {
     let sorted = df
-        .sort(by, descending, false)
+        .sort(
+            by,
+            SortMultipleOptions::default().with_order_descending_multi(descending),
+        )
         .map_err(|e| Error::operation(format!("Failed to sort: {e}")))?;
     Ok(sorted)
 }
@@ -113,7 +117,7 @@ pub fn unique_df(
     keep: UniqueKeepStrategy,
 ) -> Result<DataFrame> {
     let unique_df = df
-        .unique(subset, keep, None)
+        .unique::<String, String>(subset, keep, None)
         .map_err(|e| Error::operation(format!("Failed to get unique rows: {e}")))?;
     Ok(unique_df)
 }
@@ -158,7 +162,7 @@ pub fn rename(df: &DataFrame, mapping: &HashMap<String, String>) -> Result<DataF
 
     for (old_name, new_name) in mapping {
         renamed = renamed
-            .rename(old_name, new_name)
+            .rename(old_name.as_str(), new_name.as_str().into())
             .map_err(|e| Error::operation(format!("Failed to rename column: {e}")))?
             .clone();
     }
@@ -209,7 +213,7 @@ where
         .column(column)
         .map_err(|e| Error::operation(format!("Column not found: {e}")))?;
 
-    let values: Vec<Value> = series_to_values(col)?;
+    let values: Vec<Value> = series_to_values(col.as_materialized_series())?;
     let mapped_values: Result<Vec<Value>> = values.iter().map(f).collect();
     let mapped_values = mapped_values?;
 
@@ -230,7 +234,8 @@ pub fn transpose(
     header_name: Option<&str>,
 ) -> Result<DataFrame> {
     // The Polars transpose API has changed, using a simpler version for now
-    let transposed = df
+    let mut df_mut = df.clone();
+    let transposed = df_mut
         .transpose(header_name, None)
         .map_err(|e| Error::operation(format!("Failed to transpose: {e}")))?;
     Ok(transposed)
@@ -244,9 +249,13 @@ pub fn melt(
     _variable_name: Option<&str>,
     _value_name: Option<&str>,
 ) -> Result<DataFrame> {
-    let melted = df
-        .melt(id_vars, value_vars)
-        .map_err(|e| Error::operation(format!("Failed to melt: {e}")))?;
+    let melted = if id_vars.is_empty() {
+        df.unpivot([] as [&str; 0], value_vars)
+            .map_err(|e| Error::operation(format!("Failed to melt: {e}")))?
+    } else {
+        df.unpivot(id_vars, value_vars)
+            .map_err(|e| Error::operation(format!("Failed to melt: {e}")))?
+    };
 
     Ok(melted)
 }
@@ -291,7 +300,7 @@ pub fn sample(
             indices.shuffle(&mut rng);
             indices.truncate(sample_size);
 
-            let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
+            let idx_ca = polars::prelude::UInt32Chunked::new("idx".into(), indices);
             let sampled = df
                 .take(&idx_ca)
                 .map_err(|e| Error::operation(format!("Failed to sample: {e}")))?;
@@ -323,7 +332,7 @@ pub fn sample(
             indices.shuffle(&mut rng);
             indices.truncate(sample_size);
 
-            let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
+            let idx_ca = polars::prelude::UInt32Chunked::new("idx".into(), indices);
             let sampled = df
                 .take(&idx_ca)
                 .map_err(|e| Error::operation(format!("Failed to sample: {e}")))?;
@@ -401,7 +410,7 @@ pub fn filter_rows(value: &Value, mask: &Value) -> Result<Value> {
                         _ => Err(Error::operation("Filter mask must be boolean")),
                     })
                     .collect();
-                let mask_series = Series::new("mask", bool_mask?);
+                let mask_series = Series::new("mask".into(), bool_mask?);
                 let filtered = filter(df, &mask_series)?;
                 Ok(Value::DataFrame(filtered))
             } else {
@@ -459,7 +468,7 @@ where
                 let row_value = df_row_to_value(df, i)?;
                 mask.push(predicate(&row_value)?);
             }
-            let mask_series = Series::new("mask", mask);
+            let mask_series = Series::new("mask".into(), mask);
             let filtered = filter(df, &mask_series)?;
             Ok(Value::DataFrame(filtered))
         }
@@ -605,7 +614,7 @@ pub fn reverse(value: &Value) -> Result<Value> {
         Value::DataFrame(df) => {
             #[allow(clippy::cast_possible_truncation)]
             let indices: Vec<u32> = (0..df.height() as u32).rev().collect();
-            let idx_ca = polars::prelude::UInt32Chunked::new("idx", indices);
+            let idx_ca = polars::prelude::UInt32Chunked::new("idx".into(), indices);
             let reversed = df
                 .take(&idx_ca)
                 .map_err(|e| Error::operation(format!("Failed to reverse DataFrame: {e}")))?;
@@ -625,7 +634,7 @@ pub fn unique(value: &Value) -> Result<Value> {
     match value {
         Value::DataFrame(df) => {
             let unique_df = df
-                .unique(None, UniqueKeepStrategy::First, None)
+                .unique::<String, String>(None, UniqueKeepStrategy::First, None)
                 .map_err(|e| Error::operation(format!("Failed to get unique values: {e}")))?;
             Ok(Value::DataFrame(unique_df))
         }
@@ -665,7 +674,7 @@ fn df_row_to_value(df: &DataFrame, row_idx: usize) -> Result<Value> {
         let series = df
             .column(col_name)
             .map_err(|e| Error::operation(format!("Failed to get column: {e}")))?;
-        let value = series_value_at(series, row_idx)?;
+        let value = series_value_at(series.as_materialized_series(), row_idx)?;
         obj.insert(col_name.to_string(), value);
     }
 
@@ -696,9 +705,9 @@ fn series_value_at(series: &Series, idx: usize) -> Result<Value> {
                 .map_err(|e| Error::operation(format!("Failed to get float: {e}")))?;
             Ok(ca.get(idx).map_or(Value::Null, Value::Float))
         }
-        DataType::Utf8 => {
+        DataType::String => {
             let ca = series
-                .utf8()
+                .str()
                 .map_err(|e| Error::operation(format!("Failed to get string: {e}")))?;
             Ok(ca
                 .get(idx)
@@ -729,11 +738,11 @@ fn compare_values(a: &Value, b: &Value) -> std::cmp::Ordering {
 /// Helper function to convert Value to Series
 fn value_to_series(name: &str, value: &Value, length: usize) -> Result<Series> {
     match value {
-        Value::Null => Ok(Series::new_null(name, length)),
-        Value::Bool(b) => Ok(Series::new(name, vec![*b; length])),
-        Value::Int(i) => Ok(Series::new(name, vec![*i; length])),
-        Value::Float(f) => Ok(Series::new(name, vec![*f; length])),
-        Value::String(s) => Ok(Series::new(name, vec![s.as_str(); length])),
+        Value::Null => Ok(Series::new_null(name.into(), length)),
+        Value::Bool(b) => Ok(Series::new(name.into(), vec![*b; length])),
+        Value::Int(i) => Ok(Series::new(name.into(), vec![*i; length])),
+        Value::Float(f) => Ok(Series::new(name.into(), vec![*f; length])),
+        Value::String(s) => Ok(Series::new(name.into(), vec![s.as_str(); length])),
         Value::Array(arr) => {
             if arr.len() != length {
                 return Err(Error::operation("Array length must match DataFrame height"));
@@ -773,9 +782,9 @@ fn series_to_values(series: &Series) -> Result<Vec<Value>> {
                 values.push(opt_val.map_or(Value::Null, Value::Float));
             }
         }
-        DataType::Utf8 => {
+        DataType::String => {
             let ca = series
-                .utf8()
+                .str()
                 .map_err(|e| Error::operation(format!("Failed to get string array: {e}")))?;
             for opt_val in ca {
                 values.push(opt_val.map_or(Value::Null, |s| Value::String(s.to_string())));
@@ -796,7 +805,7 @@ fn series_to_values(series: &Series) -> Result<Vec<Value>> {
 #[allow(clippy::unnecessary_wraps, clippy::cast_precision_loss)]
 fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
     if values.is_empty() {
-        return Ok(Series::new_empty(name, &DataType::Null));
+        return Ok(Series::new_empty(name.into(), &DataType::Null));
     }
 
     // Determine the data type from the first non-null value
@@ -807,7 +816,7 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
             Value::Bool(_) => DataType::Boolean,
             Value::Int(_) => DataType::Int64,
             Value::Float(_) => DataType::Float64,
-            Value::String(_) => DataType::Utf8,
+            Value::String(_) => DataType::String,
             _ => DataType::Null,
         });
 
@@ -820,7 +829,7 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
         DataType::Int64 => {
             let vec: Vec<Option<i64>> = values
@@ -830,7 +839,7 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
         DataType::Float64 => {
             let vec: Vec<Option<f64>> = values
@@ -841,9 +850,9 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
-        DataType::Utf8 => {
+        DataType::String => {
             let vec: Vec<Option<&str>> = values
                 .iter()
                 .map(|v| match v {
@@ -851,9 +860,9 @@ fn values_to_series(name: &str, values: &[Value]) -> Result<Series> {
                     _ => None,
                 })
                 .collect();
-            Ok(Series::new(name, vec))
+            Ok(Series::new(name.into(), vec))
         }
-        _ => Ok(Series::new_null(name, values.len())),
+        _ => Ok(Series::new_null(name.into(), values.len())),
     }
 }
 
@@ -864,9 +873,9 @@ mod tests {
     #[test]
     fn test_select() {
         let df = DataFrame::new(vec![
-            Series::new("a", vec![1, 2, 3]),
-            Series::new("b", vec![4, 5, 6]),
-            Series::new("c", vec![7, 8, 9]),
+            Series::new("a".into(), vec![1, 2, 3]).into(),
+            Series::new("b".into(), vec![4, 5, 6]).into(),
+            Series::new("c".into(), vec![7, 8, 9]).into(),
         ])
         .unwrap();
 
@@ -879,12 +888,12 @@ mod tests {
     #[test]
     fn test_filter() {
         let df = DataFrame::new(vec![
-            Series::new("a", vec![1, 2, 3, 4, 5]),
-            Series::new("b", vec![10, 20, 30, 40, 50]),
+            Series::new("a".into(), vec![1, 2, 3, 4, 5]).into(),
+            Series::new("b".into(), vec![10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
-        let mask = Series::new("mask", vec![true, false, true, false, true]);
+        let mask = Series::new("mask".into(), vec![true, false, true, false, true]);
         let filtered = filter(&df, &mask).unwrap();
 
         assert_eq!(filtered.height(), 3);
@@ -896,8 +905,8 @@ mod tests {
     #[test]
     fn test_sort() {
         let df = DataFrame::new(vec![
-            Series::new("a", vec![3, 1, 4, 1, 5]),
-            Series::new("b", vec!["c", "a", "d", "b", "e"]),
+            Series::new("a".into(), vec![3, 1, 4, 1, 5]).into(),
+            Series::new("b".into(), vec!["c", "a", "d", "b", "e"]).into(),
         ])
         .unwrap();
 
@@ -914,8 +923,8 @@ mod tests {
     #[test]
     fn test_rename() {
         let df = DataFrame::new(vec![
-            Series::new("old_name", vec![1, 2, 3]),
-            Series::new("keep_name", vec![4, 5, 6]),
+            Series::new("old_name".into(), vec![1, 2, 3]).into(),
+            Series::new("keep_name".into(), vec![4, 5, 6]).into(),
         ])
         .unwrap();
 

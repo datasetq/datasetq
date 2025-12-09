@@ -30,19 +30,19 @@ pub fn builtin_titlecase(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let titlecase_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| s.map(|s| Cow::Owned(s.to_title_case())))
                             .into_series();
                         let mut s = titlecase_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -55,9 +55,9 @@ pub fn builtin_titlecase(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let titlecase_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| s.map(|s| Cow::Owned(s.to_title_case())))
                     .into_series();
@@ -112,10 +112,10 @@ mod tests {
 
     #[test]
     fn test_titlecase_series() {
-        let series = Series::new("test", &["hello", "world", "test"]);
+        let series = Series::new("test".into(), &["hello", "world", "test"]);
         let result = builtin_titlecase(&[Value::Series(series)]).unwrap();
         if let Value::Series(result_series) = result {
-            let expected = Series::new("test", &["Hello", "World", "Test"]);
+            let expected = Series::new("test".into(), &["Hello", "World", "Test"]);
             assert_eq!(result_series, expected);
         } else {
             panic!("Expected Series result");
@@ -124,13 +124,13 @@ mod tests {
 
     #[test]
     fn test_titlecase_dataframe() {
-        let names = Series::new("name", &["alice", "bob"]);
-        let ages = Series::new("age", &[25, 30]);
+        let names = Series::new("name".into(), &["alice", "bob"]);
+        let ages = Series::new("age".into(), &[25, 30]);
         let df = DataFrame::new(vec![names, ages]).unwrap();
         let result = builtin_titlecase(&[Value::DataFrame(df)]).unwrap();
         if let Value::DataFrame(result_df) = result {
-            let expected_names = Series::new("name", &["Alice", "Bob"]);
-            let expected_ages = Series::new("age", &[25, 30]);
+            let expected_names = Series::new("name".into(), &["Alice", "Bob"]);
+            let expected_ages = Series::new("age".into(), &[25, 30]);
             let expected_df = DataFrame::new(vec![expected_names, expected_ages]).unwrap();
             assert_eq!(result_df, expected_df);
         } else {

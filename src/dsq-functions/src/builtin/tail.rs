@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn test_tail_dataframe() {
-        let series = Series::new("col", vec![1i64, 2, 3, 4, 5, 6]);
+        let series = Series::new("col".into(), vec![1i64, 2, 3, 4, 5, 6]);
         let df = DataFrame::new(vec![series]).unwrap();
         let result = builtin_tail(&[Value::DataFrame(df), Value::Int(3)]).unwrap();
         if let Value::DataFrame(tail_df) = result {
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_tail_series() {
-        let series = Series::new("col", vec![1i64, 2, 3, 4, 5, 6]);
+        let series = Series::new("col".into(), vec![1i64, 2, 3, 4, 5, 6]);
         let result = builtin_tail(&[Value::Series(series), Value::Int(2)]).unwrap();
         if let Value::Series(tail_series) = result {
             assert_eq!(tail_series.len(), 2);

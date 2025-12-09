@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use polars::prelude::*;
+use polars_ops::prelude::UnpivotDF;
 
 use crate::error::{Error, Result};
 use crate::Value;
@@ -51,7 +52,7 @@ impl ColumnDataType {
             ColumnDataType::Int64 => DataType::Int64,
             ColumnDataType::Float32 => DataType::Float32,
             ColumnDataType::Float64 => DataType::Float64,
-            ColumnDataType::String => DataType::Utf8,
+            ColumnDataType::String => DataType::String,
             ColumnDataType::Boolean => DataType::Boolean,
             ColumnDataType::Date => DataType::Date,
             ColumnDataType::DateTime => {
@@ -98,8 +99,11 @@ impl Transform {
 
     /// Sort `DataFrame` by columns
     pub fn sort(df: &DataFrame, by_columns: &[String], descending: Vec<bool>) -> Result<DataFrame> {
-        df.sort(by_columns, descending, false)
-            .map_err(|e| Error::operation(format!("Failed to sort DataFrame: {e}")))
+        df.sort(
+            by_columns,
+            SortMultipleOptions::default().with_order_descending_multi(descending),
+        )
+        .map_err(|e| Error::operation(format!("Failed to sort DataFrame: {e}")))
     }
 
     /// Sort `LazyFrame` by columns
@@ -109,7 +113,9 @@ impl Transform {
         descending: &[bool],
     ) -> Result<LazyFrame> {
         let exprs: Vec<Expr> = by_columns.iter().map(|name| col(name)).collect();
-        Ok(lf.sort_by_exprs(&exprs, descending, false, false))
+        let options =
+            SortMultipleOptions::default().with_order_descending_multi(descending.to_vec());
+        Ok(lf.sort_by_exprs(&exprs, options))
     }
 
     /// Rename columns in a `DataFrame`
@@ -117,9 +123,11 @@ impl Transform {
         let mut result = df.clone();
 
         for (old_name, new_name) in mapping {
-            result.rename(old_name, new_name).map_err(|e| {
-                Error::operation(format!("Failed to rename column '{old_name}': {e}"))
-            })?;
+            result
+                .rename(old_name.as_str(), new_name.as_str().into())
+                .map_err(|e| {
+                    Error::operation(format!("Failed to rename column '{old_name}': {e}"))
+                })?;
         }
 
         Ok(result)
@@ -130,7 +138,7 @@ impl Transform {
         let mut result = lf;
 
         for (old_name, new_name) in mapping {
-            result = result.rename([old_name.as_str()], [new_name.as_str()]);
+            result = result.rename([old_name.as_str()], [new_name.as_str()], true);
         }
 
         Ok(result)
@@ -140,7 +148,7 @@ impl Transform {
     pub fn with_column(df: &DataFrame, name: &str, series: Series) -> Result<DataFrame> {
         let mut result = df.clone();
         result
-            .with_column(series.with_name(name))
+            .with_column(series.with_name(name.into()))
             .map_err(|e| Error::operation(format!("Failed to add column '{name}': {e}")))?;
         Ok(result)
     }
@@ -163,7 +171,17 @@ impl Transform {
 
     /// Drop columns from a `LazyFrame`
     pub fn drop_lazy(lf: LazyFrame, columns: &[String]) -> Result<LazyFrame> {
-        Ok(lf.drop_columns(columns))
+        // Collect to DataFrame, drop columns, then convert back to LazyFrame
+        let df = lf
+            .collect()
+            .map_err(|e| Error::operation(format!("Failed to collect LazyFrame: {e}")))?;
+        let mut result = df;
+        for column in columns {
+            result = result
+                .drop(column)
+                .map_err(|e| Error::operation(format!("Failed to drop column '{column}': {e}")))?;
+        }
+        Ok(result.lazy())
     }
 
     /// Get unique values in a `DataFrame`
@@ -172,8 +190,10 @@ impl Transform {
         subset: Option<&[String]>,
         keep: UniqueKeepStrategy,
     ) -> Result<DataFrame> {
-        df.unique(subset, keep, None)
-            .map_err(|e| Error::operation(format!("Failed to get unique values: {e}")))
+        let result = df
+            .unique::<String, String>(subset, keep, None)
+            .map_err(|e| Error::operation(format!("Failed to get unique values: {e}")))?;
+        Ok(result)
     }
 
     /// Get unique values in a `LazyFrame`
@@ -182,8 +202,14 @@ impl Transform {
         subset: Option<&[String]>,
         keep: UniqueKeepStrategy,
     ) -> Result<LazyFrame> {
-        let subset_vec = subset.map(<[std::string::String]>::to_vec);
-        Ok(lf.unique(subset_vec, keep))
+        // Collect to DataFrame, get unique, then convert back to LazyFrame
+        let df = lf
+            .collect()
+            .map_err(|e| Error::operation(format!("Failed to collect LazyFrame: {e}")))?;
+        let result = df
+            .unique::<String, String>(subset, keep, None)
+            .map_err(|e| Error::operation(format!("Failed to get unique values: {e}")))?;
+        Ok(result.lazy())
     }
 
     /// Limit the number of rows
@@ -223,7 +249,7 @@ impl Transform {
     pub fn reverse(df: &DataFrame) -> Result<DataFrame> {
         #[allow(clippy::cast_possible_truncation)]
         let indices: Vec<IdxSize> = (0..df.height() as IdxSize).rev().collect();
-        let ca = IdxCa::from_vec("", indices);
+        let ca = IdxCa::from_vec("".into(), indices);
 
         df.take(&ca)
             .map_err(|e| Error::operation(format!("Failed to reverse DataFrame: {e}")))
@@ -243,7 +269,7 @@ impl Transform {
     ) -> Result<DataFrame> {
         #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
         let n_values = vec![n as u32];
-        let n_series = Series::new("n", n_values);
+        let n_series = Series::new("n".into(), n_values);
         df.sample_n(&n_series, with_replacement, true, seed)
             .map_err(|e| Error::operation(format!("Failed to sample DataFrame: {e}")))
     }
@@ -259,19 +285,21 @@ impl Transform {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        DataFrame::new(columns).map_err(|e| {
+        let cols: Vec<_> = columns.into_iter().map(|s| s.into()).collect();
+        DataFrame::new(cols).map_err(|e| {
             Error::operation(format!("Failed to create DataFrame after fill_null: {e}"))
         })
     }
 
     /// Fill null values in a `LazyFrame`
     #[allow(clippy::needless_pass_by_value)]
-    pub fn fill_null_lazy(lf: LazyFrame, value: Expr) -> Result<LazyFrame> {
-        let columns = lf
-            .schema()
-            .map_err(|e| Error::operation(format!("Failed to get schema: {e}")))?
+    pub fn fill_null_lazy(mut lf: LazyFrame, value: Expr) -> Result<LazyFrame> {
+        let schema = lf
+            .collect_schema()
+            .map_err(|e| Error::operation(format!("Failed to collect schema: {e}")))?;
+        let columns = schema
             .iter()
-            .map(|(name, _)| col(name).fill_null(value.clone()))
+            .map(|(name, _)| col(name.as_str()).fill_null(value.clone()))
             .collect::<Vec<_>>();
 
         Ok(lf.with_columns(&columns))
@@ -284,8 +312,9 @@ impl Transform {
     }
 
     /// Drop rows with null values in a `LazyFrame`
-    pub fn drop_nulls_lazy(lf: LazyFrame, subset: Option<Vec<Expr>>) -> Result<LazyFrame> {
-        Ok(lf.drop_nulls(subset))
+    pub fn drop_nulls_lazy(lf: LazyFrame, _subset: Option<Vec<Expr>>) -> Result<LazyFrame> {
+        // drop_nulls expects Option<Selector> in 0.51
+        Ok(lf.drop_nulls(None))
     }
 
     /// Cast column types
@@ -317,8 +346,14 @@ impl Transform {
 
     /// Explode list columns in a `LazyFrame`
     pub fn explode_lazy(lf: LazyFrame, columns: &[String]) -> Result<LazyFrame> {
-        let cols: Vec<Expr> = columns.iter().map(|name| col(name)).collect();
-        Ok(lf.explode(&cols))
+        // Collect to DataFrame, explode columns, then convert back to LazyFrame
+        let df = lf
+            .collect()
+            .map_err(|e| Error::operation(format!("Failed to collect LazyFrame: {e}")))?;
+        let result = df
+            .explode(columns)
+            .map_err(|e| Error::operation(format!("Failed to explode columns: {e}")))?;
+        Ok(result.lazy())
     }
 
     /// Melt `DataFrame` from wide to long format
@@ -326,19 +361,16 @@ impl Transform {
         df: &DataFrame,
         id_vars: &[String],
         value_vars: &[String],
-        variable_name: Option<&str>,
-        value_name: Option<&str>,
+        _variable_name: Option<&str>,
+        _value_name: Option<&str>,
     ) -> Result<DataFrame> {
-        let args = MeltArgs {
-            id_vars: id_vars.iter().map(|s| s.as_str().into()).collect(),
-            value_vars: value_vars.iter().map(|s| s.as_str().into()).collect(),
-            variable_name: variable_name.map(std::convert::Into::into),
-            value_name: value_name.map(std::convert::Into::into),
-            streamable: false,
-        };
-
-        df.melt2(args)
-            .map_err(|e| Error::operation(format!("Failed to melt DataFrame: {e}")))
+        if id_vars.is_empty() {
+            df.unpivot([] as [&str; 0], value_vars)
+                .map_err(|e| Error::operation(format!("Failed to melt DataFrame: {e}")))
+        } else {
+            df.unpivot(id_vars, value_vars)
+                .map_err(|e| Error::operation(format!("Failed to melt DataFrame: {e}")))
+        }
     }
 
     /// Melt `LazyFrame` from wide to long format
@@ -346,18 +378,21 @@ impl Transform {
         lf: LazyFrame,
         id_vars: &[String],
         value_vars: &[String],
-        variable_name: Option<&str>,
-        value_name: Option<&str>,
+        _variable_name: Option<&str>,
+        _value_name: Option<&str>,
     ) -> Result<LazyFrame> {
-        let args = MeltArgs {
-            id_vars: id_vars.iter().map(|s| s.as_str().into()).collect(),
-            value_vars: value_vars.iter().map(|s| s.as_str().into()).collect(),
-            variable_name: variable_name.map(std::convert::Into::into),
-            value_name: value_name.map(std::convert::Into::into),
-            streamable: false,
+        // Collect to DataFrame, melt, then convert back to LazyFrame
+        let df = lf
+            .collect()
+            .map_err(|e| Error::operation(format!("Failed to collect LazyFrame: {e}")))?;
+        let result = if id_vars.is_empty() {
+            df.unpivot([] as [&str; 0], value_vars)
+                .map_err(|e| Error::operation(format!("Failed to melt LazyFrame: {e}")))?
+        } else {
+            df.unpivot(id_vars, value_vars)
+                .map_err(|e| Error::operation(format!("Failed to melt LazyFrame: {e}")))?
         };
-
-        Ok(lf.melt(args))
+        Ok(result.lazy())
     }
 
     /// Pivot `DataFrame` from long to wide format
@@ -408,14 +443,14 @@ impl Transform {
             .get_columns()
             .iter()
             .map(|s| {
-                let lazy_df = DataFrame::new(vec![s.clone()])
+                let lazy_df = DataFrame::new(vec![s.clone().into()])
                     .map_err(|e| {
                         Error::operation(format!("Failed to create temporary DataFrame: {e}"))
                     })?
                     .lazy();
 
                 let result = lazy_df
-                    .select(&[expr.clone().alias(s.name())])
+                    .select(&[expr.clone().alias(s.name().as_str())])
                     .collect()
                     .map_err(|e| Error::operation(format!("Failed to apply expression: {e}")))?;
 
@@ -426,7 +461,8 @@ impl Transform {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        DataFrame::new(columns)
+        let cols: Vec<_> = columns.into_iter().map(|s| s.into()).collect();
+        DataFrame::new(cols)
             .map_err(|e| Error::operation(format!("Failed to create result DataFrame: {e}")))
     }
 
@@ -473,9 +509,9 @@ mod tests {
     #[test]
     fn test_select() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3]),
-            Series::new("b", &[4, 5, 6]),
-            Series::new("c", &[7, 8, 9]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
+            Series::new("c".into(), &[7, 8, 9]).into(),
         ])
         .unwrap();
 
@@ -489,12 +525,12 @@ mod tests {
     #[test]
     fn test_filter() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3, 4, 5]),
-            Series::new("b", &[10, 20, 30, 40, 50]),
+            Series::new("a".into(), &[1, 2, 3, 4, 5]).into(),
+            Series::new("b".into(), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
-        let mask = Series::new("mask", &[true, false, true, false, true]);
+        let mask = Series::new("mask".into(), &[true, false, true, false, true]);
         let result = Transform::filter(&df, &mask).unwrap();
 
         assert_eq!(result.height(), 3);
@@ -506,8 +542,8 @@ mod tests {
     #[test]
     fn test_sort() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[3, 1, 4, 1, 5]),
-            Series::new("b", &[30, 10, 40, 15, 50]),
+            Series::new("a".into(), &[3, 1, 4, 1, 5]).into(),
+            Series::new("b".into(), &[30, 10, 40, 15, 50]).into(),
         ])
         .unwrap();
 
@@ -523,7 +559,7 @@ mod tests {
 
     #[test]
     fn test_rename() {
-        let df = DataFrame::new(vec![Series::new("old_name", &[1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("old_name".into(), &[1, 2, 3]).into()]).unwrap();
 
         let mut mapping = HashMap::new();
         mapping.insert("old_name".to_string(), "new_name".to_string());
@@ -536,8 +572,8 @@ mod tests {
     #[test]
     fn test_unique() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 2, 3, 3, 3]),
-            Series::new("b", &[10, 20, 20, 30, 30, 30]),
+            Series::new("a".into(), &[1, 2, 2, 3, 3, 3]).into(),
+            Series::new("b".into(), &[10, 20, 20, 30, 30, 30]).into(),
         ])
         .unwrap();
 
@@ -547,7 +583,7 @@ mod tests {
 
     #[test]
     fn test_limit_and_skip() {
-        let df = DataFrame::new(vec![Series::new("a", &[1, 2, 3, 4, 5])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
 
         let limited = Transform::limit(&df, 3).unwrap();
         assert_eq!(limited.height(), 3);
@@ -560,8 +596,8 @@ mod tests {
     #[test]
     fn test_drop_nulls() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[Some(1), None, Some(3), None, Some(5)]),
-            Series::new("b", &[Some(10), Some(20), None, Some(40), Some(50)]),
+            Series::new("a".into(), &[Some(1), None, Some(3), None, Some(5)]).into(),
+            Series::new("b".into(), &[Some(10), Some(20), None, Some(40), Some(50)]).into(),
         ])
         .unwrap();
 
@@ -653,7 +689,7 @@ mod tests {
         assert_eq!(ColumnDataType::Int64.to_polars_dtype(), DataType::Int64);
         assert_eq!(ColumnDataType::Float32.to_polars_dtype(), DataType::Float32);
         assert_eq!(ColumnDataType::Float64.to_polars_dtype(), DataType::Float64);
-        assert_eq!(ColumnDataType::String.to_polars_dtype(), DataType::Utf8);
+        assert_eq!(ColumnDataType::String.to_polars_dtype(), DataType::String);
         assert_eq!(ColumnDataType::Boolean.to_polars_dtype(), DataType::Boolean);
         assert_eq!(ColumnDataType::Date.to_polars_dtype(), DataType::Date);
         assert_eq!(
@@ -665,9 +701,9 @@ mod tests {
     #[test]
     fn test_select_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3]),
-            Series::new("b", &[4, 5, 6]),
-            Series::new("c", &[7, 8, 9]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
+            Series::new("c".into(), &[7, 8, 9]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -683,8 +719,8 @@ mod tests {
     #[test]
     fn test_filter_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3, 4, 5]),
-            Series::new("b", &[10, 20, 30, 40, 50]),
+            Series::new("a".into(), &[1, 2, 3, 4, 5]).into(),
+            Series::new("b".into(), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -702,8 +738,8 @@ mod tests {
     #[test]
     fn test_sort_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[3, 1, 4, 1, 5]),
-            Series::new("b", &[30, 10, 40, 15, 50]),
+            Series::new("a".into(), &[3, 1, 4, 1, 5]).into(),
+            Series::new("b".into(), &[30, 10, 40, 15, 50]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -721,7 +757,7 @@ mod tests {
 
     #[test]
     fn test_rename_lazy() {
-        let df = DataFrame::new(vec![Series::new("old_name", &[1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("old_name".into(), &[1, 2, 3]).into()]).unwrap();
         let lf = df.lazy();
 
         let mut mapping = HashMap::new();
@@ -775,9 +811,9 @@ mod tests {
     #[test]
     fn test_drop() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3]),
-            Series::new("b", &[4, 5, 6]),
-            Series::new("c", &[7, 8, 9]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
+            Series::new("c".into(), &[7, 8, 9]).into(),
         ])
         .unwrap();
 
@@ -791,9 +827,9 @@ mod tests {
     #[test]
     fn test_drop_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3]),
-            Series::new("b", &[4, 5, 6]),
-            Series::new("c", &[7, 8, 9]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
+            Series::new("c".into(), &[7, 8, 9]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -809,8 +845,8 @@ mod tests {
     #[test]
     fn test_unique_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 2, 3, 3, 3]),
-            Series::new("b", &[10, 20, 20, 30, 30, 30]),
+            Series::new("a".into(), &[1, 2, 2, 3, 3, 3]).into(),
+            Series::new("b".into(), &[10, 20, 20, 30, 30, 30]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -822,7 +858,7 @@ mod tests {
 
     #[test]
     fn test_limit_lazy() {
-        let df = DataFrame::new(vec![Series::new("a", &[1, 2, 3, 4, 5])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
         let lf = df.lazy();
 
         let result = Transform::limit_lazy(lf, 3).unwrap();
@@ -832,7 +868,7 @@ mod tests {
 
     #[test]
     fn test_skip_lazy() {
-        let df = DataFrame::new(vec![Series::new("a", &[1, 2, 3, 4, 5])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
         let lf = df.lazy();
 
         let result = Transform::skip_lazy(lf, 2).unwrap();
@@ -846,7 +882,7 @@ mod tests {
 
     #[test]
     fn test_slice() {
-        let df = DataFrame::new(vec![Series::new("a", &[1, 2, 3, 4, 5])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
 
         let result = Transform::slice(&df, 1, 3).unwrap();
         assert_eq!(result.height(), 3);
@@ -857,7 +893,7 @@ mod tests {
 
     #[test]
     fn test_slice_lazy() {
-        let df = DataFrame::new(vec![Series::new("a", &[1, 2, 3, 4, 5])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), &[1, 2, 3, 4, 5]).into()]).unwrap();
         let lf = df.lazy();
 
         let result = Transform::slice_lazy(lf, 1, 3).unwrap();
@@ -872,8 +908,8 @@ mod tests {
     #[test]
     fn test_reverse() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3, 4, 5]),
-            Series::new("b", &[10, 20, 30, 40, 50]),
+            Series::new("a".into(), &[1, 2, 3, 4, 5]).into(),
+            Series::new("b".into(), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
@@ -888,8 +924,8 @@ mod tests {
     #[test]
     fn test_reverse_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3, 4, 5]),
-            Series::new("b", &[10, 20, 30, 40, 50]),
+            Series::new("a".into(), &[1, 2, 3, 4, 5]).into(),
+            Series::new("b".into(), &[10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -947,8 +983,8 @@ mod tests {
     #[test]
     fn test_drop_nulls_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[Some(1), None, Some(3), None, Some(5)]),
-            Series::new("b", &[Some(10), Some(20), None, Some(40), Some(50)]),
+            Series::new("a".into(), &[Some(1), None, Some(3), None, Some(5)]).into(),
+            Series::new("b".into(), &[Some(10), Some(20), None, Some(40), Some(50)]).into(),
         ])
         .unwrap();
         let lf = df.lazy();

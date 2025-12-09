@@ -38,7 +38,7 @@ pub fn builtin_to_valid_utf8(args: &[Value]) -> Result<Value> {
             Ok(Value::DataFrame(df.clone()))
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 // String series are already valid UTF-8
                 Ok(Value::Series(series.clone()))
             } else {

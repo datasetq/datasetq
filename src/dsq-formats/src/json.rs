@@ -554,8 +554,8 @@ impl<R: std::io::BufRead> JsonReader<R> {
         let mut series_vec = Vec::new();
         for col in columns {
             let values = series_data.remove(&col).unwrap();
-            let series = Series::new(&col, values);
-            series_vec.push(series);
+            let series = Series::new(col.as_str().into(), values);
+            series_vec.push(series.into());
         }
 
         DataFrame::new(series_vec).map_err(Error::from)
@@ -566,8 +566,8 @@ impl<R: std::io::BufRead> JsonReader<R> {
         let any_values: Result<Vec<AnyValue>> =
             values.iter().map(|v| self.value_to_any_value(v)).collect();
 
-        let series = Series::new("value", any_values?);
-        DataFrame::new(vec![series]).map_err(Error::from)
+        let series = Series::new("value".into(), any_values?);
+        DataFrame::new(vec![series.into()]).map_err(Error::from)
     }
 
     /// Convert Value to AnyValue for Polars
@@ -577,7 +577,7 @@ impl<R: std::io::BufRead> JsonReader<R> {
             Value::Bool(b) => Ok(AnyValue::Boolean(*b)),
             Value::Int(i) => Ok(AnyValue::Int64(*i)),
             Value::Float(f) => Ok(AnyValue::Float64(*f)),
-            Value::String(s) => Ok(AnyValue::Utf8Owned(s.clone().into())),
+            Value::String(s) => Ok(AnyValue::StringOwned(s.clone().into())),
             Value::Array(_) => Err(Error::Format(FormatError::UnsupportedFeature(
                 "Cannot convert array to AnyValue".to_string(),
             ))),
@@ -719,7 +719,7 @@ impl<W: Write> JsonWriter<W> {
 
         for col_name in df.get_column_names() {
             let series = df.column(col_name).map_err(Error::from)?;
-            let value = self.series_value_to_json(series, row_idx)?;
+            let value = self.series_value_to_json(series.as_materialized_series(), row_idx)?;
             obj.insert(col_name.to_string(), value);
         }
 
@@ -797,8 +797,8 @@ impl<W: Write> JsonWriter<W> {
                     .map(JsonValue::Number)
                     .ok_or_else(|| Error::operation("Invalid float value"))
             }
-            DataType::Utf8 => {
-                let val = series.utf8().map_err(Error::from)?.get(index);
+            DataType::String => {
+                let val = series.str().map_err(Error::from)?.get(index);
                 let string_val = val.unwrap_or("").to_string();
 
                 // Try to parse as JSON if it looks like JSON
@@ -814,7 +814,7 @@ impl<W: Write> JsonWriter<W> {
                 }
             }
             DataType::Date => {
-                let val = series.date().map_err(Error::from)?.get(index);
+                let val = series.date().map_err(Error::from)?.phys.get(index);
                 if let Some(date) = val {
                     Ok(JsonValue::String(date.to_string()))
                 } else {
@@ -822,7 +822,7 @@ impl<W: Write> JsonWriter<W> {
                 }
             }
             DataType::Datetime(_, _) => {
-                let val = series.datetime().map_err(Error::from)?.get(index);
+                let val = series.datetime().map_err(Error::from)?.phys.get(index);
                 if let Some(dt) = val {
                     Ok(JsonValue::String(dt.to_string()))
                 } else {
@@ -830,7 +830,7 @@ impl<W: Write> JsonWriter<W> {
                 }
             }
             DataType::Time => {
-                let val = series.time().map_err(Error::from)?.get(index);
+                let val = series.time().map_err(Error::from)?.phys.get(index);
                 if let Some(time) = val {
                     Ok(JsonValue::String(time.to_string()))
                 } else {
@@ -1170,7 +1170,7 @@ pub(crate) fn row_to_json_value(row: &[AnyValue], column_names: &[String]) -> se
             AnyValue::Float64(f) => serde_json::Value::Number(
                 serde_json::Number::from_f64(*f).unwrap_or(serde_json::Number::from(0)),
             ),
-            AnyValue::Utf8(s) => serde_json::Value::String(s.to_string()),
+            AnyValue::String(s) => serde_json::Value::String(s.to_string()),
             _ => serde_json::Value::Null,
         };
         map.insert(key.to_string(), value);

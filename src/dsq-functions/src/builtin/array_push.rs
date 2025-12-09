@@ -52,7 +52,7 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
             let any_value = match value_to_push {
                 Value::Int(i) => AnyValue::Int64(*i),
                 Value::Float(f) => AnyValue::Float64(*f),
-                Value::String(s) => AnyValue::Utf8(s),
+                Value::String(s) => AnyValue::String(s),
                 Value::Bool(b) => AnyValue::Boolean(*b),
                 Value::Null => AnyValue::Null,
                 _ => AnyValue::Null, // For complex types
@@ -70,17 +70,17 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
                                     values.push(list_series.get(j).unwrap());
                                 }
                                 values.push(any_value.clone());
-                                new_lists.push(Series::new("", values));
+                                new_lists.push(Series::new("".into(), values));
                             } else {
-                                new_lists.push(Series::new("", vec![any_value.clone()]));
+                                new_lists.push(Series::new("".into(), vec![any_value.clone()]));
                             }
                         }
-                        let new_list_series = Series::new(col_name, new_lists);
-                        new_series_vec.push(new_list_series);
+                        let new_list_series = Series::new(col_name.clone(), new_lists);
+                        new_series_vec.push(new_list_series.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series_vec.push(s);
+                        s.rename(col_name.clone());
+                        new_series_vec.push(s.into());
                     }
                 }
             }
@@ -128,9 +128,9 @@ mod tests {
 
     #[test]
     fn test_builtin_array_push_dataframe() {
-        let s1 = Series::new("", &[1i64, 2i64]);
-        let s2 = Series::new("", &[3i64]);
-        let list_series = Series::new("list_col", &[s1, s2]);
+        let s1 = Series::new("".into(), &[1i64, 2i64]);
+        let s2 = Series::new("".into(), &[3i64]);
+        let list_series = Series::new("list_col".into(), &[s1, s2]);
         let df = DataFrame::new(vec![list_series]).unwrap();
         let result = builtin_array_push(&[Value::DataFrame(df), Value::Int(4)]).unwrap();
         match result {

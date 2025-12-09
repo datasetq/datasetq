@@ -144,8 +144,8 @@ impl Value {
                     .map(JsonValue::Number)
                     .ok_or_else(|| TypeError::OutOfRange("Invalid float value".to_string()).into())
             }
-            DataType::Utf8 => {
-                let val = series.utf8().map_err(Error::from)?.get(index);
+            DataType::String => {
+                let val = series.str().map_err(Error::from)?.get(index);
                 Ok(JsonValue::String(val.unwrap_or("").to_string()))
             }
             DataType::Date => {
@@ -256,11 +256,12 @@ impl Value {
                 let mut series_vec = Vec::new();
                 for col in columns {
                     let values = series_map.remove(&col).unwrap();
-                    let series = Series::new(&col, values);
+                    let series = Series::new(col.as_str().into(), values);
                     series_vec.push(series);
                 }
 
-                DataFrame::new(series_vec).map_err(Error::from)
+                let columns: Vec<_> = series_vec.into_iter().map(|s| s.into()).collect();
+                DataFrame::new(columns).map_err(Error::from)
             }
             _ => Err(TypeError::InvalidConversion {
                 from: self.type_name().to_string(),
@@ -282,7 +283,7 @@ impl Value {
             }
             .into()),
             Value::Float(f) => Ok(AnyValue::Float64(*f)),
-            Value::String(s) => Ok(AnyValue::Utf8(s)),
+            Value::String(s) => Ok(AnyValue::String(s)),
             _ => Err(TypeError::UnsupportedOperation {
                 operation: "to_any_value".to_string(),
                 typ: value.type_name().to_string(),
@@ -517,7 +518,7 @@ mod tests {
         assert!(Value::LazyFrame(Box::new(LazyFrame::default())).is_lazy_frame());
         assert!(!Value::int(1).is_lazy_frame());
 
-        assert!(Value::Series(Series::new_empty("test", &DataType::Int64)).is_series());
+        assert!(Value::Series(Series::new_empty("test".into(), &DataType::Int64)).is_series());
         assert!(!Value::int(1).is_series());
     }
 
@@ -533,10 +534,10 @@ mod tests {
         );
         assert_eq!(Value::array(vec![]).len(), Some(0));
 
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3]).into()]).unwrap();
         assert_eq!(Value::DataFrame(df).len(), Some(3));
 
-        let series = Series::new("test", vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 3]);
         assert_eq!(Value::Series(series).len(), Some(3));
 
         assert!(Value::string("").is_empty());
@@ -565,7 +566,7 @@ mod tests {
             "lazyframe"
         );
         assert_eq!(
-            Value::Series(Series::new_empty("test", &DataType::Int64)).type_name(),
+            Value::Series(Series::new_empty("test".into(), &DataType::Int64)).type_name(),
             "series"
         );
     }
@@ -790,9 +791,9 @@ mod tests {
         assert_ne!(Value::bool(true), Value::bool(false));
 
         // DataFrame/Series comparison (always false)
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3]).into()]).unwrap();
         assert_ne!(Value::dataframe(df.clone()), Value::dataframe(df));
-        let series = Series::new("test", vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 3]);
         assert_ne!(Value::series(series.clone()), Value::series(series));
     }
 
@@ -874,7 +875,7 @@ mod tests {
             Value::string("hello")
                 .value_to_any_value(&Value::string("hello"))
                 .unwrap(),
-            AnyValue::Utf8("hello")
+            AnyValue::String("hello")
         );
 
         // Test BigInt error
@@ -889,8 +890,8 @@ mod tests {
     #[test]
     fn test_dataframe_to_json() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 
@@ -920,7 +921,7 @@ mod tests {
 
     #[test]
     fn test_series_to_json() {
-        let series = Series::new("ages", vec![30i64, 25i64, 35i64]);
+        let series = Series::new("ages".into(), vec![30i64, 25i64, 35i64]);
         let value = Value::Series(series);
         let json = value.to_json().unwrap();
 
@@ -938,8 +939,8 @@ mod tests {
     #[test]
     fn test_lazyframe_to_json() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 
@@ -958,8 +959,8 @@ mod tests {
     #[test]
     fn test_indexing_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob", "Charlie"]),
-            Series::new("age", vec![30i64, 25i64, 35i64]),
+            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64, 35i64]).into(),
         ])
         .unwrap();
 
@@ -991,8 +992,8 @@ mod tests {
     #[test]
     fn test_field_access_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 

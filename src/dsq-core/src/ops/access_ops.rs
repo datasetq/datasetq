@@ -187,7 +187,7 @@ impl Operation for IterateOperation {
                                 let value = match val {
                                     polars::prelude::AnyValue::Int64(i) => Value::Int(i),
                                     polars::prelude::AnyValue::Float64(f) => Value::Float(f),
-                                    polars::prelude::AnyValue::Utf8(s) => {
+                                    polars::prelude::AnyValue::String(s) => {
                                         Value::String(s.to_string())
                                     }
                                     polars::prelude::AnyValue::Boolean(b) => Value::Bool(b),

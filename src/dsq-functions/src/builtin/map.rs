@@ -65,7 +65,7 @@ pub fn builtin_map(args: &[Value]) -> Result<Value> {
                     for (key, _) in template {
                         if let Ok(series) = df.column(key) {
                             let mut s = series.clone();
-                            s.rename(key);
+                            s.rename(key.as_str().into());
                             selected_series.push(s);
                         }
                     }
@@ -178,8 +178,8 @@ mod tests {
 
     #[test]
     fn test_map_dataframe_with_string_field() {
-        let names = Series::new("name", &["Alice", "Bob"]);
-        let ages = Series::new("age", &[25, 30]);
+        let names = Series::new("name".into(), &["Alice", "Bob"]);
+        let ages = Series::new("age".into(), &[25, 30]);
         let df = DataFrame::new(vec![names, ages]).unwrap();
 
         let args = vec![Value::DataFrame(df), Value::String("name".to_string())];
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_map_dataframe_with_missing_column() {
-        let names = Series::new("name", &["Alice", "Bob"]);
+        let names = Series::new("name".into(), &["Alice", "Bob"]);
         let df = DataFrame::new(vec![names]).unwrap();
 
         let args = vec![Value::DataFrame(df), Value::String("age".to_string())];
@@ -204,9 +204,9 @@ mod tests {
 
     #[test]
     fn test_map_dataframe_with_object_template() {
-        let names = Series::new("name", &["Alice", "Bob"]);
-        let ages = Series::new("age", &[25, 30]);
-        let cities = Series::new("city", &["NYC", "LA"]);
+        let names = Series::new("name".into(), &["Alice", "Bob"]);
+        let ages = Series::new("age".into(), &[25, 30]);
+        let cities = Series::new("city".into(), &["NYC", "LA"]);
         let df = DataFrame::new(vec![names, ages, cities]).unwrap();
 
         let mut template = HashMap::new();

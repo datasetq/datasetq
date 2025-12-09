@@ -50,9 +50,9 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let set_series = series
-                            .utf8()
+                            .str()
                             .map_err(|e| {
                                 dsq_shared::error::operation_error(format!(
                                 "url_set_domain_without_www() failed to cast series to utf8: {}",
@@ -79,12 +79,12 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = set_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -97,9 +97,9 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let set_series = series
-                    .utf8()
+                    .str()
                     .map_err(|e| {
                         dsq_shared::error::operation_error(format!(
                             "url_set_domain_without_www() failed to cast series to utf8: {}",

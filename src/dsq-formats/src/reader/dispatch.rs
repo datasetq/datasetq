@@ -80,6 +80,8 @@ pub fn deserialize_parquet<R: Read + polars::io::mmap::MmapBytesReader + std::io
         _ => None,
     };
 
+    use polars::prelude::SerReader;
+
     let mut parquet_reader = ParquetReader::new(reader);
 
     if let Some(columns) = parquet_opts {
@@ -87,7 +89,7 @@ pub fn deserialize_parquet<R: Read + polars::io::mmap::MmapBytesReader + std::io
     }
 
     if let Some(max_rows) = options.max_rows {
-        parquet_reader = parquet_reader.with_n_rows(Some(max_rows));
+        parquet_reader = parquet_reader.with_slice(Some((0, max_rows)));
     }
 
     let df = parquet_reader.finish().map_err(Error::from)?;

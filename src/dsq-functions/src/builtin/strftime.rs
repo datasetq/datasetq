@@ -138,11 +138,11 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                                 formatted_values.push("".to_string());
                             }
                         }
-                        let formatted_series = Series::new(col_name, formatted_values);
-                        new_series.push(formatted_series);
-                    } else if series.dtype() == &DataType::Utf8 {
+                        let formatted_series = Series::new(col_name.clone(), formatted_values);
+                        new_series.push(formatted_series.into());
+                    } else if series.dtype() == &DataType::String {
                         let formatted_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| {
                                 s.and_then(|s| {
@@ -174,12 +174,12 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = formatted_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -218,10 +218,10 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                         formatted_values.push("".to_string());
                     }
                 }
-                Ok(Value::Series(Series::new("", formatted_values)))
-            } else if series.dtype() == &DataType::Utf8 {
+                Ok(Value::Series(Series::new("".into(), formatted_values)))
+            } else if series.dtype() == &DataType::String {
                 let formatted_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| {
                         s.and_then(|s| {

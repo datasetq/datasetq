@@ -29,7 +29,7 @@ pub fn builtin_systime_ns(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             // Add a new column with current time for each row
             let mut new_df = df.clone();
-            let time_series = Series::new("systime_ns", vec![nanos; df.height()]);
+            let time_series = Series::new("systime_ns".into(), vec![nanos; df.height()]);
             match new_df.with_column(time_series) {
                 Ok(_) => Ok(Value::DataFrame(new_df)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -105,8 +105,8 @@ mod tests {
     #[test]
     fn test_systime_ns_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", &["Alice", "Bob"]),
-            Series::new("age", &[25, 30]),
+            Series::new("name".into(), &["Alice", "Bob"]),
+            Series::new("age".into(), &[25, 30]),
         ])
         .unwrap();
         let result = builtin_systime_ns(&[Value::DataFrame(df.clone())]).unwrap();
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_systime_ns_with_series() {
-        let series = Series::new("values", vec![1, 2, 3]);
+        let series = Series::new("values".into(), vec![1, 2, 3]);
         let result = builtin_systime_ns(&[Value::Series(series.clone())]).unwrap();
         match result {
             Value::Series(time_series) => {

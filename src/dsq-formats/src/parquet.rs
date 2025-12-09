@@ -1,7 +1,6 @@
 #![allow(invalid_reference_casting)]
 
 use crate::error::{Error, Result};
-use polars::io::parquet::ParallelStrategy;
 use polars::prelude::*;
 
 use std::fs::File;
@@ -135,11 +134,13 @@ impl ParquetReader {
 
     /// Read the Parquet file into a DataFrame
     pub fn read(self) -> Result<DataFrame> {
+        use polars::prelude::SerReader;
+
         let file = File::open(&self.path)?;
-        let mut pq_reader = polars::io::parquet::ParquetReader::new(file);
+        let mut pq_reader = polars::prelude::ParquetReader::new(file);
 
         if let Some(n_rows) = self.options.n_rows {
-            pq_reader = pq_reader.with_n_rows(Some(n_rows));
+            pq_reader = pq_reader.with_slice(Some((0, n_rows)));
         }
 
         if let Some(columns) = &self.options.columns {
@@ -147,25 +148,29 @@ impl ParquetReader {
         }
 
         // if let Some(row_count) = self.options.row_count {
-        //     pq_reader = pq_reader.with_row_count(Some(polars::io::RowCount::new("row_nr".to_string(), row_count as u32)));
+        //     pq_reader = pq_reader.with_row_index(Some(polars::io::RowIndex {
+        //         name: "row_nr".into(),
+        //         offset: row_count as IdxSize,
+        //     }));
         // }
 
-        // pq_reader = pq_reader.read_parallel(self.options.parallel);
+        pq_reader = pq_reader.read_parallel(self.options.parallel);
 
         pq_reader.finish().map_err(Error::from)
     }
 
     /// Read the Parquet file into a LazyFrame for lazy evaluation
     pub fn read_lazy(self) -> Result<LazyFrame> {
-        use polars::prelude::ScanArgsParquet;
+        use polars::prelude::{PlPath, ScanArgsParquet};
 
         let mut scan_args = ScanArgsParquet::default();
         scan_args.n_rows = self.options.n_rows;
         // scan_args.with_columns = self.options.columns;
-        scan_args.row_count = None;
+        scan_args.row_index = None;
         scan_args.parallel = self.options.parallel;
 
-        LazyFrame::scan_parquet(&self.path, scan_args).map_err(Error::from)
+        LazyFrame::scan_parquet(PlPath::new(self.path.to_str().unwrap()), scan_args)
+            .map_err(Error::from)
     }
 }
 
@@ -209,9 +214,8 @@ impl<W: std::io::Write> ParquetWriter<W> {
 
     /// Write a DataFrame to Parquet format
     pub fn finish(self, df: &mut DataFrame) -> Result<()> {
-        let mut writer = polars::io::parquet::ParquetWriter::new(self.writer)
-            .with_compression(self.options.compression.into())
-            .with_statistics(self.options.statistics);
+        let mut writer = polars::prelude::ParquetWriter::new(self.writer)
+            .with_compression(self.options.compression.into());
 
         if let Some(row_group_size) = self.options.row_group_size {
             writer = writer.with_row_group_size(Some(row_group_size));

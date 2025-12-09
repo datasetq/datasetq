@@ -11,8 +11,8 @@
 
 use crate::error::{Error, Result, TypeError};
 use crate::Value;
-use polars::lazy::dsl::count;
 use polars::prelude::*;
+use polars_ops::prelude::UnpivotDF;
 use smallvec::SmallVec;
 
 use std::collections::HashMap;
@@ -48,7 +48,9 @@ pub fn group_by(value: &Value, columns: &[String]) -> Result<Value> {
                             let value = match val {
                                 polars::prelude::AnyValue::Int64(i) => Value::Int(i),
                                 polars::prelude::AnyValue::Float64(f) => Value::Float(f),
-                                polars::prelude::AnyValue::Utf8(s) => Value::String(s.to_string()),
+                                polars::prelude::AnyValue::String(s) => {
+                                    Value::String(s.to_string())
+                                }
                                 polars::prelude::AnyValue::Boolean(b) => Value::Bool(b),
                                 _ => Value::Null,
                             };
@@ -220,7 +222,7 @@ impl AggregationFunction {
     /// Convert to Polars expression
     pub fn to_polars_expr(&self) -> Result<Expr> {
         match self {
-            AggregationFunction::Count => Ok(count().alias("count")),
+            AggregationFunction::Count => Ok(len().alias("count")),
             AggregationFunction::Sum(col_name) => {
                 Ok(col(col_name).sum().alias(&format!("{col_name}_sum")))
             }
@@ -834,14 +836,22 @@ pub fn unpivot(
 ) -> Result<Value> {
     match value {
         Value::DataFrame(df) => {
-            let mut unpivoted = df
-                .clone()
-                .melt(id_columns, value_columns)
+            // Use unpivot method from UnpivotDF trait
+            let mut unpivoted = if id_columns.is_empty() {
+                df.clone()
+                    .unpivot([] as [&str; 0], value_columns)
+                    .map_err(Error::from)?
+            } else {
+                df.clone()
+                    .unpivot(id_columns, value_columns)
+                    .map_err(Error::from)?
+            };
+            unpivoted
+                .rename("variable", variable_name.into())
                 .map_err(Error::from)?;
             unpivoted
-                .rename("variable", variable_name)
+                .rename("value", value_name.into())
                 .map_err(Error::from)?;
-            unpivoted.rename("value", value_name).map_err(Error::from)?;
 
             Ok(Value::DataFrame(unpivoted))
         }

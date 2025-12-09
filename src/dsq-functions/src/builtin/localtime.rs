@@ -132,12 +132,12 @@ pub fn builtin_localtime(args: &[Value]) -> Result<Value> {
                                 localtime_values.push("".to_string());
                             }
                         }
-                        let localtime_series = Series::new(col_name, localtime_values);
-                        new_series.push(localtime_series);
+                        let localtime_series = Series::new(col_name.clone(), localtime_values);
+                        new_series.push(localtime_series.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -180,7 +180,7 @@ pub fn builtin_localtime(args: &[Value]) -> Result<Value> {
                         localtime_values.push("".to_string());
                     }
                 }
-                Ok(Value::Series(Series::new("", localtime_values)))
+                Ok(Value::Series(Series::new("".into(), localtime_values)))
             } else {
                 Ok(Value::Series(series.clone()))
             }

@@ -34,7 +34,7 @@ pub fn json_to_dataframe(value: &serde_json::Value, options: &ReadOptions) -> Re
                             values.push(AnyValue::Null);
                         }
                     }
-                    series_vec.push(Series::new(col, values));
+                    series_vec.push(Series::new(col.as_str().into(), values).into());
                 }
             } else {
                 if let Some(serde_json::Value::Object(obj)) = arr_slice.first() {
@@ -52,7 +52,7 @@ pub fn json_to_dataframe(value: &serde_json::Value, options: &ReadOptions) -> Re
                                 values.push(AnyValue::Null);
                             }
                         }
-                        series_vec.push(Series::new(key, values));
+                        series_vec.push(Series::new(key.as_str().into(), values).into());
                     }
                 }
             }
@@ -73,7 +73,9 @@ pub fn json_to_dataframe(value: &serde_json::Value, options: &ReadOptions) -> Re
                 let val = obj
                     .get(key)
                     .ok_or_else(|| Error::operation("Key not found in object"))?;
-                series_vec.push(Series::new(key, vec![json_value_to_anyvalue(val)]));
+                series_vec.push(
+                    Series::new(key.as_str().into(), vec![json_value_to_anyvalue(val)]).into(),
+                );
             }
             DataFrame::new(series_vec).map_err(Error::from)
         }
@@ -99,7 +101,7 @@ fn json_value_to_anyvalue(value: &serde_json::Value) -> AnyValue<'_> {
                 AnyValue::Null
             }
         }
-        serde_json::Value::String(s) => AnyValue::Utf8(s),
+        serde_json::Value::String(s) => AnyValue::String(s),
         serde_json::Value::Array(_) => AnyValue::Null, // TODO: Handle nested arrays
         serde_json::Value::Object(_) => AnyValue::Null, // TODO: Handle nested objects
     }

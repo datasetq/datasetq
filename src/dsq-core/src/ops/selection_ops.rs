@@ -37,7 +37,7 @@ impl Operation for SelectConditionOperation {
                                 polars::prelude::AnyValue::Boolean(b) => b,
                                 polars::prelude::AnyValue::Int64(i) => i != 0,
                                 polars::prelude::AnyValue::Float64(f) => f != 0.0,
-                                polars::prelude::AnyValue::Utf8(s) => !s.is_empty(),
+                                polars::prelude::AnyValue::String(s) => !s.is_empty(),
                                 _ => false,
                             };
                             mask_vec.push(is_true);
@@ -48,7 +48,7 @@ impl Operation for SelectConditionOperation {
 
                 if mask_vec.len() == df.height() {
                     let mask_chunked =
-                        polars::prelude::BooleanChunked::from_slice("mask", &mask_vec);
+                        polars::prelude::BooleanChunked::from_slice("mask".into(), &mask_vec);
                     match df.filter(&mask_chunked) {
                         Ok(filtered_df) => return Ok(Value::DataFrame(filtered_df)),
                         Err(e) => {

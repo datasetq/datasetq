@@ -276,7 +276,7 @@ impl Executor {
                 match value {
                     Value::DataFrame(df) => {
                         // Write as CSV to stdout - avoid clone by using a mutable reference
-                        use polars::io::csv::CsvWriter;
+                        use polars::prelude::CsvWriter;
                         use std::io::BufWriter;
                         let stdout = std::io::stdout();
                         let mut writer = BufWriter::with_capacity(65536, stdout.lock());
@@ -312,7 +312,8 @@ impl Executor {
                         let mut stdout = BufWriter::with_capacity(65536, stdout_handle.lock());
 
                         // Write header
-                        let headers: Vec<&str> = df.get_column_names().to_vec();
+                        let headers: Vec<&str> =
+                            df.get_column_names().iter().map(|s| s.as_str()).collect();
                         for (i, header) in headers.iter().enumerate() {
                             if i > 0 {
                                 stdout.write_all(&[FIELD_SEPARATOR])?;
@@ -337,7 +338,9 @@ impl Executor {
                                         e
                                     )))
                                 })? {
-                                    polars::prelude::AnyValue::Utf8(s) => value_buffer.push_str(s),
+                                    polars::prelude::AnyValue::String(s) => {
+                                        value_buffer.push_str(s)
+                                    }
                                     polars::prelude::AnyValue::Int64(i) => {
                                         write!(value_buffer, "{}", i).unwrap()
                                     }

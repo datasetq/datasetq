@@ -29,19 +29,19 @@ pub fn builtin_rstrip(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let rstrip_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .apply(|s| s.map(|s| Cow::Owned(s.trim_end().to_string())))
                             .into_series();
                         let mut s = rstrip_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -54,9 +54,9 @@ pub fn builtin_rstrip(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let rstrip_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .apply(|s| s.map(|s| Cow::Owned(s.trim_end().to_string())))
                     .into_series();
@@ -125,15 +125,15 @@ mod tests {
     #[test]
     fn test_rstrip_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", &["  Alice  ", "Bob   ", "Charlie"]),
-            Series::new("age", &[25, 30, 35]),
+            Series::new("name".into(), &["  Alice  ", "Bob   ", "Charlie"]),
+            Series::new("age".into(), &[25, 30, 35]),
         ])
         .unwrap();
         let result = builtin_rstrip(&[Value::DataFrame(df.clone())]).unwrap();
         if let Value::DataFrame(result_df) = result {
             let name_series = result_df.column("name").unwrap();
             let name_values: Vec<String> = name_series
-                .utf8()
+                .str()
                 .unwrap()
                 .into_iter()
                 .map(|s| s.unwrap().to_string())
@@ -148,11 +148,11 @@ mod tests {
 
     #[test]
     fn test_rstrip_series() {
-        let series = Series::new("test", &["  hello  ", "world   ", "no spaces"]);
+        let series = Series::new("test".into(), &["  hello  ", "world   ", "no spaces"]);
         let result = builtin_rstrip(&[Value::Series(series)]).unwrap();
         if let Value::Series(result_series) = result {
             let values: Vec<String> = result_series
-                .utf8()
+                .str()
                 .unwrap()
                 .into_iter()
                 .map(|s| s.unwrap().to_string())
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_rstrip_non_string_series() {
-        let series = Series::new("numbers", &[1, 2, 3]);
+        let series = Series::new("numbers".into(), &[1, 2, 3]);
         let result = builtin_rstrip(&[Value::Series(series.clone())]).unwrap();
         if let Value::Series(result_series) = result {
             assert_eq!(result_series.name(), series.name());

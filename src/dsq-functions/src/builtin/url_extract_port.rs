@@ -35,9 +35,9 @@ pub fn builtin_url_extract_port(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let extracted_series = series
-                            .utf8()
+                            .str()
                             .map_err(|e| {
                                 dsq_shared::error::operation_error(format!(
                                     "url_extract_port() failed to cast series to utf8: {}",
@@ -52,12 +52,12 @@ pub fn builtin_url_extract_port(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = extracted_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -70,9 +70,9 @@ pub fn builtin_url_extract_port(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let extracted_series = series
-                    .utf8()
+                    .str()
                     .map_err(|e| {
                         dsq_shared::error::operation_error(format!(
                             "url_extract_port() failed to cast series to utf8: {}",
@@ -148,12 +148,15 @@ mod tests {
 
     #[test]
     fn test_url_extract_port_dataframe() {
-        let urls = Series::new("urls", &["https://example.com:8080", "http://test.com"]);
+        let urls = Series::new(
+            "urls".into(),
+            &["https://example.com:8080", "http://test.com"],
+        );
         let df = DataFrame::new(vec![urls]).unwrap();
         let result = builtin_url_extract_port(&[Value::DataFrame(df)]).unwrap();
         if let Value::DataFrame(result_df) = result {
             let col = result_df.column("urls").unwrap();
-            let values: Vec<Option<&str>> = col.utf8().unwrap().into_iter().collect();
+            let values: Vec<Option<&str>> = col.str().unwrap().into_iter().collect();
             assert_eq!(values, vec![Some("8080"), None]);
         } else {
             panic!("Expected DataFrame");
@@ -162,10 +165,13 @@ mod tests {
 
     #[test]
     fn test_url_extract_port_series() {
-        let urls = Series::new("urls", &["https://example.com:8080", "http://test.com"]);
+        let urls = Series::new(
+            "urls".into(),
+            &["https://example.com:8080", "http://test.com"],
+        );
         let result = builtin_url_extract_port(&[Value::Series(urls)]).unwrap();
         if let Value::Series(result_series) = result {
-            let values: Vec<Option<&str>> = result_series.utf8().unwrap().into_iter().collect();
+            let values: Vec<Option<&str>> = result_series.str().unwrap().into_iter().collect();
             assert_eq!(values, vec![Some("8080"), None]);
         } else {
             panic!("Expected Series");

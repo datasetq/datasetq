@@ -83,7 +83,7 @@ pub fn builtin_select(args: &[Value]) -> Result<Value> {
                                 "select() mask series must contain booleans",
                             ));
                         }
-                        let mask_chunked = BooleanChunked::from_slice("mask", &mask_vec);
+                        let mask_chunked = BooleanChunked::from_slice("mask".into(), &mask_vec);
                         match df.filter(&mask_chunked) {
                             Ok(filtered_df) => Ok(Value::DataFrame(filtered_df)),
                             Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -111,7 +111,7 @@ pub fn builtin_select(args: &[Value]) -> Result<Value> {
                                 "select() mask series must contain booleans",
                             ));
                         }
-                        let mask_chunked = BooleanChunked::from_slice("mask", &mask_vec);
+                        let mask_chunked = BooleanChunked::from_slice("mask".into(), &mask_vec);
                         match series.filter(&mask_chunked) {
                             Ok(filtered_series) => Ok(Value::Series(filtered_series)),
                             Err(e) => Err(dsq_shared::error::operation_error(format!(

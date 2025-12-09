@@ -45,10 +45,10 @@ smartstring = "1.0"
 inventory = "0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.35", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+polars = { version = "0.51", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { version = "0.35", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
+polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
 wasm-bindgen = "0.2"
 js-sys = "0.3"
 

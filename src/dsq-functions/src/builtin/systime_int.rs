@@ -28,7 +28,7 @@ pub fn builtin_systime_int(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             // Add a new column with current time for each row
             let mut new_df = df.clone();
-            let time_series = Series::new("systime_int", vec![seconds; df.height()]);
+            let time_series = Series::new("systime_int".into(), vec![seconds; df.height()]);
             match new_df.with_column(time_series) {
                 Ok(_) => Ok(Value::DataFrame(new_df)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -39,7 +39,7 @@ pub fn builtin_systime_int(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             // Add a new series with current time for each element
-            let time_series = Series::new("systime_int", vec![seconds; series.len()]);
+            let time_series = Series::new("systime_int".into(), vec![seconds; series.len()]);
             Ok(Value::Series(time_series))
         }
         _ => Ok(Value::Int(seconds)),
@@ -96,8 +96,8 @@ mod tests {
     #[test]
     fn test_builtin_systime_int_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", &["Alice", "Bob"]),
-            Series::new("age", &[25, 30]),
+            Series::new("name".into(), &["Alice", "Bob"]),
+            Series::new("age".into(), &[25, 30]),
         ])
         .unwrap();
         let result = builtin_systime_int(&[Value::DataFrame(df)]).unwrap();
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_builtin_systime_int_with_series() {
-        let series = Series::new("test", &[1, 2, 3]);
+        let series = Series::new("test".into(), &[1, 2, 3]);
         let result = builtin_systime_int(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(result_series) => {

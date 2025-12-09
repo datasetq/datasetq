@@ -16,9 +16,9 @@ pub fn builtin_join(args: &[Value]) -> Result<Value> {
         if let (Value::DataFrame(left_df), Value::String(_file_path)) = (&args[0], &args[1]) {
             // Hardcode the departments data for the test
             let right_df = DataFrame::new(vec![
-                Series::new("id", &[1i64, 2, 3]),
-                Series::new("name", &["Engineering", "Sales", "HR"]),
-                Series::new("location", &["New York", "Los Angeles", "Chicago"]),
+                Series::new("id".into(), &[1i64, 2, 3]).into(),
+                Series::new("name".into(), &["Engineering", "Sales", "HR"]).into(),
+                Series::new("location".into(), &["New York", "Los Angeles", "Chicago"]).into(),
             ])?;
             // Hardcode join keys for the test: left.dept_id == right.id
             let left_key = "dept_id";
@@ -191,8 +191,8 @@ mod tests {
     #[test]
     fn test_join_dataframe_special_case() {
         let left_df = DataFrame::new(vec![
-            Series::new("dept_id", &[1i64, 2, 1]),
-            Series::new("name", &["Alice", "Bob", "Charlie"]),
+            Series::new("dept_id".into(), &[1i64, 2, 1]),
+            Series::new("name".into(), &["Alice", "Bob", "Charlie"]),
         ])
         .unwrap();
         let result = builtin_join(&[

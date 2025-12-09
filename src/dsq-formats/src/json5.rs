@@ -478,8 +478,8 @@ impl<R: BufRead> Json5Reader<R> {
             let values = series_data
                 .remove(&col)
                 .ok_or_else(|| Error::operation("Column not found in series data"))?;
-            let series = Series::new(&col, values);
-            series_vec.push(series);
+            let series = Series::new(col.as_str().into(), values);
+            series_vec.push(series.into());
         }
 
         DataFrame::new(series_vec).map_err(Error::from)
@@ -492,8 +492,8 @@ impl<R: BufRead> Json5Reader<R> {
             .map(|v| self.value_to_any_value(v))
             .collect();
 
-        let series = Series::new("value", any_values?);
-        DataFrame::new(vec![series]).map_err(Error::from)
+        let series = Series::new("value".into(), any_values?);
+        DataFrame::new(vec![series.into()]).map_err(Error::from)
     }
 
     /// Convert Value to AnyValue for Polars
@@ -503,14 +503,14 @@ impl<R: BufRead> Json5Reader<R> {
             Value::Bool(b) => Ok(AnyValue::Boolean(b)),
             Value::Int(i) => Ok(AnyValue::Int64(i)),
             Value::Float(f) => Ok(AnyValue::Float64(f)),
-            Value::String(s) => Ok(AnyValue::Utf8(Box::leak(s.into_boxed_str()))),
+            Value::String(s) => Ok(AnyValue::StringOwned(s.into())),
             Value::Array(_) => {
                 // TODO: Convert array to List AnyValue
-                Ok(AnyValue::Utf8("array"))
+                Ok(AnyValue::String("array"))
             }
             Value::Object(_) => {
                 // TODO: Convert object to Struct AnyValue
-                Ok(AnyValue::Utf8("object"))
+                Ok(AnyValue::String("object"))
             }
             _ => Err(Error::Format(FormatError::UnsupportedFeature(format!(
                 "Cannot convert {} to AnyValue",
@@ -661,7 +661,7 @@ impl<W: Write> Json5Writer<W> {
 
         for col_name in df.get_column_names() {
             let series = df.column(col_name).map_err(Error::from)?;
-            let value = self.series_value_to_json(series, row_idx)?;
+            let value = self.series_value_to_json(series.as_materialized_series(), row_idx)?;
             obj.insert(col_name.to_string(), value);
         }
 
@@ -805,8 +805,8 @@ impl<W: Write> Json5Writer<W> {
                     }
                 }
             }
-            DataType::Utf8 => {
-                let val = series.utf8().map_err(Error::from)?.get(index);
+            DataType::String => {
+                let val = series.str().map_err(Error::from)?.get(index);
                 let string_val = match val {
                     Some(v) => v.to_string(),
                     None => {
@@ -831,7 +831,7 @@ impl<W: Write> Json5Writer<W> {
                 }
             }
             DataType::Date => {
-                let val = series.date().map_err(Error::from)?.get(index);
+                let val = series.date().map_err(Error::from)?.phys.get(index);
                 if let Some(date) = val {
                     Ok(JsonValue::String(date.to_string()))
                 } else if let Some(ref null_str) = self.options.null_value {
@@ -841,7 +841,7 @@ impl<W: Write> Json5Writer<W> {
                 }
             }
             DataType::Datetime(_, _) => {
-                let val = series.datetime().map_err(Error::from)?.get(index);
+                let val = series.datetime().map_err(Error::from)?.phys.get(index);
                 if let Some(dt) = val {
                     Ok(JsonValue::String(dt.to_string()))
                 } else if let Some(ref null_str) = self.options.null_value {
@@ -851,7 +851,7 @@ impl<W: Write> Json5Writer<W> {
                 }
             }
             DataType::Time => {
-                let val = series.time().map_err(Error::from)?.get(index);
+                let val = series.time().map_err(Error::from)?.phys.get(index);
                 if let Some(time) = val {
                     Ok(JsonValue::String(time.to_string()))
                 } else {

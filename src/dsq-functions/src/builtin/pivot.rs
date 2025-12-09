@@ -118,7 +118,7 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
     for col_name in &index_columns {
         if let Ok(series) = df.column(col_name) {
             let mut s = series.clone();
-            s.rename(col_name);
+            s.rename(col_name.clone());
             result_columns.push(s);
         }
     }
@@ -279,7 +279,7 @@ fn aggregate_values(values: &[Value], agg_function: Option<&str>) -> Result<AnyV
                 match first {
                     Value::Int(i) => Ok(AnyValue::Int64(*i as i64)),
                     Value::Float(f) => Ok(AnyValue::Float64(*f)),
-                    Value::String(s) => Ok(AnyValue::Utf8(&s)),
+                    Value::String(s) => Ok(AnyValue::String(&s)),
                     Value::Bool(b) => Ok(AnyValue::Boolean(*b)),
                     _ => Ok(AnyValue::Null),
                 }
@@ -292,7 +292,7 @@ fn aggregate_values(values: &[Value], agg_function: Option<&str>) -> Result<AnyV
                 match last {
                     Value::Int(i) => Ok(AnyValue::Int64(*i as i64)),
                     Value::Float(f) => Ok(AnyValue::Float64(*f)),
-                    Value::String(s) => Ok(AnyValue::Utf8(&s)),
+                    Value::String(s) => Ok(AnyValue::String(&s)),
                     Value::Bool(b) => Ok(AnyValue::Boolean(*b)),
                     _ => Ok(AnyValue::Null),
                 }

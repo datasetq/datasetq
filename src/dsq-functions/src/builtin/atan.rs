@@ -51,12 +51,12 @@ pub fn builtin_atan(args: &[Value]) -> Result<Value> {
                             .apply(|opt_f| opt_f.map(|f| f.atan()))
                             .into_series();
                         let mut s = atan_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }

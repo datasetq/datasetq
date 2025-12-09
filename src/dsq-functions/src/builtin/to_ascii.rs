@@ -43,9 +43,9 @@ pub fn builtin_to_ascii(args: &[Value]) -> Result<Value> {
                 .collect();
             for col in col_names {
                 if let Ok(series) = new_df.column(&col) {
-                    if series.dtype() == &DataType::Utf8 {
+                    if series.dtype() == &DataType::String {
                         let new_series = series
-                            .utf8()
+                            .str()
                             .unwrap()
                             .into_iter()
                             .map(|opt_s| {
@@ -55,7 +55,7 @@ pub fn builtin_to_ascii(args: &[Value]) -> Result<Value> {
                                     ascii_codes.join(" ")
                                 })
                             })
-                            .collect::<Utf8Chunked>()
+                            .collect::<StringChunked>()
                             .into_series();
                         let _ = new_df.replace(&col, new_series);
                     }
@@ -64,9 +64,9 @@ pub fn builtin_to_ascii(args: &[Value]) -> Result<Value> {
             Ok(Value::DataFrame(new_df))
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
+            if series.dtype() == &DataType::String {
                 let new_series = series
-                    .utf8()
+                    .str()
                     .unwrap()
                     .into_iter()
                     .map(|opt_s| {
@@ -76,7 +76,7 @@ pub fn builtin_to_ascii(args: &[Value]) -> Result<Value> {
                             ascii_codes.join(" ")
                         })
                     })
-                    .collect::<Utf8Chunked>()
+                    .collect::<StringChunked>()
                     .into_series();
                 Ok(Value::Series(new_series))
             } else {
@@ -138,13 +138,13 @@ mod tests {
     #[test]
     fn test_to_ascii_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("text", &["hello", "world"]),
-            Series::new("number", &[1, 2]),
+            Series::new("text".into(), &["hello", "world"]),
+            Series::new("number".into(), &[1, 2]),
         ])
         .unwrap();
         let result = builtin_to_ascii(&[Value::DataFrame(df.clone())]).unwrap();
         if let Value::DataFrame(new_df) = result {
-            let text_series = new_df.column("text").unwrap().utf8().unwrap();
+            let text_series = new_df.column("text").unwrap().str().unwrap();
             assert_eq!(text_series.get(0).unwrap(), "104 101 108 108 111");
             assert_eq!(text_series.get(1).unwrap(), "119 111 114 108 100");
             // number column should remain unchanged
@@ -157,10 +157,10 @@ mod tests {
 
     #[test]
     fn test_to_ascii_series() {
-        let series = Series::new("test", &["hi", "there"]);
+        let series = Series::new("test".into(), &["hi", "there"]);
         let result = builtin_to_ascii(&[Value::Series(series)]).unwrap();
         if let Value::Series(new_series) = result {
-            let utf8_series = new_series.utf8().unwrap();
+            let utf8_series = new_series.str().unwrap();
             assert_eq!(utf8_series.get(0).unwrap(), "104 105");
             assert_eq!(utf8_series.get(1).unwrap(), "116 104 101 114 101");
         } else {
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_to_ascii_non_string_series() {
-        let series = Series::new("numbers", &[1, 2, 3]);
+        let series = Series::new("numbers".into(), &[1, 2, 3]);
         let result = builtin_to_ascii(&[Value::Series(series)]);
         assert!(result.is_err());
         assert!(result

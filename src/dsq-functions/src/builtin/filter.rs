@@ -31,7 +31,7 @@ pub fn builtin_filter(args: &[Value]) -> Result<Value> {
                             mask.push(false);
                         }
                     }
-                    let mask_chunked = BooleanChunked::from_slice("mask", &mask);
+                    let mask_chunked = BooleanChunked::from_slice("mask".into(), &mask);
                     match df.filter(&mask_chunked) {
                         Ok(filtered_df) => Ok(Value::DataFrame(filtered_df)),
                         Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -56,7 +56,7 @@ pub fn builtin_filter(args: &[Value]) -> Result<Value> {
                     mask.push(false);
                 }
             }
-            let mask_chunked = BooleanChunked::from_slice("mask", &mask);
+            let mask_chunked = BooleanChunked::from_slice("mask".into(), &mask);
             match series.filter(&mask_chunked) {
                 Ok(filtered_series) => Ok(Value::Series(filtered_series)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -137,8 +137,8 @@ mod tests {
     #[test]
     fn test_filter_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1", vec![1, 2, 1, 3]),
-            Series::new("col2", vec!["a", "b", "c", "d"]),
+            Series::new("col1".into(), vec![1, 2, 1, 3]),
+            Series::new("col2".into(), vec!["a", "b", "c", "d"]),
         ])
         .unwrap();
         let result = builtin_filter(&[Value::DataFrame(df), Value::Int(1)]).unwrap();
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_filter_series() {
-        let series = Series::new("test", vec![1, 2, 1, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 1, 3]);
         let result = builtin_filter(&[Value::Series(series), Value::Int(1)]).unwrap();
         match result {
             Value::Series(filtered_series) => {

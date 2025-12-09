@@ -49,8 +49,8 @@ pub fn builtin_base64_decode(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype() == &DataType::Utf8 {
-                        let utf8_series = series.utf8().map_err(|e| {
+                    if series.dtype() == &DataType::String {
+                        let utf8_series = series.str().map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "base64_decode() failed to cast series to utf8: {}",
                                 e
@@ -68,12 +68,12 @@ pub fn builtin_base64_decode(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = decoded_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -86,8 +86,8 @@ pub fn builtin_base64_decode(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype() == &DataType::Utf8 {
-                let utf8_series = series.utf8().map_err(|e| {
+            if series.dtype() == &DataType::String {
+                let utf8_series = series.str().map_err(|e| {
                     dsq_shared::error::operation_error(format!(
                         "base64_decode() failed to cast series to utf8: {}",
                         e

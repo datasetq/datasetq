@@ -34,7 +34,8 @@ pub fn builtin_median(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             let mut medians = HashMap::new();
             for col_name in df.get_column_names() {
-                if let Ok(series) = df.column(col_name) {
+                if let Ok(column) = df.column(col_name) {
+                    let series = column.as_materialized_series();
                     if series.dtype().is_numeric() {
                         if let Some(median_val) = series.median() {
                             medians.insert(col_name.to_string(), Value::Float(median_val));

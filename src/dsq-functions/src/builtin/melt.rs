@@ -105,14 +105,14 @@ pub fn builtin_melt(args: &[Value]) -> Result<Value> {
 
             // Add id columns
             for (i, id_var) in id_vars.iter().enumerate() {
-                new_series.push(Series::new(id_var, &id_columns_data[i]));
+                new_series.push(Series::new(id_var.into(), &id_columns_data[i]).into());
             }
 
             // Add variable column
-            new_series.push(Series::new("variable", &variable_values));
+            new_series.push(Series::new("variable".into(), &variable_values).into());
 
             // Add value column
-            new_series.push(Series::new("value", &value_values));
+            new_series.push(Series::new("value".into(), &value_values).into());
 
             match DataFrame::new(new_series) {
                 Ok(melted_df) => Ok(Value::DataFrame(melted_df)),
@@ -144,9 +144,9 @@ mod tests {
     #[test]
     fn test_builtin_melt_basic() {
         // Create a simple DataFrame
-        let series1 = Series::new("id", vec![1i64, 2]);
-        let series2 = Series::new("A", vec![10i64, 20]);
-        let series3 = Series::new("B", vec![100i64, 200]);
+        let series1 = Series::new("id".into(), vec![1i64, 2]);
+        let series2 = Series::new("A".into(), vec![10i64, 20]);
+        let series3 = Series::new("B".into(), vec![100i64, 200]);
         let df = DataFrame::new(vec![series1, series2, series3]).unwrap();
 
         let result = builtin_melt(&[Value::DataFrame(df)]).unwrap();
@@ -170,9 +170,9 @@ mod tests {
     #[test]
     fn test_builtin_melt_with_id_vars() {
         // Create a DataFrame
-        let series1 = Series::new("id", vec![1i64, 2]);
-        let series2 = Series::new("A", vec![10i64, 20]);
-        let series3 = Series::new("B", vec![100i64, 200]);
+        let series1 = Series::new("id".into(), vec![1i64, 2]);
+        let series2 = Series::new("A".into(), vec![10i64, 20]);
+        let series3 = Series::new("B".into(), vec![100i64, 200]);
         let df = DataFrame::new(vec![series1, series2, series3]).unwrap();
 
         let result =
@@ -189,10 +189,10 @@ mod tests {
     #[test]
     fn test_builtin_melt_with_value_vars() {
         // Create a DataFrame
-        let series1 = Series::new("id", vec![1i64, 2]);
-        let series2 = Series::new("A", vec![10i64, 20]);
-        let series3 = Series::new("B", vec![100i64, 200]);
-        let series4 = Series::new("C", vec![1000i64, 2000]);
+        let series1 = Series::new("id".into(), vec![1i64, 2]);
+        let series2 = Series::new("A".into(), vec![10i64, 20]);
+        let series3 = Series::new("B".into(), vec![100i64, 200]);
+        let series4 = Series::new("C".into(), vec![1000i64, 2000]);
         let df = DataFrame::new(vec![series1, series2, series3, series4]).unwrap();
 
         let result = builtin_melt(&[
@@ -225,7 +225,7 @@ mod tests {
             .contains("expects 1-3 arguments"));
 
         // Too many arguments
-        let df = DataFrame::new(vec![Series::new("col", vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("col".into(), vec![1i64])]).unwrap();
         let result = builtin_melt(&[
             Value::DataFrame(df),
             Value::String("id".to_string()),
@@ -241,7 +241,7 @@ mod tests {
 
     #[test]
     fn test_builtin_melt_invalid_id_vars() {
-        let df = DataFrame::new(vec![Series::new("col", vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("col".into(), vec![1i64])]).unwrap();
         let result = builtin_melt(&[
             Value::DataFrame(df),
             Value::Int(123), // Invalid id_vars type
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_builtin_melt_invalid_value_vars() {
-        let df = DataFrame::new(vec![Series::new("col", vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("col".into(), vec![1i64])]).unwrap();
         let result = builtin_melt(&[
             Value::DataFrame(df),
             Value::String("id".to_string()),

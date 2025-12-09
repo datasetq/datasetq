@@ -175,7 +175,8 @@ pub use writer::serialize_parquet;
 #[cfg(feature = "csv")]
 pub use csv::{
     detect_csv_format, read_csv_file, read_csv_file_with_options, write_csv_file,
-    write_csv_file_with_options, CsvReadOptions, CsvReader, CsvWriteOptions, CsvWriter,
+    write_csv_file_with_options, CsvReader, CsvWriteOptions, CsvWriter,
+    DsqCsvReadOptions as CsvReadOptions,
 };
 
 #[cfg(feature = "json")]

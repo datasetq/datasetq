@@ -53,16 +53,15 @@ pub fn builtin_quartile(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             let mut quartiles = HashMap::new();
             for col_name in df.get_column_names() {
-                if let Ok(series) = df.column(col_name) {
+                if let Ok(column) = df.column(col_name) {
+                    let series = column.as_materialized_series();
                     if series.dtype().is_numeric() {
-                        if let Ok(quant_series) = series.quantile_as_series(
-                            quartile as f64 / 4.0,
-                            QuantileInterpolOptions::Linear,
-                        ) {
-                            if let Ok(av) = quant_series.get(0) {
-                                if let Ok(f) = av.try_extract::<f64>() {
-                                    quartiles.insert(col_name.to_string(), Value::Float(f));
-                                }
+                        if let Ok(result) =
+                            series.quantile_reduce(quartile as f64 / 4.0, QuantileMethod::Linear)
+                        {
+                            let av = result.as_any_value();
+                            if let Ok(f) = av.try_extract::<f64>() {
+                                quartiles.insert(col_name.to_string(), Value::Float(f));
                             }
                         }
                     }
@@ -72,16 +71,14 @@ pub fn builtin_quartile(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                match series
-                    .quantile_as_series(quartile as f64 / 4.0, QuantileInterpolOptions::default())
-                {
-                    Ok(quant_series) => match quant_series.get(0) {
-                        Ok(av) => match av.try_extract::<f64>() {
+                match series.quantile_reduce(quartile as f64 / 4.0, QuantileMethod::default()) {
+                    Ok(result) => {
+                        let av = result.as_any_value();
+                        match av.try_extract::<f64>() {
                             Ok(f) => Ok(Value::Float(f)),
                             Err(_) => Ok(Value::Null),
-                        },
-                        Err(_) => Ok(Value::Null),
-                    },
+                        }
+                    }
                     Err(_) => Ok(Value::Null),
                 }
             } else {

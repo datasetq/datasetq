@@ -59,8 +59,9 @@ pub fn builtin_transpose(args: &[Value]) -> Result<Value> {
             Ok(Value::Array(result))
         }
         Value::DataFrame(df) => {
-            // Transpose DataFrame
-            match df.transpose(None, None) {
+            // Transpose DataFrame - need to clone since transpose takes &mut self
+            let mut df_clone = df.clone();
+            match df_clone.transpose(None, None) {
                 Ok(transposed_df) => Ok(Value::DataFrame(transposed_df)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
                     "transpose() failed: {}",
@@ -166,8 +167,8 @@ mod tests {
     #[test]
     fn test_builtin_transpose_dataframe() {
         // Create a simple DataFrame
-        let series1 = Series::new("col1", vec![1i64, 2]);
-        let series2 = Series::new("col2", vec![3i64, 4]);
+        let series1 = Series::new("col1".into(), vec![1i64, 2]);
+        let series2 = Series::new("col2".into(), vec![3i64, 4]);
         let df = DataFrame::new(vec![series1, series2]).unwrap();
         let result = builtin_transpose(&[Value::DataFrame(df)]).unwrap();
 

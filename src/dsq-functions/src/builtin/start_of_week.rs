@@ -74,7 +74,7 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype().is_numeric() || series.dtype() == &DataType::Utf8 {
+                    if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut start_values = Vec::new();
                         for i in 0..series.len() {
                             if let Ok(val) = series.get(i) {
@@ -110,12 +110,12 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                                 start_values.push(0i64);
                             }
                         }
-                        let start_series = Series::new(col_name, start_values);
-                        new_series.push(start_series);
+                        let start_series = Series::new(col_name.clone(), start_values);
+                        new_series.push(start_series.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -128,7 +128,7 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.dtype().is_numeric() || series.dtype() == &DataType::Utf8 {
+            if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                 let mut start_values = Vec::new();
                 for i in 0..series.len() {
                     if let Ok(val) = series.get(i) {
@@ -161,7 +161,10 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                         start_values.push(0i64);
                     }
                 }
-                Ok(Value::Series(Series::new(series.name(), start_values)))
+                Ok(Value::Series(Series::new(
+                    series.name().clone(),
+                    start_values,
+                )))
             } else {
                 Ok(Value::Series(series.clone()))
             }

@@ -102,8 +102,8 @@ mod tests {
     #[test]
     fn test_length_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("a", &[1, 2, 3]),
-            Series::new("b", &[4, 5, 6]),
+            Series::new("a".into(), &[1, 2, 3]),
+            Series::new("b".into(), &[4, 5, 6]),
         ])
         .unwrap();
         let result = builtin_length(&[Value::DataFrame(df)]).unwrap();
@@ -112,14 +112,14 @@ mod tests {
 
     #[test]
     fn test_length_series() {
-        let series = Series::new("test", &[1, 2, 3, 4, 5]);
+        let series = Series::new("test".into(), &[1, 2, 3, 4, 5]);
         let result = builtin_length(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Int(5));
     }
 
     #[test]
     fn test_length_empty_series() {
-        let series = Series::new("empty", Vec::<i32>::new());
+        let series = Series::new("empty".into(), Vec::<i32>::new());
         let result = builtin_length(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Int(0));
     }

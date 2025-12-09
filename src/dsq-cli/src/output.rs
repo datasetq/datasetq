@@ -54,7 +54,7 @@ impl OutputWriter {
         match value {
             Value::DataFrame(df) => {
                 // For DataFrames, write as CSV
-                use polars::io::csv::CsvWriter;
+                use polars::prelude::CsvWriter;
                 let mut writer = std::io::stdout();
                 CsvWriter::new(&mut writer)
                     .include_header(true)
@@ -123,7 +123,7 @@ impl OutputWriter {
                             b','
                         };
                         let mut writer = std::io::stdout();
-                        use polars::io::csv::CsvWriter;
+                        use polars::prelude::CsvWriter;
                         match value {
                             Value::DataFrame(df) => {
                                 CsvWriter::new(&mut writer)
@@ -193,7 +193,7 @@ impl OutputWriter {
 
     #[allow(dead_code)]
     fn write_dataframe_to_file(&self, df: &DataFrame, path: &Path, separator: u8) -> Result<()> {
-        use polars::io::csv::CsvWriter;
+        use polars::prelude::CsvWriter;
         let mut file = std::fs::File::create(path)?;
         CsvWriter::new(&mut file)
             .include_header(true)

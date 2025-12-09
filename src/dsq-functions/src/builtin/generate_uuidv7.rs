@@ -27,7 +27,7 @@ pub fn builtin_generate_uuidv7(args: &[Value]) -> Result<Value> {
                     // Add a new column with UUIDs for each row
                     let mut new_df = df.clone();
                     let uuid_series = Series::new(
-                        "uuid_v7",
+                        "uuid_v7".into(),
                         (0..df.height())
                             .map(|_| {
                                 let uuid = uuid::Uuid::now_v7();
@@ -45,7 +45,7 @@ pub fn builtin_generate_uuidv7(args: &[Value]) -> Result<Value> {
                 }
                 Value::Series(series) => {
                     let uuid_series = Series::new(
-                        series.name(),
+                        series.name().clone(),
                         (0..series.len())
                             .map(|_| {
                                 let uuid = uuid::Uuid::now_v7();
@@ -123,8 +123,8 @@ mod tests {
     #[test]
     fn test_builtin_generate_uuidv7_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1", vec![1, 2, 3]),
-            Series::new("col2", vec!["a", "b", "c"]),
+            Series::new("col1".into(), vec![1, 2, 3]),
+            Series::new("col2".into(), vec!["a", "b", "c"]),
         ])
         .unwrap();
         let result = builtin_generate_uuidv7(&[Value::DataFrame(df.clone())]).unwrap();
@@ -133,9 +133,9 @@ mod tests {
                 assert_eq!(result_df.height(), 3);
                 assert!(result_df.get_column_names().contains(&"uuid_v7"));
                 let uuid_col = result_df.column("uuid_v7").unwrap();
-                assert_eq!(uuid_col.dtype(), &DataType::Utf8);
+                assert_eq!(uuid_col.dtype(), &DataType::String);
                 for i in 0..uuid_col.len() {
-                    if let Ok(AnyValue::Utf8(uuid_str)) = uuid_col.get(i) {
+                    if let Ok(AnyValue::String(uuid_str)) = uuid_col.get(i) {
                         assert_eq!(uuid_str.len(), 36);
                         assert!(uuid::Uuid::parse_str(uuid_str).is_ok());
                     }
@@ -150,14 +150,14 @@ mod tests {
 
     #[test]
     fn test_builtin_generate_uuidv7_with_series() {
-        let series = Series::new("test", vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 3]);
         let result = builtin_generate_uuidv7(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(result_series) => {
                 assert_eq!(result_series.len(), 3);
-                assert_eq!(result_series.dtype(), &DataType::Utf8);
+                assert_eq!(result_series.dtype(), &DataType::String);
                 for i in 0..result_series.len() {
-                    if let Ok(AnyValue::Utf8(uuid_str)) = result_series.get(i) {
+                    if let Ok(AnyValue::String(uuid_str)) = result_series.get(i) {
                         assert_eq!(uuid_str.len(), 36);
                         assert!(uuid::Uuid::parse_str(uuid_str).is_ok());
                     }

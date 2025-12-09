@@ -89,12 +89,12 @@ pub fn builtin_asin(args: &[Value]) -> Result<Value> {
                             })
                             .into_series();
                         let mut s = asin_series;
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }

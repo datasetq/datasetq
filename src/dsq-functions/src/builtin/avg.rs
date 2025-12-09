@@ -43,7 +43,8 @@ pub fn builtin_avg(args: &[Value]) -> Result<Value> {
         Value::DataFrame(df) => {
             let mut means = HashMap::new();
             for col_name in df.get_column_names() {
-                if let Ok(series) = df.column(col_name) {
+                if let Ok(column) = df.column(col_name) {
+                    let series = column.as_materialized_series();
                     if series.dtype().is_numeric() {
                         if let Some(mean_val) = series.mean() {
                             means.insert(col_name.to_string(), Value::Float(mean_val));

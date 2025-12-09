@@ -46,7 +46,7 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
-                    if series.dtype().is_numeric() || series.dtype() == &DataType::Utf8 {
+                    if series.dtype().is_numeric() || series.dtype() == &DataType::String {
                         let mut gmtime_values = Vec::new();
                         for i in 0..series.len() {
                             if let Ok(val) = series.get(i) {
@@ -69,12 +69,13 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
                                 gmtime_values.push("null".to_string());
                             }
                         }
-                        let new_s = Series::new(&format!("{}_gmtime", col_name), gmtime_values);
-                        new_series.push(new_s);
+                        let new_s =
+                            Series::new(format!("{}_gmtime", col_name).into(), gmtime_values);
+                        new_series.push(new_s.into());
                     } else {
                         let mut s = series.clone();
-                        s.rename(col_name);
-                        new_series.push(s);
+                        s.rename(col_name.clone());
+                        new_series.push(s.into());
                     }
                 }
             }
@@ -104,7 +105,7 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
                     gmtime_values.push("null".to_string());
                 }
             }
-            let new_series = Series::new("gmtime", gmtime_values);
+            let new_series = Series::new("gmtime".into(), gmtime_values);
             Ok(Value::Series(new_series))
         }
         _ => Err(dsq_shared::error::operation_error(
