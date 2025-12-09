@@ -972,174 +972,6 @@ pub fn detect_json_format<R: Read>(mut reader: R) -> Result<JsonFormat> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_json_array_reader() {
-        let json_data = r#"[
-            {"name": "Alice", "age": 30, "active": true},
-            {"name": "Bob", "age": 25, "active": false}
-        ]"#;
-
-        let cursor = BufReader::new(Cursor::new(json_data.as_bytes()));
-        let mut reader = JsonReader::new(cursor);
-        let df = reader.read_dataframe().unwrap();
-
-        assert_eq!(df.height(), 2);
-        assert_eq!(df.width(), 3);
-        let columns = df.get_column_names();
-        // Columns are collected in BTreeSet order, so they should be sorted
-        assert_eq!(columns, vec!["active", "age", "name"]);
-    }
-
-    #[test]
-    fn test_json_lines_reader() {
-        let jsonl_data = r#"{"name": "Alice", "age": 30}
-{"name": "Bob", "age": 25}
-{"name": "Charlie", "age": 35}"#;
-
-        let cursor = Cursor::new(jsonl_data.as_bytes());
-        let options = JsonReadOptions {
-            lines: true,
-            ..Default::default()
-        };
-        let mut reader = JsonReader::with_options(cursor, options);
-        let df = reader.read_dataframe().unwrap();
-
-        assert_eq!(df.height(), 3);
-        assert_eq!(df.width(), 2);
-    }
-
-    #[test]
-    fn test_json_writer() {
-        let df = df! {
-            "name" => ["Alice", "Bob"],
-            "age" => [30, 25],
-            "active" => [true, false]
-        }
-        .unwrap();
-
-        let mut buffer = Vec::new();
-        {
-            let mut writer = JsonWriter::new(&mut buffer);
-            writer.write_dataframe(&df).unwrap();
-        }
-
-        let output = String::from_utf8(buffer).unwrap();
-        let json_val: serde_json::Value = serde_json::from_str(&output).unwrap();
-
-        assert!(json_val.is_array());
-        let array = json_val.as_array().unwrap();
-        assert_eq!(array.len(), 2);
-    }
-
-    #[test]
-    fn test_json_lines_writer() {
-        let df = df! {
-            "name" => ["Alice", "Bob"],
-            "age" => [30, 25]
-        }
-        .unwrap();
-
-        let mut buffer = Vec::new();
-        {
-            let options = JsonWriteOptions {
-                lines: true,
-                ..Default::default()
-            };
-            let mut writer = JsonWriter::with_options(&mut buffer, options);
-            writer.write_dataframe(&df).unwrap();
-        }
-
-        let output = String::from_utf8(buffer).unwrap();
-        let lines: Vec<&str> = output.trim().split('\n').collect();
-
-        assert_eq!(lines.len(), 2);
-        for line in lines {
-            let json_val: serde_json::Value = serde_json::from_str(line).unwrap();
-            assert!(json_val.is_object());
-        }
-    }
-
-    #[test]
-    fn test_flattening() {
-        let json_data = r#"[
-            {"user": {"name": "Alice", "details": {"age": 30}}, "active": true},
-            {"user": {"name": "Bob", "details": {"age": 25}}, "active": false}
-        ]"#;
-
-        let cursor = BufReader::new(Cursor::new(json_data.as_bytes()));
-        let options = JsonReadOptions {
-            flatten: true,
-            ..Default::default()
-        };
-        let mut reader = JsonReader::with_options(cursor, options);
-        let df = reader.read_dataframe().unwrap();
-
-        assert_eq!(df.height(), 2);
-        // Should have flattened columns like "user.name", "user.details.age", "active"
-        let columns = df.get_column_names();
-        assert_eq!(columns.len(), 3);
-        assert!(columns.contains(&&PlSmallStr::from("active")));
-        assert!(columns.contains(&&PlSmallStr::from("user.name")));
-        assert!(columns.contains(&&PlSmallStr::from("user.details.age")));
-    }
-
-    #[test]
-    fn test_format_detection() {
-        // Test JSON array detection
-        let json_array = r#"[{"a": 1}, {"b": 2}]"#;
-        let cursor = Cursor::new(json_array.as_bytes());
-        let format = detect_json_format(cursor).unwrap();
-        assert!(matches!(format, JsonFormat::Array));
-
-        // Test JSON Lines detection
-        let json_lines = r#"{"a": 1}
-{"b": 2}"#;
-        let cursor = Cursor::new(json_lines.as_bytes());
-        let format = detect_json_format(cursor).unwrap();
-        assert!(matches!(format, JsonFormat::Lines));
-
-        // Test single object detection
-        let json_object = r#"{"a": 1, "b": 2}"#;
-        let cursor = Cursor::new(json_object.as_bytes());
-        let format = detect_json_format(cursor).unwrap();
-        assert!(matches!(format, JsonFormat::Object));
-    }
-
-    #[test]
-    fn test_error_handling() {
-        let invalid_json = r#"{"name": "Alice", "age": 30,}"#; // Trailing comma
-
-        let cursor = Cursor::new(invalid_json.as_bytes());
-        let mut reader = JsonReader::new(cursor);
-        let result = reader.read_dataframe();
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_ignore_errors() {
-        let mixed_json = r#"{"name": "Alice", "age": 30}
-invalid json line
-{"name": "Bob", "age": 25}"#;
-
-        let cursor = Cursor::new(mixed_json.as_bytes());
-        let options = JsonReadOptions {
-            lines: true,
-            ignore_errors: true,
-            ..Default::default()
-        };
-        let mut reader = JsonReader::with_options(cursor, options);
-        let df = reader.read_dataframe().unwrap();
-
-        assert_eq!(df.height(), 2); // Should skip the invalid line
-    }
-}
-
 // Public API functions for use by reader/writer modules
 
 use crate::reader::{FormatReadOptions, ReadOptions};
@@ -1314,4 +1146,172 @@ pub fn serialize_json<W: Write>(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn test_json_array_reader() {
+        let json_data = r#"[
+            {"name": "Alice", "age": 30, "active": true},
+            {"name": "Bob", "age": 25, "active": false}
+        ]"#;
+
+        let cursor = BufReader::new(Cursor::new(json_data.as_bytes()));
+        let mut reader = JsonReader::new(cursor);
+        let df = reader.read_dataframe().unwrap();
+
+        assert_eq!(df.height(), 2);
+        assert_eq!(df.width(), 3);
+        let columns = df.get_column_names();
+        // Columns are collected in BTreeSet order, so they should be sorted
+        assert_eq!(columns, vec!["active", "age", "name"]);
+    }
+
+    #[test]
+    fn test_json_lines_reader() {
+        let jsonl_data = r#"{"name": "Alice", "age": 30}
+{"name": "Bob", "age": 25}
+{"name": "Charlie", "age": 35}"#;
+
+        let cursor = Cursor::new(jsonl_data.as_bytes());
+        let options = JsonReadOptions {
+            lines: true,
+            ..Default::default()
+        };
+        let mut reader = JsonReader::with_options(cursor, options);
+        let df = reader.read_dataframe().unwrap();
+
+        assert_eq!(df.height(), 3);
+        assert_eq!(df.width(), 2);
+    }
+
+    #[test]
+    fn test_json_writer() {
+        let df = df! {
+            "name" => ["Alice", "Bob"],
+            "age" => [30, 25],
+            "active" => [true, false]
+        }
+        .unwrap();
+
+        let mut buffer = Vec::new();
+        {
+            let mut writer = JsonWriter::new(&mut buffer);
+            writer.write_dataframe(&df).unwrap();
+        }
+
+        let output = String::from_utf8(buffer).unwrap();
+        let json_val: serde_json::Value = serde_json::from_str(&output).unwrap();
+
+        assert!(json_val.is_array());
+        let array = json_val.as_array().unwrap();
+        assert_eq!(array.len(), 2);
+    }
+
+    #[test]
+    fn test_json_lines_writer() {
+        let df = df! {
+            "name" => ["Alice", "Bob"],
+            "age" => [30, 25]
+        }
+        .unwrap();
+
+        let mut buffer = Vec::new();
+        {
+            let options = JsonWriteOptions {
+                lines: true,
+                ..Default::default()
+            };
+            let mut writer = JsonWriter::with_options(&mut buffer, options);
+            writer.write_dataframe(&df).unwrap();
+        }
+
+        let output = String::from_utf8(buffer).unwrap();
+        let lines: Vec<&str> = output.trim().split('\n').collect();
+
+        assert_eq!(lines.len(), 2);
+        for line in lines {
+            let json_val: serde_json::Value = serde_json::from_str(line).unwrap();
+            assert!(json_val.is_object());
+        }
+    }
+
+    #[test]
+    fn test_flattening() {
+        let json_data = r#"[
+            {"user": {"name": "Alice", "details": {"age": 30}}, "active": true},
+            {"user": {"name": "Bob", "details": {"age": 25}}, "active": false}
+        ]"#;
+
+        let cursor = BufReader::new(Cursor::new(json_data.as_bytes()));
+        let options = JsonReadOptions {
+            flatten: true,
+            ..Default::default()
+        };
+        let mut reader = JsonReader::with_options(cursor, options);
+        let df = reader.read_dataframe().unwrap();
+
+        assert_eq!(df.height(), 2);
+        // Should have flattened columns like "user.name", "user.details.age", "active"
+        let columns = df.get_column_names();
+        assert_eq!(columns.len(), 3);
+        assert!(columns.contains(&&PlSmallStr::from("active")));
+        assert!(columns.contains(&&PlSmallStr::from("user.name")));
+        assert!(columns.contains(&&PlSmallStr::from("user.details.age")));
+    }
+
+    #[test]
+    fn test_format_detection() {
+        // Test JSON array detection
+        let json_array = r#"[{"a": 1}, {"b": 2}]"#;
+        let cursor = Cursor::new(json_array.as_bytes());
+        let format = detect_json_format(cursor).unwrap();
+        assert!(matches!(format, JsonFormat::Array));
+
+        // Test JSON Lines detection
+        let json_lines = r#"{"a": 1}
+{"b": 2}"#;
+        let cursor = Cursor::new(json_lines.as_bytes());
+        let format = detect_json_format(cursor).unwrap();
+        assert!(matches!(format, JsonFormat::Lines));
+
+        // Test single object detection
+        let json_object = r#"{"a": 1, "b": 2}"#;
+        let cursor = Cursor::new(json_object.as_bytes());
+        let format = detect_json_format(cursor).unwrap();
+        assert!(matches!(format, JsonFormat::Object));
+    }
+
+    #[test]
+    fn test_error_handling() {
+        let invalid_json = r#"{"name": "Alice", "age": 30,}"#; // Trailing comma
+
+        let cursor = Cursor::new(invalid_json.as_bytes());
+        let mut reader = JsonReader::new(cursor);
+        let result = reader.read_dataframe();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_ignore_errors() {
+        let mixed_json = r#"{"name": "Alice", "age": 30}
+invalid json line
+{"name": "Bob", "age": 25}"#;
+
+        let cursor = Cursor::new(mixed_json.as_bytes());
+        let options = JsonReadOptions {
+            lines: true,
+            ignore_errors: true,
+            ..Default::default()
+        };
+        let mut reader = JsonReader::with_options(cursor, options);
+        let df = reader.read_dataframe().unwrap();
+
+        assert_eq!(df.height(), 2); // Should skip the invalid line
+    }
 }

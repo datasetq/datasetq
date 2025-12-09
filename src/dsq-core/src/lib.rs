@@ -766,7 +766,8 @@ mod tests {
 
         fn create_mock_data() -> Value {
             // Create mock data similar to the example datasets
-            let data = array(vec![
+
+            array(vec![
                 object(vec![
                     ("title".to_string(), Value::string("Book A")),
                     ("genre".to_string(), Value::string("Fiction")),
@@ -809,13 +810,13 @@ mod tests {
                     ("price".to_string(), Value::float(22.99)),
                     ("author".to_string(), Value::string("Author G")),
                 ]),
-            ]);
-            data
+            ])
         }
 
         fn create_employee_data() -> Value {
             // Create mock employee data
-            let data = array(vec![
+
+            array(vec![
                 object(vec![
                     ("name".to_string(), Value::string("Alice Johnson")),
                     ("department".to_string(), Value::string("Sales")),
@@ -876,17 +877,16 @@ mod tests {
                     ("salary".to_string(), Value::int(79000)),
                     ("age".to_string(), Value::int(30)),
                 ]),
-            ]);
-            data
+            ])
         }
 
         #[test]
         fn test_example_002_query_on_csv() {
-            let query = r#"group_by(.genre) | map({
+            let query = r"group_by(.genre) | map({
   genre: .[0].genre,
   count: length,
   avg_price: (map(.price) | add / length)
-})"#;
+})";
 
             let data = create_mock_data();
             let result = crate::filter::execute_filter(query, &data);
@@ -919,11 +919,11 @@ mod tests {
 
         #[test]
         fn test_example_002_query_on_json() {
-            let query = r#"group_by(.genre) | map({
+            let query = r"group_by(.genre) | map({
   genre: .[0].genre,
   count: length,
   avg_price: (map(.price) | add / length)
-})"#;
+})";
 
             let data = create_mock_data();
             let result = crate::filter::execute_filter(query, &data);
@@ -944,11 +944,11 @@ mod tests {
 
         #[test]
         fn test_example_002_query_on_tsv() {
-            let query = r#"group_by(.genre) | map({
+            let query = r"group_by(.genre) | map({
   genre: .[0].genre,
   count: length,
   avg_price: (map(.price) | add / length)
-})"#;
+})";
 
             let data = create_mock_data();
             let result = crate::filter::execute_filter(query, &data);
@@ -969,11 +969,11 @@ mod tests {
 
         #[test]
         fn test_example_002_query_on_parquet() {
-            let query = r#"group_by(.genre) | map({
+            let query = r"group_by(.genre) | map({
   genre: .[0].genre,
   count: length,
   avg_price: (map(.price) | add / length)
-})"#;
+})";
 
             let data = create_mock_data();
             let result = crate::filter::execute_filter(query, &data);
@@ -1013,11 +1013,11 @@ mod tests {
 
         #[test]
         fn test_example_085_query_on_csv() {
-            let query = r#"group_by(.department) | map({
+            let query = r"group_by(.department) | map({
   dept: .[0].department,
   count: length,
   avg_salary: (map(.salary) | add / length)
-})"#;
+})";
 
             let data = create_employee_data();
             let result = execute_filter(query, &data);
@@ -1069,7 +1069,7 @@ mod tests {
 
         #[test]
         fn test_example_075_query_on_csv() {
-            let query = r#"map(.salary += 5000) | map({name, new_salary: .salary, department})"#;
+            let query = r"map(.salary += 5000) | map({name, new_salary: .salary, department})";
 
             let data = create_employee_data();
             let result = execute_filter(query, &data);
@@ -1113,7 +1113,7 @@ mod tests {
                                         "Henry Moore" => assert_eq!(*new_salary, 107000), // 102000 + 5000
                                         "Ivy Taylor" => assert_eq!(*new_salary, 70000), // 65000 + 5000
                                         "Jack Anderson" => assert_eq!(*new_salary, 84000), // 79000 + 5000
-                                        _ => panic!("Unexpected employee name: {}", name),
+                                        _ => panic!("Unexpected employee name: {name}"),
                                     }
                                 } else {
                                     panic!(
@@ -1133,11 +1133,11 @@ mod tests {
         #[ignore = "parser does not support field names with spaces"]
         fn test_csv_with_spaces_in_field_names() {
             // Test CSV data with spaces in field names
-            let csv_data = r#"id,US City Name,population,country
+            let csv_data = r"id,US City Name,population,country
 1,New York,8500000,USA
 2,Los Angeles,4000000,USA
 3,London,9000000,UK
-4,Paris,2200000,France"#;
+4,Paris,2200000,France";
 
             // Create a temporary file
             let mut temp_file = NamedTempFile::new().unwrap();

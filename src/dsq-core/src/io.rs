@@ -15,8 +15,8 @@ use crate::Value;
 use dsq_formats::format::detect_format_from_content;
 use dsq_formats::{
     deserialize_adt, deserialize_csv, deserialize_json, deserialize_parquet, serialize_adt,
-    serialize_csv, serialize_json, serialize_parquet, DataFormat, FormatReadOptions,
-    FormatWriteOptions, ReadOptions as DsFormatReadOptions,
+    serialize_csv, serialize_parquet, DataFormat, FormatReadOptions, FormatWriteOptions,
+    ReadOptions as DsFormatReadOptions,
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -231,6 +231,9 @@ pub async fn write_file<P: AsRef<Path>>(
         }
         DataFormat::Adt => {
             serialize_adt(&mut buffer, value, &format_write_options, &format_options)?;
+        }
+        DataFormat::Json | DataFormat::JsonLines => {
+            serialize_json(&mut buffer, value, &format_write_options, &format_options)?;
         }
         DataFormat::Parquet => {
             serialize_parquet(&mut buffer, value, &format_write_options, &format_options)?;
@@ -623,8 +626,7 @@ mod tests {
         let write_result = write_file_sync(&result, output_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write CSV: {:?}",
-            write_result
+            "Failed to write CSV: {write_result:?}"
         );
 
         // Read it back to verify
@@ -680,8 +682,7 @@ mod tests {
         let write_result = write_file_sync(&result, output_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write JSON: {:?}",
-            write_result
+            "Failed to write JSON: {write_result:?}"
         );
 
         // Read it back to verify
@@ -714,8 +715,7 @@ mod tests {
         let write_result = write_file_sync(&df_value, path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write Parquet: {:?}",
-            write_result
+            "Failed to write Parquet: {write_result:?}"
         );
 
         // Read back from Parquet
@@ -781,8 +781,7 @@ mod tests {
         let write_result = write_file_sync(&result, output_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write TSV: {:?}",
-            write_result
+            "Failed to write TSV: {write_result:?}"
         );
     }
 
@@ -808,8 +807,7 @@ mod tests {
         let write_result = write_file_sync(&csv_result, json_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to convert CSV to JSON: {:?}",
-            write_result
+            "Failed to convert CSV to JSON: {write_result:?}"
         );
 
         // Read back from JSON
@@ -849,7 +847,7 @@ mod tests {
         ];
 
         for (format_name, data) in &test_data {
-            let input_path = temp_dir.path().join(format!("input.{}", format_name));
+            let input_path = temp_dir.path().join(format!("input.{format_name}"));
             fs::write(&input_path, data).unwrap();
 
             let output_path = temp_dir.path().join("output.parquet");
@@ -862,9 +860,7 @@ mod tests {
                 convert_file(&input_path, &output_path, &read_options, &write_options);
             assert!(
                 convert_result.is_ok(),
-                "Failed to convert {} to Parquet: {:?}",
-                format_name,
-                convert_result
+                "Failed to convert {format_name} to Parquet: {convert_result:?}"
             );
 
             // Read back the Parquet file to verify
@@ -876,23 +872,20 @@ mod tests {
                     assert!(
                         df.get_column_names()
                             .contains(&&polars::datatypes::PlSmallStr::from("name")),
-                        "Missing 'name' column for {}",
-                        format_name
+                        "Missing 'name' column for {format_name}"
                     );
                     assert!(
                         df.get_column_names()
                             .contains(&&polars::datatypes::PlSmallStr::from("age")),
-                        "Missing 'age' column for {}",
-                        format_name
+                        "Missing 'age' column for {format_name}"
                     );
                     assert!(
                         df.get_column_names()
                             .contains(&&polars::datatypes::PlSmallStr::from("active")),
-                        "Missing 'active' column for {}",
-                        format_name
+                        "Missing 'active' column for {format_name}"
                     );
                 }
-                _ => panic!("Expected DataFrame for {} conversion", format_name),
+                _ => panic!("Expected DataFrame for {format_name} conversion"),
             }
         }
     }
@@ -943,8 +936,7 @@ mod tests {
         let write_result = write_file_sync(&df_value, &ndjson_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write NDJSON: {:?}",
-            write_result
+            "Failed to write NDJSON: {write_result:?}"
         );
 
         // Read back and verify
@@ -985,8 +977,7 @@ mod tests {
         let write_result = write_file_sync(&df_value, &jsonl_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write JSONL: {:?}",
-            write_result
+            "Failed to write JSONL: {write_result:?}"
         );
 
         // Read the file content and verify it's valid NDJSON
@@ -1041,8 +1032,7 @@ mod tests {
         let write_result2 = write_file_sync(&nulls_value, &ndjson_path2, &write_options);
         assert!(
             write_result2.is_ok(),
-            "Failed to write NDJSON with nulls: {:?}",
-            write_result2
+            "Failed to write NDJSON with nulls: {write_result2:?}"
         );
 
         let content2 = std::fs::read_to_string(&ndjson_path2).unwrap();
@@ -1157,8 +1147,7 @@ mod tests {
         let write_result = write_file_sync(&df_value, &json_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write JSON: {:?}",
-            write_result
+            "Failed to write JSON: {write_result:?}"
         );
 
         // Read back and verify
@@ -1189,8 +1178,7 @@ mod tests {
         let write_result = write_file_sync(&df_value, &adt_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write ADT: {:?}",
-            write_result
+            "Failed to write ADT: {write_result:?}"
         );
 
         // Read back using lazy reader
@@ -1265,8 +1253,7 @@ mod tests {
         let write_result = write_file_sync(&df_value, &csv_path, &write_options);
         assert!(
             write_result.is_ok(),
-            "Failed to write CSV without header: {:?}",
-            write_result
+            "Failed to write CSV without header: {write_result:?}"
         );
 
         let content = std::fs::read_to_string(&csv_path).unwrap();
@@ -1312,8 +1299,7 @@ mod tests {
         let convert_result = convert_file(csv_path, &json_path, &read_options, &write_options);
         assert!(
             convert_result.is_ok(),
-            "Failed to convert CSV to JSON: {:?}",
-            convert_result
+            "Failed to convert CSV to JSON: {convert_result:?}"
         );
 
         // Verify the JSON file

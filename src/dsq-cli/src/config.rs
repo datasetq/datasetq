@@ -1106,7 +1106,7 @@ mod tests {
         let formats = FormatConfigs::default();
         assert_eq!(formats.csv.separator, ",");
         assert!(formats.csv.has_header);
-        assert_eq!(formats.json.pretty_print, true);
+        assert!(formats.json.pretty_print);
         assert_eq!(formats.parquet.compression, "snappy");
 
         // Test CsvConfig default

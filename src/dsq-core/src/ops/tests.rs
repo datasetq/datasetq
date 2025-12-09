@@ -112,7 +112,7 @@ fn test_recommended_batch_size() {
     // Create a large DataFrame
     let large_df = df! {
         "id" => (0..2_000_000).collect::<Vec<i32>>(),
-        "value" => (0..2_000_000).map(|i| i as f64).collect::<Vec<f64>>()
+        "value" => (0..2_000_000).map(f64::from).collect::<Vec<f64>>()
     }
     .unwrap();
     let large_value = Value::DataFrame(large_df);

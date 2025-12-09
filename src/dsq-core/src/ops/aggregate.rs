@@ -1394,7 +1394,7 @@ mod tests {
                 let mut found_south = false;
 
                 for item in &arr {
-                    if let &Value::Object(ref obj) = item {
+                    if let Value::Object(obj) = item {
                         if let Some(Value::String(dept)) = obj.get("dept") {
                             if let Some(Value::String(region)) = obj.get("region") {
                                 if let Some(Value::Int(sum)) = obj.get("salary_sum") {

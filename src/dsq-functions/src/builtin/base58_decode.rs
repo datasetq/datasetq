@@ -130,7 +130,7 @@ mod tests {
     fn test_base58_decode_binary_data() {
         // Test with actual binary data that would not be valid UTF-8
         // Use bytes that form invalid UTF-8 sequence
-        let binary_data = vec![0xff, 0xfe, 0xfd]; // Invalid UTF-8 bytes
+        let binary_data = [0xff, 0xfe, 0xfd]; // Invalid UTF-8 bytes
         let encoded = binary_data.to_base58();
         let result = builtin_base58_decode(&[Value::String(encoded)]).unwrap();
         // Should return hex representation since it's not valid UTF-8

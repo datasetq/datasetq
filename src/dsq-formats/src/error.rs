@@ -206,10 +206,7 @@ mod tests {
 
         // For Polars and Json, we can't easily test exact string without creating real errors
         // But we can test the prefix
-        let polars_err = polars::error::PolarsError::from(io::Error::new(
-            io::ErrorKind::Other,
-            "test polars error",
-        ));
+        let polars_err = polars::error::PolarsError::from(io::Error::other("test polars error"));
         let err = Error::Polars(polars_err);
         assert!(err.to_string().starts_with("DataFrame error:"));
 
@@ -268,8 +265,7 @@ mod tests {
         assert!(matches!(err, Error::Io(_)));
 
         // Polars
-        let polars_err =
-            polars::error::PolarsError::from(io::Error::new(io::ErrorKind::Other, "test"));
+        let polars_err = polars::error::PolarsError::from(io::Error::other("test"));
         let err: Error = polars_err.into();
         assert!(matches!(err, Error::Polars(_)));
 

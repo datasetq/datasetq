@@ -9,7 +9,7 @@ fn parse_success(input: &str) -> Filter {
     let parser = FilterParser::new();
     parser
         .parse(input)
-        .expect(&format!("Failed to parse: {}", input))
+        .unwrap_or_else(|_| panic!("Failed to parse: {}", input))
 }
 
 fn parse_failure(input: &str) {

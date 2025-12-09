@@ -37,6 +37,10 @@ pub fn compile_filter(filter: &str) -> anyhow::Result<CompiledFilter> {
     compiler.compile_str(filter)
 }
 
+/// Re-export commonly used types from dsq-shared
+pub use dsq_shared::value::Value;
+pub use dsq_shared::Result;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -784,7 +788,3 @@ mod tests {
         assert_eq!(result.unwrap(), expected);
     }
 }
-
-/// Re-export commonly used types from dsq-shared
-pub use dsq_shared::value::Value;
-pub use dsq_shared::Result;

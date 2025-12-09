@@ -837,6 +837,138 @@ pub fn detect_csv_format(bytes: &[u8]) -> bool {
     }
 }
 
+// Public API functions for use by reader/writer modules
+
+use crate::reader::{FormatReadOptions, ReadOptions};
+use crate::writer::{FormatWriteOptions, WriteOptions};
+use dsq_shared::value::Value;
+
+/// Deserialize CSV data from a reader
+pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
+    mut reader: R,
+    options: &ReadOptions,
+    format_options: &FormatReadOptions,
+) -> Result<Value> {
+    // Check for empty input
+    let mut buffer = Vec::new();
+    reader.read_to_end(&mut buffer)?;
+    if buffer.is_empty() {
+        return Ok(Value::DataFrame(DataFrame::empty()));
+    }
+
+    let csv_opts = match format_options {
+        FormatReadOptions::Csv {
+            separator,
+            has_header,
+            quote_char,
+            comment_char,
+            null_values,
+            encoding,
+        } => (
+            *separator,
+            *has_header,
+            *quote_char,
+            *comment_char,
+            null_values.clone(),
+            encoding.clone(),
+        ),
+        _ => (
+            b',',
+            true,
+            Some(b'"'),
+            None,
+            None,
+            crate::writer::CsvEncoding::Utf8,
+        ),
+    };
+
+    let mut parse_options = CsvParseOptions::default().with_separator(csv_opts.0);
+
+    if let Some(quote) = csv_opts.2 {
+        parse_options = parse_options.with_quote_char(Some(quote));
+    }
+
+    if let Some(comment) = csv_opts.3 {
+        parse_options = parse_options
+            .with_comment_prefix(Some(polars::prelude::CommentPrefix::Single(comment)));
+    }
+
+    if let Some(null_vals) = csv_opts.4 {
+        let null_vals_converted: Vec<_> = null_vals.iter().map(|s| s.as_str().into()).collect();
+        parse_options =
+            parse_options.with_null_values(Some(NullValues::AllColumns(null_vals_converted)));
+    }
+
+    let mut read_options = CsvReadOptions::default()
+        .with_parse_options(parse_options)
+        .with_has_header(csv_opts.1);
+
+    if let Some(max_rows) = options.max_rows {
+        read_options = read_options.with_n_rows(Some(max_rows));
+    }
+
+    if options.skip_rows > 0 {
+        read_options = read_options.with_skip_rows(options.skip_rows);
+    }
+
+    // Note: with_projection expects column indices, not names
+    // We'll handle column selection after reading
+    let selected_columns = options.columns.clone();
+
+    let csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer)).with_options(read_options);
+
+    let mut df = csv_reader.finish().map_err(Error::from)?;
+
+    // Apply column selection if specified
+    if let Some(cols) = selected_columns {
+        df = df.select(&cols).map_err(Error::from)?;
+    }
+
+    Ok(Value::DataFrame(df))
+}
+
+/// Serialize CSV data to a writer
+pub fn serialize_csv<W: Write>(
+    writer: W,
+    value: &Value,
+    options: &WriteOptions,
+    format_options: &FormatWriteOptions,
+) -> Result<()> {
+    let mut df = match value {
+        Value::DataFrame(df) => df.clone(),
+        Value::LazyFrame(lf) => (*lf).clone().collect().map_err(Error::from)?,
+        _ => return Err(Error::operation("Expected DataFrame for CSV serialization")),
+    };
+
+    let csv_opts = match format_options {
+        FormatWriteOptions::Csv {
+            separator,
+            quote_char,
+            line_terminator: _,
+            quote_style: _,
+            null_value: _,
+            datetime_format: _,
+            date_format: _,
+            time_format: _,
+            float_precision: _,
+            null_values,
+            encoding: _,
+        } => (*separator, *quote_char, null_values.clone()),
+        _ => (b',', Some(b'"'), None),
+    };
+
+    let mut csv_writer = polars::prelude::CsvWriter::new(writer)
+        .with_separator(csv_opts.0)
+        .include_header(options.include_header);
+
+    if let Some(quote) = csv_opts.1 {
+        csv_writer = csv_writer.with_quote_char(quote);
+    }
+
+    csv_writer.finish(&mut df).map_err(Error::from)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -1750,136 +1882,4 @@ mod tests {
         let output = String::from_utf8(buffer).unwrap();
         assert!(output.contains("N/A"));
     }
-}
-
-// Public API functions for use by reader/writer modules
-
-use crate::reader::{FormatReadOptions, ReadOptions};
-use crate::writer::{FormatWriteOptions, WriteOptions};
-use dsq_shared::value::Value;
-
-/// Deserialize CSV data from a reader
-pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
-    mut reader: R,
-    options: &ReadOptions,
-    format_options: &FormatReadOptions,
-) -> Result<Value> {
-    // Check for empty input
-    let mut buffer = Vec::new();
-    reader.read_to_end(&mut buffer)?;
-    if buffer.is_empty() {
-        return Ok(Value::DataFrame(DataFrame::empty()));
-    }
-
-    let csv_opts = match format_options {
-        FormatReadOptions::Csv {
-            separator,
-            has_header,
-            quote_char,
-            comment_char,
-            null_values,
-            encoding,
-        } => (
-            *separator,
-            *has_header,
-            *quote_char,
-            *comment_char,
-            null_values.clone(),
-            encoding.clone(),
-        ),
-        _ => (
-            b',',
-            true,
-            Some(b'"'),
-            None,
-            None,
-            crate::writer::CsvEncoding::Utf8,
-        ),
-    };
-
-    let mut parse_options = CsvParseOptions::default().with_separator(csv_opts.0);
-
-    if let Some(quote) = csv_opts.2 {
-        parse_options = parse_options.with_quote_char(Some(quote));
-    }
-
-    if let Some(comment) = csv_opts.3 {
-        parse_options = parse_options
-            .with_comment_prefix(Some(polars::prelude::CommentPrefix::Single(comment)));
-    }
-
-    if let Some(null_vals) = csv_opts.4 {
-        let null_vals_converted: Vec<_> = null_vals.iter().map(|s| s.as_str().into()).collect();
-        parse_options =
-            parse_options.with_null_values(Some(NullValues::AllColumns(null_vals_converted)));
-    }
-
-    let mut read_options = CsvReadOptions::default()
-        .with_parse_options(parse_options)
-        .with_has_header(csv_opts.1);
-
-    if let Some(max_rows) = options.max_rows {
-        read_options = read_options.with_n_rows(Some(max_rows));
-    }
-
-    if options.skip_rows > 0 {
-        read_options = read_options.with_skip_rows(options.skip_rows);
-    }
-
-    // Note: with_projection expects column indices, not names
-    // We'll handle column selection after reading
-    let selected_columns = options.columns.clone();
-
-    let csv_reader = PolarsCsvReader::new(std::io::Cursor::new(buffer)).with_options(read_options);
-
-    let mut df = csv_reader.finish().map_err(Error::from)?;
-
-    // Apply column selection if specified
-    if let Some(cols) = selected_columns {
-        df = df.select(&cols).map_err(Error::from)?;
-    }
-
-    Ok(Value::DataFrame(df))
-}
-
-/// Serialize CSV data to a writer
-pub fn serialize_csv<W: Write>(
-    writer: W,
-    value: &Value,
-    options: &WriteOptions,
-    format_options: &FormatWriteOptions,
-) -> Result<()> {
-    let mut df = match value {
-        Value::DataFrame(df) => df.clone(),
-        Value::LazyFrame(lf) => (*lf).clone().collect().map_err(Error::from)?,
-        _ => return Err(Error::operation("Expected DataFrame for CSV serialization")),
-    };
-
-    let csv_opts = match format_options {
-        FormatWriteOptions::Csv {
-            separator,
-            quote_char,
-            line_terminator: _,
-            quote_style: _,
-            null_value: _,
-            datetime_format: _,
-            date_format: _,
-            time_format: _,
-            float_precision: _,
-            null_values,
-            encoding: _,
-        } => (*separator, *quote_char, null_values.clone()),
-        _ => (b',', Some(b'"'), None),
-    };
-
-    let mut csv_writer = polars::prelude::CsvWriter::new(writer)
-        .with_separator(csv_opts.0)
-        .include_header(options.include_header);
-
-    if let Some(quote) = csv_opts.1 {
-        csv_writer = csv_writer.with_quote_char(quote);
-    }
-
-    csv_writer.finish(&mut df).map_err(Error::from)?;
-    Ok(())
 }
