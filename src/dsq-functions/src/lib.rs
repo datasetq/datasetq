@@ -383,9 +383,9 @@ mod tests {
     use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {
-        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age".into(), &[25, 30, 35]);
-        let scores = Series::new("score".into(), &[85.5, 92.0, 78.3]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
+        let ages = Series::new("age".into().into(), &[25, 30, 35]);
+        let scores = Series::new("score".into().into(), &[85.5, 92.0, 78.3]);
         DataFrame::new(vec![names, ages, scores]).unwrap()
     }
 
@@ -1499,8 +1499,8 @@ mod tests {
     fn test_builtin_length_with_dataframe() {
         let registry = BuiltinRegistry::new();
         let df = DataFrame::new(vec![
-            Series::new("name".into(), &["Alice", "Bob", "Charlie"]),
-            Series::new("age".into(), &[25, 30, 35]),
+            Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]),
+            Series::new("age".into().into(), &[25, 30, 35]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1580,11 +1580,11 @@ mod tests {
     #[test]
     fn test_builtin_select_dataframe_with_series() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]),
-            Series::new("age".into(), vec![25, 30, 35]),
+            Series::new("name".into().into(), vec!["Alice", "Bob", "Charlie"]),
+            Series::new("age".into().into(), vec![25, 30, 35]),
         ])
         .unwrap();
-        let mask_series = Series::new("mask".into(), vec![true, false, true]);
+        let mask_series = Series::new("mask".into().into(), vec![true, false, true]);
         let result =
             builtin_select(&[Value::DataFrame(df.clone()), Value::Series(mask_series)]).unwrap();
         match result {
@@ -1592,10 +1592,10 @@ mod tests {
                 assert_eq!(filtered_df.height(), 2);
                 let names = filtered_df.column("name").unwrap();
                 assert_eq!(names.len(), 2);
-                if let Ok(AnyValue::Utf8(name1)) = names.get(0) {
+                if let Ok(AnyValue::String(name1)) = names.get(0) {
                     assert_eq!(name1, "Alice");
                 }
-                if let Ok(AnyValue::Utf8(name2)) = names.get(1) {
+                if let Ok(AnyValue::String(name2)) = names.get(1) {
                     assert_eq!(name2, "Charlie");
                 }
             }
@@ -1605,8 +1605,8 @@ mod tests {
 
     #[test]
     fn test_builtin_select_series_with_series() {
-        let series = Series::new("values".into(), vec![1, 2, 3, 4]);
-        let mask_series = Series::new("mask".into(), vec![true, false, true, false]);
+        let series = Series::new("values".into().into(), vec![1, 2, 3, 4]);
+        let mask_series = Series::new("mask".into().into(), vec![true, false, true, false]);
         let result = builtin_select(&[Value::Series(series), Value::Series(mask_series)]).unwrap();
         match result {
             Value::Series(filtered_series) => {
@@ -1657,8 +1657,8 @@ mod tests {
 
         // Test with DataFrame input
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice"]),
-            Series::new("age".into(), vec![25]),
+            Series::new("name".into().into(), vec!["Alice"]),
+            Series::new("age".into().into(), vec![25]),
         ])
         .unwrap();
         let result = builtin_select(&[Value::DataFrame(df.clone()), Value::Bool(true)]).unwrap();
@@ -1673,7 +1673,7 @@ mod tests {
         assert_eq!(result, Value::Null);
 
         // Test with Series input
-        let series = Series::new("values".into(), vec![1, 2, 3]);
+        let series = Series::new("values".into().into(), vec![1, 2, 3]);
         let result = builtin_select(&[Value::Series(series.clone()), Value::Bool(true)]).unwrap();
         if let Value::Series(result_series) = result {
             assert_eq!(result_series.name(), series.name());
@@ -1696,22 +1696,25 @@ mod tests {
         assert!(result.unwrap_err().to_string().contains("same length"));
 
         // Mismatched lengths for DataFrame mask series
-        let df = DataFrame::new(vec![Series::new("a".into(), vec![1])]).unwrap();
-        let mask_series = Series::new("mask".into(), vec![true, false]);
+        let df = DataFrame::new(vec![Series::new("a".into().into(), vec![1])]).unwrap();
+        let mask_series = Series::new("mask".into().into(), vec![true, false]);
         let result = builtin_select(&[Value::DataFrame(df), Value::Series(mask_series)]);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("same length"));
 
         // Mismatched lengths for Series mask series
-        let series = Series::new("values".into(), vec![1]);
-        let mask_series = Series::new("mask".into(), vec![true, false]);
+        let series = Series::new("values".into().into(), vec![1]);
+        let mask_series = Series::new("mask".into().into(), vec![true, false]);
         let result = builtin_select(&[Value::Series(series), Value::Series(mask_series)]);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("same length"));
 
         // Mask series with non-booleans
-        let series = Series::new("values".into(), vec![1, 2]);
-        let mask_series = Series::new("mask".into(), vec![AnyValue::Int64(1), AnyValue::Int64(0)]); // Non-booleans
+        let series = Series::new("values".into().into(), vec![1, 2]);
+        let mask_series = Series::new(
+            "mask".into().into(),
+            vec![AnyValue::Int64(1), AnyValue::Int64(0)],
+        ); // Non-booleans
         let result = builtin_select(&[Value::Series(series), Value::Series(mask_series)]);
         assert!(result.is_err());
         assert!(result
@@ -1754,8 +1757,8 @@ mod tests {
     #[test]
     fn test_builtin_filter_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1".into(), vec![1, 2, 1, 3]),
-            Series::new("col2".into(), vec!["a", "b", "c", "d"]),
+            Series::new("col1".into().into(), vec![1, 2, 1, 3]),
+            Series::new("col2".into().into(), vec!["a", "b", "c", "d"]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1778,7 +1781,7 @@ mod tests {
 
     #[test]
     fn test_builtin_filter_series() {
-        let series = Series::new("values".into(), vec![1, 2, 1, 3]);
+        let series = Series::new("values".into().into(), vec![1, 2, 1, 3]);
         let series_value = Value::Series(series);
         let filter_value = Value::Int(1);
         let result = builtin_filter(&[series_value, filter_value]).unwrap();
@@ -2125,8 +2128,8 @@ mod tests {
 
         // Test popping from DataFrame with rows
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]),
-            Series::new("age".into(), vec![25, 30, 35]),
+            Series::new("name".into().into(), vec!["Alice", "Bob", "Charlie"]),
+            Series::new("age".into().into(), vec![25, 30, 35]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -2141,8 +2144,8 @@ mod tests {
 
         // Test popping from single-row DataFrame
         let df = DataFrame::new(vec![
-            Series::new("id".into(), vec![42]),
-            Series::new("value".into(), vec!["test".to_string()]),
+            Series::new("id".into().into(), vec![42]),
+            Series::new("value".into().into(), vec!["test".to_string()]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -2156,7 +2159,11 @@ mod tests {
         }
 
         // Test popping from empty DataFrame
-        let df = DataFrame::new(vec![Series::new("empty".into(), Vec::<String>::new())]).unwrap();
+        let df = DataFrame::new(vec![Series::new(
+            "empty".into().into(),
+            Vec::<String>::new(),
+        )])
+        .unwrap();
         let df_value = Value::DataFrame(df);
         let result = registry.call_function("array_pop", &[df_value]).unwrap();
         assert_eq!(result, Value::Null);
@@ -2167,7 +2174,10 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Test popping from list series
-        let list_series = Series::new("lists".into(), vec![Series::new("".into(), vec![1, 2, 3])]);
+        let list_series = Series::new(
+            "lists".into().into(),
+            vec![Series::new("".into().into(), vec![1, 2, 3])],
+        );
         let series_value = Value::Series(list_series);
         let result = registry
             .call_function("array_pop", &[series_value])
@@ -2177,7 +2187,7 @@ mod tests {
         // Test popping from empty list series
         let list_series = Series::new(
             "empty_lists".into(),
-            vec![Series::new("".into(), Vec::<i32>::new())],
+            vec![Series::new("".into().into(), Vec::<i32>::new())],
         );
         let series_value = Value::Series(list_series);
         let result = registry
@@ -2186,7 +2196,7 @@ mod tests {
         assert_eq!(result, Value::Null);
 
         // Test with non-list series (should error)
-        let int_series = Series::new("ints".into(), vec![1, 2, 3]);
+        let int_series = Series::new("ints".into().into(), vec![1, 2, 3]);
         let series_value = Value::Series(int_series);
         let result = registry.call_function("array_pop", &[series_value]);
         assert!(result.is_err());
@@ -2355,7 +2365,10 @@ mod tests {
 
     #[test]
     fn test_builtin_histogram_series() {
-        let series = Series::new("values".into(), vec![1i64, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let series = Series::new(
+            "values".into().into(),
+            vec![1i64, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        );
         let series_value = Value::Series(series);
         let result = builtin_histogram(&[series_value]).unwrap();
         match result {
@@ -2478,7 +2491,7 @@ mod tests {
         );
 
         // Test DataFrame input
-        let text_series = Series::new("text".into(), &["Привет", "Москва", "тест"]);
+        let text_series = Series::new("text".into().into(), &["Привет", "Москва", "тест"]);
         let df = DataFrame::new(vec![text_series]).unwrap();
         let result = builtin_transliterate(&[
             Value::DataFrame(df),
@@ -2585,7 +2598,7 @@ mod tests {
         assert_eq!(result, Value::Int(3)); // 3 rows
 
         // Test with Series
-        let series = Series::new("test".into(), &[1, 2, 3, 4]);
+        let series = Series::new("test".into().into(), &[1, 2, 3, 4]);
         let series_val = Value::Series(series);
         let result = registry.call_function("length", &[series_val]).unwrap();
         assert_eq!(result, Value::Int(4));
@@ -2847,17 +2860,17 @@ mod tests {
 
         // Create test DataFrame
         let df = DataFrame::new(vec![
-            Series::new("a".into(), vec![10i64, 20, 30]),
-            Series::new("b".into(), vec![1i64, 2, 3]),
-            Series::new("c".into(), vec![100.0f64, 200.0, 300.0]),
+            Series::new("a".into().into(), vec![10i64, 20, 30]),
+            Series::new("b".into().into(), vec![1i64, 2, 3]),
+            Series::new("c".into().into(), vec![100.0f64, 200.0, 300.0]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
 
         // Create masks
-        let mask1 = Series::new("mask1".into(), vec![true, false, true]);
+        let mask1 = Series::new("mask1".into().into(), vec![true, false, true]);
         let mask1_value = Value::Series(mask1);
-        let mask2 = Series::new("mask2".into(), vec![true, true, true]);
+        let mask2 = Series::new("mask2".into().into(), vec![true, true, true]);
         let mask2_value = Value::Series(mask2);
 
         let result = registry
@@ -2879,12 +2892,12 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Test with numeric series
-        let series = Series::new("values".into(), vec![10.0f64, 20.0, 30.0, 40.0]);
+        let series = Series::new("values".into().into(), vec![10.0f64, 20.0, 30.0, 40.0]);
         let series_value = Value::Series(series);
 
-        let mask1 = Series::new("mask1".into(), vec![true, false, true, false]);
+        let mask1 = Series::new("mask1".into().into(), vec![true, false, true, false]);
         let mask1_value = Value::Series(mask1);
-        let mask2 = Series::new("mask2".into(), vec![true, true, true, false]);
+        let mask2 = Series::new("mask2".into().into(), vec![true, true, true, false]);
         let mask2_value = Value::Series(mask2);
 
         let result = registry
@@ -2893,11 +2906,11 @@ mod tests {
         assert_eq!(result, Value::Float(20.0)); // (10.0 + 30.0) / 2 = 20.0
 
         // Test with no matches
-        let series = Series::new("values".into(), vec![10.0f64, 20.0]);
+        let series = Series::new("values".into().into(), vec![10.0f64, 20.0]);
         let series_value = Value::Series(series);
-        let mask1 = Series::new("mask1".into(), vec![false, false]);
+        let mask1 = Series::new("mask1".into().into(), vec![false, false]);
         let mask1_value = Value::Series(mask1);
-        let mask2 = Series::new("mask2".into(), vec![true, true]);
+        let mask2 = Series::new("mask2".into().into(), vec![true, true]);
         let mask2_value = Value::Series(mask2);
 
         let result = registry
@@ -3027,14 +3040,14 @@ mod tests {
 
         // Create test DataFrame
         let df = DataFrame::new(vec![
-            Series::new("a".into(), vec![10i64, 20, 30]),
-            Series::new("b".into(), vec![1i64, 2, 3]),
+            Series::new("a".into().into(), vec![10i64, 20, 30]),
+            Series::new("b".into().into(), vec![1i64, 2, 3]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
 
         // Create mask
-        let mask = Series::new("mask".into(), vec![true, false, true]);
+        let mask = Series::new("mask".into().into(), vec![true, false, true]);
         let mask_value = Value::Series(mask);
 
         let result = registry
@@ -3048,10 +3061,10 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Test with numeric series
-        let series = Series::new("values".into(), vec![10.0f64, 20.0, 30.0, 40.0]);
+        let series = Series::new("values".into().into(), vec![10.0f64, 20.0, 30.0, 40.0]);
         let series_value = Value::Series(series);
 
-        let mask = Series::new("mask".into(), vec![true, false, true, false]);
+        let mask = Series::new("mask".into().into(), vec![true, false, true, false]);
         let mask_value = Value::Series(mask);
 
         let result = registry
@@ -3256,8 +3269,8 @@ mod tests {
 
         // Create a simple DataFrame
         let df = DataFrame::new(vec![
-            Series::new("col1".into(), &[1.0, 2.0, 3.0]),
-            Series::new("col2".into(), &[4.0, 5.0, 6.0]),
+            Series::new("col1".into().into(), &[1.0, 2.0, 3.0]),
+            Series::new("col2".into().into(), &[4.0, 5.0, 6.0]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -3278,7 +3291,7 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Create a numeric series
-        let series = Series::new("test".into(), &[1.0, 2.0, 3.0, 4.0, 5.0]);
+        let series = Series::new("test".into().into(), &[1.0, 2.0, 3.0, 4.0, 5.0]);
         let series_value = Value::Series(series);
 
         let result = registry.call_function("stdev_s", &[series_value]).unwrap();
@@ -3395,8 +3408,8 @@ mod tests {
 
         // Create a simple DataFrame
         let df = DataFrame::new(vec![
-            Series::new("col1".into(), &[1.0, 2.0, 3.0]),
-            Series::new("col2".into(), &[4.0, 5.0, 6.0]),
+            Series::new("col1".into().into(), &[1.0, 2.0, 3.0]),
+            Series::new("col2".into().into(), &[4.0, 5.0, 6.0]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -3417,7 +3430,7 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Create a numeric series
-        let series = Series::new("test".into(), &[1.0, 2.0, 3.0, 4.0, 5.0]);
+        let series = Series::new("test".into().into(), &[1.0, 2.0, 3.0, 4.0, 5.0]);
         let series_value = Value::Series(series);
 
         let result = registry.call_function("std", &[series_value]).unwrap();
@@ -3660,8 +3673,8 @@ mod tests {
         let registry = BuiltinRegistry::new();
 
         // Test with Series (should return Null for now as placeholder)
-        let series1 = Value::Series(Series::new("a".into(), &[1, 2, 3, 4]));
-        let series2 = Value::Series(Series::new("b".into(), &[2, 4, 6, 8]));
+        let series1 = Value::Series(Series::new("a".into().into(), &[1, 2, 3, 4]));
+        let series2 = Value::Series(Series::new("b".into().into(), &[2, 4, 6, 8]));
         let result = registry
             .call_function("correl", &[series1, series2])
             .unwrap();
@@ -3887,8 +3900,8 @@ mod tests {
         }
 
         // Test with DataFrame
-        let names = Series::new("name".into(), &["Alice", "Bob", "Alice", "Charlie"]);
-        let ages = Series::new("age".into(), &[25, 30, 25, 35]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob", "Alice", "Charlie"]);
+        let ages = Series::new("age".into().into(), &[25, 30, 25, 35]);
         let df = DataFrame::new(vec![names, ages]).unwrap();
         let df_val = Value::DataFrame(df);
         let result = registry.call_function("least_frequent", &[df_val]).unwrap();
@@ -3896,7 +3909,7 @@ mod tests {
         assert_eq!(result, Value::String("Charlie".to_string()));
 
         // Test with Series
-        let series = Series::new("values".into(), &[1, 2, 1, 3, 2, 1]);
+        let series = Series::new("values".into().into(), &[1, 2, 1, 3, 2, 1]);
         let series_val = Value::Series(series);
         let result = registry
             .call_function("least_frequent", &[series_val])

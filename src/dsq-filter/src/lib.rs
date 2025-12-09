@@ -278,8 +278,8 @@ mod tests {
 
         // Create a test DataFrame with products and prices
         let df = DataFrame::new(vec![
-            Series::new("name", &["Laptop", "Phone", "Book", "Shoes"]),
-            Series::new("price", &[1200, 800, 20, 150]),
+            Series::new("name".into(), &["Laptop", "Phone", "Book", "Shoes"]),
+            Series::new("price".into(), &[1200, 800, 20, 150]),
             Series::new(
                 "category",
                 &["Electronics", "Electronics", "Books", "Clothing"],
@@ -404,9 +404,9 @@ mod tests {
 
         // Create a test DataFrame with numeric columns
         let df = DataFrame::new(vec![
-            Series::new("id", &[1, 2, 3, 4]),
-            Series::new("age", &[25, 30, 35, 28]),
-            Series::new("salary", &[50000, 60000, 70000, 55000]),
+            Series::new("id".into(), &[1, 2, 3, 4]),
+            Series::new("age".into(), &[25, 30, 35, 28]),
+            Series::new("salary".into(), &[50000, 60000, 70000, 55000]),
         ])
         .unwrap();
 
@@ -467,7 +467,7 @@ mod tests {
                     "2023-10-07",
                 ],
             ),
-            Series::new("value", &[100, 200, 150, 300, 250, 175, 225]),
+            Series::new("value".into(), &[100, 200, 150, 300, 250, 175, 225]),
         ])
         .unwrap();
 

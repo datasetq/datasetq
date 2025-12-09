@@ -1960,7 +1960,7 @@ impl Operation for FunctionCallOperation {
                             mask_values.push(dsq_shared::value::is_truthy(&predicate_result));
                         }
 
-                        let mask_series = Series::new("mask".into(), mask_values);
+                        let mask_series = Series::new("mask".into().into(), mask_values);
                         let boolean_chunked = mask_series.bool().map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "Failed to create boolean mask: {}",
@@ -2147,7 +2147,7 @@ impl Operation for FunctionCallOperation {
                             mask_values.push(is_truthy(&condition_val));
                         }
 
-                        let mask_series = Series::new("mask".into(), mask_values);
+                        let mask_series = Series::new("mask".into().into(), mask_values);
                         let boolean_chunked = mask_series.bool().map_err(|e| {
                             dsq_shared::error::operation_error(format!(
                                 "Failed to create boolean mask: {}",

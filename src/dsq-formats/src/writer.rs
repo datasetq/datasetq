@@ -745,9 +745,9 @@ mod tests {
     use std::io::Cursor;
 
     fn create_test_dataframe() -> DataFrame {
-        let s1 = Series::new("name", &["Alice", "Bob", "Charlie"]);
-        let s2 = Series::new("age", &[25i64, 30, 35]);
-        let s3 = Series::new("active", &[true, false, true]);
+        let s1 = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
+        let s2 = Series::new("age".into(), &[25i64, 30, 35]);
+        let s3 = Series::new("active".into(), &[true, false, true]);
         DataFrame::new(vec![s1, s2, s3]).unwrap()
     }
 
@@ -1026,8 +1026,8 @@ mod tests {
     fn test_row_to_json_value_with_nulls() {
         use crate::json::row_to_json_value;
 
-        let s1 = Series::new("name", &["Alice", "Bob"]);
-        let s2 = Series::new("age", &[Some(25i64), None]);
+        let s1 = Series::new("name".into(), &["Alice", "Bob"]);
+        let s2 = Series::new("age".into(), &[Some(25i64), None]);
         let df = DataFrame::new(vec![s1, s2]).unwrap();
         let row = df.get_row(1).unwrap();
         let column_names = df

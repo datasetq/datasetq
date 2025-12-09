@@ -144,9 +144,9 @@ mod tests {
     use std::collections::HashMap;
 
     fn create_test_dataframe() -> DataFrame {
-        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age".into(), &[25, 30, 35]);
-        let scores = Series::new("score".into(), &[85.5, 92.0, 78.3]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
+        let ages = Series::new("age".into().into(), &[25, 30, 35]);
+        let scores = Series::new("score".into().into(), &[85.5, 92.0, 78.3]);
         DataFrame::new(vec![names, ages, scores]).unwrap()
     }
 
@@ -236,8 +236,8 @@ mod tests {
 
     #[test]
     fn test_sort_by_series_by_key_series() {
-        let series = Series::new("values".into(), &[3, 1, 2]);
-        let key_series = Series::new("keys".into(), &[30, 10, 20]);
+        let series = Series::new("values".into().into(), &[3, 1, 2]);
+        let key_series = Series::new("keys".into().into(), &[30, 10, 20]);
         let result = builtin_sort_by(&[Value::Series(series), Value::Series(key_series)]).unwrap();
         if let Value::Series(sorted_series) = result {
             let values = sorted_series.i32().unwrap();

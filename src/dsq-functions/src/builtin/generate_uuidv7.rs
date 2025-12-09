@@ -123,15 +123,15 @@ mod tests {
     #[test]
     fn test_builtin_generate_uuidv7_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1".into(), vec![1, 2, 3]),
-            Series::new("col2".into(), vec!["a", "b", "c"]),
+            Series::new("col1".into().into(), vec![1, 2, 3]),
+            Series::new("col2".into().into(), vec!["a", "b", "c"]),
         ])
         .unwrap();
         let result = builtin_generate_uuidv7(&[Value::DataFrame(df.clone())]).unwrap();
         match result {
             Value::DataFrame(result_df) => {
                 assert_eq!(result_df.height(), 3);
-                assert!(result_df.get_column_names().contains(&"uuid_v7"));
+                assert!(result_df.get_column_names().contains(&"uuid_v7".into()));
                 let uuid_col = result_df.column("uuid_v7").unwrap();
                 assert_eq!(uuid_col.dtype(), &DataType::String);
                 for i in 0..uuid_col.len() {
@@ -141,8 +141,8 @@ mod tests {
                     }
                 }
                 // Original columns should remain
-                assert!(result_df.get_column_names().contains(&"col1"));
-                assert!(result_df.get_column_names().contains(&"col2"));
+                assert!(result_df.get_column_names().contains(&"col1".into()));
+                assert!(result_df.get_column_names().contains(&"col2".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_builtin_generate_uuidv7_with_series() {
-        let series = Series::new("test".into(), vec![1, 2, 3]);
+        let series = Series::new("test".into().into(), vec![1, 2, 3]);
         let result = builtin_generate_uuidv7(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(result_series) => {

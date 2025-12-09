@@ -254,8 +254,8 @@ mod tests {
     #[test]
     fn test_pluralize_dataframe() {
         use polars::prelude::*;
-        let s1 = Series::new("words".into(), &["cat", "dog", "child"]);
-        let s2 = Series::new("numbers".into(), &[1, 2, 3]);
+        let s1 = Series::new("words".into().into(), &["cat", "dog", "child"]);
+        let s2 = Series::new("numbers".into().into(), &[1, 2, 3]);
         let df = DataFrame::new(vec![s1, s2]).unwrap();
 
         let args = vec![Value::DataFrame(df)];
@@ -272,7 +272,10 @@ mod tests {
             assert_eq!(words, vec!["cats", "dogs", "children"]);
 
             let numbers_series = result_df.column("numbers").unwrap();
-            assert_eq!(numbers_series, &Series::new("numbers".into(), &[1, 2, 3]));
+            assert_eq!(
+                numbers_series,
+                &Series::new("numbers".into().into(), &[1, 2, 3])
+            );
         } else {
             panic!("Expected DataFrame");
         }
@@ -281,7 +284,7 @@ mod tests {
     #[test]
     fn test_pluralize_series() {
         use polars::prelude::*;
-        let series = Series::new("words".into(), &["cat", "dog", "child"]);
+        let series = Series::new("words".into().into(), &["cat", "dog", "child"]);
 
         let args = vec![Value::Series(series.clone())];
         let result = builtin_pluralize(&args).unwrap();
@@ -302,7 +305,7 @@ mod tests {
     #[test]
     fn test_pluralize_series_non_string() {
         use polars::prelude::*;
-        let series = Series::new("numbers".into(), &[1, 2, 3]);
+        let series = Series::new("numbers".into().into(), &[1, 2, 3]);
 
         let args = vec![Value::Series(series.clone())];
         let result = builtin_pluralize(&args).unwrap();

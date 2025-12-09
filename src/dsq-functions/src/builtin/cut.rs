@@ -85,9 +85,9 @@ mod tests {
     use dsq_shared::value::Value;
 
     fn create_test_dataframe() -> DataFrame {
-        let s1 = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
-        let s2 = Series::new("age".into(), &[25, 30, 35]);
-        let s3 = Series::new("city".into(), &["NYC", "LA", "Chicago"]);
+        let s1 = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
+        let s2 = Series::new("age".into().into(), &[25, 30, 35]);
+        let s3 = Series::new("city".into().into(), &["NYC", "LA", "Chicago"]);
         DataFrame::new(vec![s1, s2, s3]).unwrap()
     }
 

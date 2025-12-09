@@ -543,8 +543,8 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 2);
                 assert_eq!(df.width(), 2);
-                assert!(df.get_column_names().contains(&"name"));
-                assert!(df.get_column_names().contains(&"age"));
+                assert!(df.get_column_names().contains(&"name".into()));
+                assert!(df.get_column_names().contains(&"age".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -565,8 +565,8 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 1);
-                assert!(df.get_column_names().contains(&"name"));
-                assert!(df.get_column_names().contains(&"age"));
+                assert!(df.get_column_names().contains(&"name".into()));
+                assert!(df.get_column_names().contains(&"age".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -608,9 +608,9 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 4);
                 assert_eq!(df.width(), 3);
-                assert!(df.get_column_names().contains(&"genre"));
-                assert!(df.get_column_names().contains(&"title"));
-                assert!(df.get_column_names().contains(&"price"));
+                assert!(df.get_column_names().contains(&"genre".into()));
+                assert!(df.get_column_names().contains(&"title".into()));
+                assert!(df.get_column_names().contains(&"price".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -699,9 +699,9 @@ mod tests {
     fn test_group_by_io_parquet() {
         // Create a DataFrame that represents group_by results
         let df = DataFrame::new(vec![
-            Series::new("genre", vec!["Fiction", "Non-Fiction"]),
-            Series::new("count", vec![3i64, 1i64]),
-            Series::new("avg_price", vec![10.33, 15.0]),
+            Series::new("genre".into(), vec!["Fiction", "Non-Fiction"]),
+            Series::new("count".into(), vec![3i64, 1i64]),
+            Series::new("avg_price".into(), vec![10.33, 15.0]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -726,9 +726,9 @@ mod tests {
             Value::DataFrame(df_back) => {
                 assert_eq!(df_back.height(), 2);
                 assert_eq!(df_back.width(), 3);
-                assert!(df_back.get_column_names().contains(&"genre"));
-                assert!(df_back.get_column_names().contains(&"count"));
-                assert!(df_back.get_column_names().contains(&"avg_price"));
+                assert!(df_back.get_column_names().contains(&"genre".into()));
+                assert!(df_back.get_column_names().contains(&"count".into()));
+                assert!(df_back.get_column_names().contains(&"avg_price".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -751,9 +751,9 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 3);
                 assert_eq!(df.width(), 3);
-                assert!(df.get_column_names().contains(&"genre"));
-                assert!(df.get_column_names().contains(&"title"));
-                assert!(df.get_column_names().contains(&"price"));
+                assert!(df.get_column_names().contains(&"genre".into()));
+                assert!(df.get_column_names().contains(&"title".into()));
+                assert!(df.get_column_names().contains(&"price".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -859,17 +859,17 @@ mod tests {
                     assert_eq!(df.height(), 3, "Wrong row count for {}", format_name);
                     assert_eq!(df.width(), 3, "Wrong column count for {}", format_name);
                     assert!(
-                        df.get_column_names().contains(&"name"),
+                        df.get_column_names().contains(&"name".into()),
                         "Missing 'name' column for {}",
                         format_name
                     );
                     assert!(
-                        df.get_column_names().contains(&"age"),
+                        df.get_column_names().contains(&"age".into()),
                         "Missing 'age' column for {}",
                         format_name
                     );
                     assert!(
-                        df.get_column_names().contains(&"active"),
+                        df.get_column_names().contains(&"active".into()),
                         "Missing 'active' column for {}",
                         format_name
                     );
@@ -888,7 +888,7 @@ mod tests {
         assert!(result.is_err(), "Expected error for non-existent file");
 
         // Test writing to invalid path
-        let df = DataFrame::new(vec![Series::new("test", vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("test".into(), vec![1i64])]).unwrap();
         let df_value = Value::DataFrame(df);
         let invalid_path = Path::new("/invalid/path/file.csv");
         let write_options = WriteOptions::default();
@@ -911,9 +911,9 @@ mod tests {
     #[ignore = "NDJSON/JsonLines format not fully supported"]
     fn test_write_ndjson() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob", "Charlie"]),
-            Series::new("age", vec![30i64, 25i64, 35i64]),
-            Series::new("active", vec![true, false, true]),
+            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]),
+            Series::new("age".into(), vec![30i64, 25i64, 35i64]),
+            Series::new("active".into(), vec![true, false, true]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -936,9 +936,9 @@ mod tests {
             Value::DataFrame(read_df) => {
                 assert_eq!(read_df.height(), 3);
                 assert_eq!(read_df.width(), 3);
-                assert!(read_df.get_column_names().contains(&"name"));
-                assert!(read_df.get_column_names().contains(&"age"));
-                assert!(read_df.get_column_names().contains(&"active"));
+                assert!(read_df.get_column_names().contains(&"name".into()));
+                assert!(read_df.get_column_names().contains(&"age".into()));
+                assert!(read_df.get_column_names().contains(&"active".into()));
             }
             _ => panic!("Expected DataFrame after reading NDJSON"),
         }
@@ -948,8 +948,8 @@ mod tests {
     #[ignore = "JSONL format not fully supported"]
     fn test_write_jsonl() {
         let df = DataFrame::new(vec![
-            Series::new("id", vec![1i64, 2i64]),
-            Series::new("value", vec!["test1", "test2"]),
+            Series::new("id".into(), vec![1i64, 2i64]),
+            Series::new("value".into(), vec!["test1", "test2"]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1006,8 +1006,8 @@ mod tests {
 
         // Test DataFrame with null values
         let df_with_nulls = DataFrame::new(vec![
-            Series::new("name", vec![Some("Alice"), None, Some("Charlie")]),
-            Series::new("age", vec![Some(30i64), Some(25i64), None]),
+            Series::new("name".into(), vec![Some("Alice"), None, Some("Charlie")]),
+            Series::new("age".into(), vec![Some(30i64), Some(25i64), None]),
         ])
         .unwrap();
         let nulls_value = Value::DataFrame(df_with_nulls);
@@ -1050,8 +1050,8 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 3);
                 assert_eq!(df.width(), 2);
-                assert!(df.get_column_names().contains(&"name"));
-                assert!(df.get_column_names().contains(&"age"));
+                assert!(df.get_column_names().contains(&"name".into()));
+                assert!(df.get_column_names().contains(&"age".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1083,8 +1083,8 @@ mod tests {
     fn test_read_parquet() {
         // Create a DataFrame and write it to Parquet, then read it back
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
 
@@ -1103,8 +1103,8 @@ mod tests {
             Value::DataFrame(read_df) => {
                 assert_eq!(read_df.height(), 2);
                 assert_eq!(read_df.width(), 2);
-                assert!(read_df.get_column_names().contains(&"name"));
-                assert!(read_df.get_column_names().contains(&"age"));
+                assert!(read_df.get_column_names().contains(&"name".into()));
+                assert!(read_df.get_column_names().contains(&"age".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1135,8 +1135,8 @@ mod tests {
     #[test]
     fn test_write_json() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1169,8 +1169,8 @@ mod tests {
     fn test_write_json5() {
         // JSON5 is currently stubbed to write as JSON
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice"]),
-            Series::new("age", vec![30i64]),
+            Series::new("name".into(), vec!["Alice"]),
+            Series::new("age".into(), vec![30i64]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1195,8 +1195,8 @@ mod tests {
     #[test]
     fn test_write_adt() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1268,8 +1268,8 @@ mod tests {
     #[test]
     fn test_write_options_include_header() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);

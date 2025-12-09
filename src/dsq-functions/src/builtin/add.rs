@@ -275,15 +275,19 @@ mod tests {
     use dsq_shared::value::Value;
 
     fn create_test_dataframe() -> DataFrame {
-        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age".into(), &[25, 30, 35]);
-        let scores = Series::new("score".into(), &[85.5, 92.0, 78.3]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
+        let ages = Series::new("age".into().into(), &[25, 30, 35]);
+        let scores = Series::new("score".into().into(), &[85.5, 92.0, 78.3]);
         DataFrame::new(vec![names, ages, scores]).unwrap()
     }
 
     #[test]
     fn test_builtin_add_with_dataframe() {
-        let df = DataFrame::new(vec![Series::new("value".into(), &[10.0, 20.0, 30.0])]).unwrap();
+        let df = DataFrame::new(vec![Series::new(
+            "value".into().into(),
+            &[10.0, 20.0, 30.0],
+        )])
+        .unwrap();
         let df_value = Value::DataFrame(df);
         let result = builtin_add(&[df_value]).unwrap();
         assert_eq!(result, Value::Float(60.0));
@@ -376,7 +380,7 @@ mod tests {
     #[test]
     fn test_builtin_add_with_series() {
         use polars::prelude::*;
-        let series = Series::new("test".into(), &[1, 2, 3, 4, 5]);
+        let series = Series::new("test".into().into(), &[1, 2, 3, 4, 5]);
         let series_value = Value::Series(series);
         let result = builtin_add(&[series_value]).unwrap();
         assert_eq!(result, Value::Int(15));

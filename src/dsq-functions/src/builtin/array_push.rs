@@ -128,9 +128,9 @@ mod tests {
 
     #[test]
     fn test_builtin_array_push_dataframe() {
-        let s1 = Series::new("".into(), &[1i64, 2i64]);
-        let s2 = Series::new("".into(), &[3i64]);
-        let list_series = Series::new("list_col".into(), &[s1, s2]);
+        let s1 = Series::new("".into().into(), &[1i64, 2i64]);
+        let s2 = Series::new("".into().into(), &[3i64]);
+        let list_series = Series::new("list_col".into().into(), &[s1, s2]);
         let df = DataFrame::new(vec![list_series]).unwrap();
         let result = builtin_array_push(&[Value::DataFrame(df), Value::Int(4)]).unwrap();
         match result {

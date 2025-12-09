@@ -1436,8 +1436,8 @@ mod tests {
     #[test]
     fn test_null_value_writing() {
         let df = DataFrame::new(vec![
-            Series::new("name", &["Alice", "Bob"]),
-            Series::new("age", &[Some(30i32), None::<i32>]),
+            Series::new("name".into(), &["Alice", "Bob"]),
+            Series::new("age".into(), &[Some(30i32), None::<i32>]),
         ])
         .unwrap();
 
@@ -1650,7 +1650,7 @@ mod tests {
     fn test_date_formatting() {
         use polars::prelude::*;
         let dates: Vec<NaiveDate> = vec![NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()];
-        let df = DataFrame::new(vec![Series::new("date_col", dates)]).unwrap();
+        let df = DataFrame::new(vec![Series::new("date_col".into(), dates)]).unwrap();
 
         let mut buffer = Vec::new();
         {
@@ -1676,7 +1676,7 @@ mod tests {
         let timestamp_us =
             dt.and_utc().timestamp() * 1_000_000 + dt.and_utc().timestamp_subsec_micros() as i64;
         let datetimes: Vec<i64> = vec![timestamp_us];
-        let series = Series::new("datetime_col", datetimes)
+        let series = Series::new("datetime_col".into(), datetimes)
             .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
             .unwrap();
         let df = DataFrame::new(vec![series]).unwrap();
@@ -1713,9 +1713,9 @@ mod tests {
     #[test]
     fn test_null_handling_different_types() {
         let df = DataFrame::new(vec![
-            Series::new("int_col", &[Some(1i32), None::<i32>]),
-            Series::new("float_col", &[Some(1.5f64), None::<f64>]),
-            Series::new("str_col", &[Some("test"), None::<&str>]),
+            Series::new("int_col".into(), &[Some(1i32), None::<i32>]),
+            Series::new("float_col".into(), &[Some(1.5f64), None::<f64>]),
+            Series::new("str_col".into(), &[Some("test"), None::<&str>]),
         ])
         .unwrap();
 

@@ -121,8 +121,8 @@ mod tests {
     #[test]
     fn test_builtin_camel_case_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1".into(), &["hello_world", "snake_case"]),
-            Series::new("col2".into(), &[1, 2]),
+            Series::new("col1".into().into(), &["hello_world", "snake_case"]),
+            Series::new("col2".into().into(), &[1, 2]),
         ])
         .unwrap();
 
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_builtin_camel_case_series() {
-        let series = Series::new("test".into(), &["hello_world", "snake_case"]);
+        let series = Series::new("test".into().into(), &["hello_world", "snake_case"]);
 
         let result = builtin_camel_case(&[Value::Series(series)]).unwrap();
         match result {

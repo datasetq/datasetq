@@ -210,7 +210,7 @@ mod tests {
     #[test]
     fn test_dos2unix_dataframe() {
         // Create a test DataFrame with string columns
-        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie"]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
         let descriptions = Series::new(
             "description",
             &["Line1\r\nLine2", "Single line", "Another\r\nline"],
@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn test_dos2unix_series_non_utf8() {
         // Create a test Series with integers (should remain unchanged)
-        let series = Series::new("numbers".into(), &[1, 2, 3]);
+        let series = Series::new("numbers".into().into(), &[1, 2, 3]);
 
         let result = builtin_dos2unix(&[Value::Series(series.clone())]);
         assert!(result.is_ok());

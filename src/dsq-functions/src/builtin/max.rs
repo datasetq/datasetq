@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_max_dataframe() {
-        let series = Series::new("col".into(), vec![1i64, 5, 3]);
+        let series = Series::new("col".into().into(), vec![1i64, 5, 3]);
         let df = DataFrame::new(vec![series]).unwrap();
         let result = builtin_max(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Float(5.0));
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_max_dataframe_no_numeric() {
-        let series = Series::new("col".into(), vec!["a", "b", "c"]);
+        let series = Series::new("col".into().into(), vec!["a", "b", "c"]);
         let df = DataFrame::new(vec![series]).unwrap();
         let result = builtin_max(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Null);

@@ -218,7 +218,10 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                         formatted_values.push("".to_string());
                     }
                 }
-                Ok(Value::Series(Series::new("".into(), formatted_values)))
+                Ok(Value::Series(Series::new(
+                    "".into().into(),
+                    formatted_values,
+                )))
             } else if series.dtype() == &DataType::String {
                 let formatted_series = series
                     .str()

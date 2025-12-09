@@ -178,8 +178,8 @@ mod tests {
 
     #[test]
     fn test_map_dataframe_with_string_field() {
-        let names = Series::new("name".into(), &["Alice", "Bob"]);
-        let ages = Series::new("age".into(), &[25, 30]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob"]);
+        let ages = Series::new("age".into().into(), &[25, 30]);
         let df = DataFrame::new(vec![names, ages]).unwrap();
 
         let args = vec![Value::DataFrame(df), Value::String("name".to_string())];
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_map_dataframe_with_missing_column() {
-        let names = Series::new("name".into(), &["Alice", "Bob"]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob"]);
         let df = DataFrame::new(vec![names]).unwrap();
 
         let args = vec![Value::DataFrame(df), Value::String("age".to_string())];
@@ -204,9 +204,9 @@ mod tests {
 
     #[test]
     fn test_map_dataframe_with_object_template() {
-        let names = Series::new("name".into(), &["Alice", "Bob"]);
-        let ages = Series::new("age".into(), &[25, 30]);
-        let cities = Series::new("city".into(), &["NYC", "LA"]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob"]);
+        let ages = Series::new("age".into().into(), &[25, 30]);
+        let cities = Series::new("city".into().into(), &["NYC", "LA"]);
         let df = DataFrame::new(vec![names, ages, cities]).unwrap();
 
         let mut template = HashMap::new();
@@ -219,8 +219,8 @@ mod tests {
         if let Value::DataFrame(result_df) = result {
             let col_names = result_df.get_column_names();
             assert_eq!(col_names.len(), 2);
-            assert!(col_names.contains(&"name"));
-            assert!(col_names.contains(&"age"));
+            assert!(col_names.contains(&"name".into()));
+            assert!(col_names.contains(&"age".into()));
             assert_eq!(result_df.height(), 2);
         } else {
             panic!("Expected DataFrame");

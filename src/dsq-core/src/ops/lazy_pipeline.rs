@@ -193,8 +193,8 @@ mod tests {
     #[test]
     fn test_lazy_pipeline_basic() {
         let df = DataFrame::new(vec![
-            Series::new("id", vec![1i64, 2, 3, 4, 5]),
-            Series::new("value", vec![10i64, 20, 30, 40, 50]),
+            Series::new("id".into(), vec![1i64, 2, 3, 4, 5]),
+            Series::new("value".into(), vec![10i64, 20, 30, 40, 50]),
         ])
         .unwrap();
 
@@ -211,9 +211,9 @@ mod tests {
     #[test]
     fn test_lazy_pipeline_select() {
         let df = DataFrame::new(vec![
-            Series::new("id", vec![1i64, 2, 3]),
-            Series::new("value", vec![10i64, 20, 30]),
-            Series::new("extra", vec!["a", "b", "c"]),
+            Series::new("id".into(), vec![1i64, 2, 3]),
+            Series::new("value".into(), vec![10i64, 20, 30]),
+            Series::new("extra".into(), vec!["a", "b", "c"]),
         ])
         .unwrap();
 
@@ -221,16 +221,16 @@ mod tests {
 
         let result = pipeline.execute(df.lazy()).unwrap();
         assert_eq!(result.width(), 2);
-        assert!(result.get_column_names().contains(&"id"));
-        assert!(result.get_column_names().contains(&"value"));
-        assert!(!result.get_column_names().contains(&"extra"));
+        assert!(result.get_column_names().contains(&"id".into()));
+        assert!(result.get_column_names().contains(&"value".into()));
+        assert!(!result.get_column_names().contains(&"extra".into()));
     }
 
     #[test]
     fn test_lazy_pipeline_with_value() {
         let df = DataFrame::new(vec![
-            Series::new("id", vec![1i64, 2, 3]),
-            Series::new("value", vec![10i64, 20, 30]),
+            Series::new("id".into(), vec![1i64, 2, 3]),
+            Series::new("value".into(), vec![10i64, 20, 30]),
         ])
         .unwrap();
 

@@ -266,8 +266,8 @@ mod tests {
 
     fn create_test_dataframe() -> DataFrame {
         DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap()
     }

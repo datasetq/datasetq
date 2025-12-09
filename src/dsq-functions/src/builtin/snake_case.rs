@@ -120,8 +120,8 @@ mod tests {
     #[test]
     fn test_builtin_snake_case_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("col1".into(), &["CamelCase", "XMLHttpRequest"]),
-            Series::new("col2".into(), &[1, 2]),
+            Series::new("col1".into().into(), &["CamelCase", "XMLHttpRequest"]),
+            Series::new("col2".into().into(), &[1, 2]),
         ])
         .unwrap();
 
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_builtin_snake_case_series() {
-        let series = Series::new("test".into(), &["CamelCase", "XMLHttpRequest"]);
+        let series = Series::new("test".into().into(), &["CamelCase", "XMLHttpRequest"]);
 
         let result = builtin_snake_case(&[Value::Series(series)]).unwrap();
         match result {

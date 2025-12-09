@@ -333,7 +333,7 @@ impl Executor {
                                         e
                                     )))
                                 })? {
-                                    polars::prelude::AnyValue::Utf8(s) => value_buffer.push_str(s),
+                                    polars::prelude::AnyValue::String(s) => value_buffer.push_str(s),
                                     polars::prelude::AnyValue::Int64(i) => {
                                         write!(value_buffer, "{}", i).unwrap()
                                     }

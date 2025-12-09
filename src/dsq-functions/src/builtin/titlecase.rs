@@ -112,10 +112,10 @@ mod tests {
 
     #[test]
     fn test_titlecase_series() {
-        let series = Series::new("test".into(), &["hello", "world", "test"]);
+        let series = Series::new("test".into().into(), &["hello", "world", "test"]);
         let result = builtin_titlecase(&[Value::Series(series)]).unwrap();
         if let Value::Series(result_series) = result {
-            let expected = Series::new("test".into(), &["Hello", "World", "Test"]);
+            let expected = Series::new("test".into().into(), &["Hello", "World", "Test"]);
             assert_eq!(result_series, expected);
         } else {
             panic!("Expected Series result");
@@ -124,13 +124,13 @@ mod tests {
 
     #[test]
     fn test_titlecase_dataframe() {
-        let names = Series::new("name".into(), &["alice", "bob"]);
-        let ages = Series::new("age".into(), &[25, 30]);
+        let names = Series::new("name".into().into(), &["alice", "bob"]);
+        let ages = Series::new("age".into().into(), &[25, 30]);
         let df = DataFrame::new(vec![names, ages]).unwrap();
         let result = builtin_titlecase(&[Value::DataFrame(df)]).unwrap();
         if let Value::DataFrame(result_df) = result {
-            let expected_names = Series::new("name".into(), &["Alice", "Bob"]);
-            let expected_ages = Series::new("age".into(), &[25, 30]);
+            let expected_names = Series::new("name".into().into(), &["Alice", "Bob"]);
+            let expected_ages = Series::new("age".into().into(), &[25, 30]);
             let expected_df = DataFrame::new(vec![expected_names, expected_ages]).unwrap();
             assert_eq!(result_df, expected_df);
         } else {

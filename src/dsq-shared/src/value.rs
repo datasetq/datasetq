@@ -999,7 +999,7 @@ mod tests {
         let obj = HashMap::from([("key".to_string(), Value::string("value"))]);
         assert_eq!(Value::object(obj.clone()), Value::Object(obj));
 
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3])]).unwrap();
         let df_val = Value::dataframe(df.clone());
         assert!(df_val.is_dataframe());
 
@@ -1007,16 +1007,16 @@ mod tests {
         let lf_val = Value::lazy_frame(lf.clone());
         assert!(lf_val.is_lazy_frame());
 
-        let series = Series::new("test", vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 3]);
         let series_val = Value::series(series.clone());
         assert!(series_val.is_series());
     }
 
     #[test]
     fn test_value_is_methods() {
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3])]).unwrap();
         let lf = df.clone().lazy();
-        let series = Series::new("test", vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 3]);
 
         assert!(Value::Null.is_null());
         assert!(!Value::int(1).is_null());
@@ -1050,10 +1050,10 @@ mod tests {
 
     #[test]
     fn test_value_len_and_empty() {
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3])]).unwrap();
         let empty_df = DataFrame::empty();
-        let series = Series::new("test", vec![1, 2, 3]);
-        let empty_series = Series::new("empty", Vec::<i32>::new());
+        let series = Series::new("test".into(), vec![1, 2, 3]);
+        let empty_series = Series::new("empty".into(), Vec::<i32>::new());
         let lf = df.clone().lazy();
 
         assert_eq!(Value::Null.len(), None);
@@ -1165,8 +1165,8 @@ mod tests {
     fn test_json_conversion_polars() {
         // DataFrame
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let value = Value::dataframe(df.clone());
@@ -1184,7 +1184,7 @@ mod tests {
         assert_eq!(json, expected); // Same as DataFrame after collect
 
         // Series
-        let series = Series::new("ages", vec![30i64, 25i64]);
+        let series = Series::new("ages".into(), vec![30i64, 25i64]);
         let value = Value::series(series);
         let json = value.to_json().unwrap();
         let expected_series = json!([30, 25]);
@@ -1241,8 +1241,8 @@ mod tests {
     #[test]
     fn test_indexing_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let val = Value::dataframe(df);
@@ -1326,8 +1326,8 @@ mod tests {
     #[test]
     fn test_field_access_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let val = Value::dataframe(df);
@@ -1397,9 +1397,9 @@ mod tests {
         assert_ne!(Value::bool(true), Value::bool(false));
 
         // DataFrame/Series comparison (always false)
-        let df = DataFrame::new(vec![Series::new("a", vec![1, 2, 3])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3])]).unwrap();
         assert_ne!(Value::dataframe(df.clone()), Value::dataframe(df));
-        let series = Series::new("test", vec![1, 2, 3]);
+        let series = Series::new("test".into(), vec![1, 2, 3]);
         assert_ne!(Value::series(series.clone()), Value::series(series));
 
         // BigInt vs Float (not implemented, so false)
@@ -1429,7 +1429,7 @@ mod tests {
         assert!(json.contains("\"b\":\"x\""));
 
         // DataFrame
-        let df = DataFrame::new(vec![Series::new("name", vec!["Alice"])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("name".into(), vec!["Alice"])]).unwrap();
         let val = Value::dataframe(df);
         let json = serde_json::to_string(&val).unwrap();
         assert!(json.contains("\"type\":\"DataFrame\""));
@@ -1445,7 +1445,9 @@ mod tests {
         assert!(format!("{:?}", Value::array(vec![Value::int(1)])).contains("Array([Int(1)]"));
         assert!(format!("{:?}", Value::object(HashMap::new())).contains("Object({})"));
         assert!(format!("{:?}", Value::dataframe(DataFrame::empty())).contains("DataFrame"));
-        assert!(format!("{:?}", Value::series(Series::new("test", vec![1]))).contains("Series"));
+        assert!(
+            format!("{:?}", Value::series(Series::new("test".into(), vec![1]))).contains("Series")
+        );
     }
 
     #[test]
@@ -1486,8 +1488,8 @@ mod tests {
         let df = data.to_dataframe().unwrap();
         assert_eq!(df.height(), 2);
         assert_eq!(df.width(), 2);
-        assert!(df.get_column_names().contains(&"name"));
-        assert!(df.get_column_names().contains(&"age"));
+        assert!(df.get_column_names().contains(&"name".into()));
+        assert!(df.get_column_names().contains(&"age".into()));
 
         // Empty array
         let empty = Value::array(vec![]);
@@ -1507,8 +1509,8 @@ mod tests {
 
         // DataFrame input
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
         let val = Value::dataframe(df.clone());
@@ -1542,7 +1544,7 @@ mod tests {
             Some(Value::float(3.14))
         );
         assert_eq!(
-            value_from_any_value(AnyValue::Utf8("hello")),
+            value_from_any_value(AnyValue::String("hello")),
             Some(Value::string("hello"))
         );
 
@@ -1553,8 +1555,8 @@ mod tests {
     #[test]
     fn test_df_row_to_value() {
         let df = DataFrame::new(vec![
-            Series::new("name", vec!["Alice", "Bob"]),
-            Series::new("age", vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]),
+            Series::new("age".into(), vec![30i64, 25i64]),
         ])
         .unwrap();
 
@@ -1580,7 +1582,7 @@ mod tests {
 
     #[test]
     fn test_series_value_at() {
-        let series = Series::new("test", vec![Some(1i64), None, Some(3i64)]);
+        let series = Series::new("test".into(), vec![Some(1i64), None, Some(3i64)]);
 
         assert_eq!(series_value_at(&series, 0).unwrap(), Value::int(1));
         assert_eq!(series_value_at(&series, 1).unwrap(), Value::Null);

@@ -218,8 +218,8 @@ mod tests {
 
     #[test]
     fn test_buffer_dataframe_with_batch_size() {
-        let names = Series::new("name".into(), &["Alice", "Bob", "Charlie", "David"]);
-        let ages = Series::new("age".into(), &[25, 30, 35, 28]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie", "David"]);
+        let ages = Series::new("age".into().into(), &[25, 30, 35, 28]);
         let df = DataFrame::new(vec![names, ages]).unwrap();
 
         let result = builtin_buffer(&[Value::DataFrame(df), Value::Int(2)]).unwrap();
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_buffer_dataframe_without_batch_size() {
-        let names = Series::new("name".into(), &["Alice", "Bob"]);
+        let names = Series::new("name".into().into(), &["Alice", "Bob"]);
         let df = DataFrame::new(vec![names]).unwrap();
 
         let result = builtin_buffer(&[Value::DataFrame(df)]).unwrap();
@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_buffer_series_with_batch_size() {
-        let series = Series::new("values".into(), &[1, 2, 3, 4, 5]);
+        let series = Series::new("values".into().into(), &[1, 2, 3, 4, 5]);
         let result = builtin_buffer(&[Value::Series(series), Value::Int(2)]).unwrap();
 
         match result {

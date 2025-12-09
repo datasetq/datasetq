@@ -167,8 +167,8 @@ mod tests {
     #[test]
     fn test_builtin_transpose_dataframe() {
         // Create a simple DataFrame
-        let series1 = Series::new("col1".into(), vec![1i64, 2]);
-        let series2 = Series::new("col2".into(), vec![3i64, 4]);
+        let series1 = Series::new("col1".into().into(), vec![1i64, 2]);
+        let series2 = Series::new("col2".into().into(), vec![3i64, 4]);
         let df = DataFrame::new(vec![series1, series2]).unwrap();
         let result = builtin_transpose(&[Value::DataFrame(df)]).unwrap();
 

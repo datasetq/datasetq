@@ -60,9 +60,9 @@ fn test_pipeline_with_aggregation() {
     match result {
         Value::DataFrame(df) => {
             assert_eq!(df.height(), 3); // 3 departments
-            assert!(df.get_column_names().contains(&"department"));
-            assert!(df.get_column_names().contains(&"age_mean"));
-            assert!(df.get_column_names().contains(&"salary_sum"));
+            assert!(df.get_column_names().contains(&"department".into()));
+            assert!(df.get_column_names().contains(&"age_mean".into()));
+            assert!(df.get_column_names().contains(&"salary_sum".into()));
         }
         _ => panic!("Expected DataFrame"),
     }
@@ -848,7 +848,7 @@ fn test_pipeline_group_by_method() {
     match result {
         Value::DataFrame(grouped_df) => {
             assert_eq!(grouped_df.height(), 3); // 3 departments
-            assert!(grouped_df.get_column_names().contains(&"department"));
+            assert!(grouped_df.get_column_names().contains(&"department".into()));
         }
         _ => panic!("Expected DataFrame"),
     }
@@ -869,8 +869,8 @@ fn test_pipeline_aggregate_method() {
     match result {
         Value::DataFrame(agg_df) => {
             assert_eq!(agg_df.height(), 3); // 3 departments
-            assert!(agg_df.get_column_names().contains(&"department"));
-            assert!(agg_df.get_column_names().contains(&"count"));
+            assert!(agg_df.get_column_names().contains(&"department".into()));
+            assert!(agg_df.get_column_names().contains(&"count".into()));
         }
         _ => panic!("Expected DataFrame"),
     }

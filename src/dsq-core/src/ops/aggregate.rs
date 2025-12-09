@@ -1068,10 +1068,10 @@ mod tests {
         match result {
             Ok(Value::DataFrame(df)) => {
                 assert_eq!(df.height(), 3); // 3 departments
-                assert!(df.get_column_names().contains(&"department"));
-                assert!(df.get_column_names().contains(&"salary_sum"));
-                assert!(df.get_column_names().contains(&"age_mean"));
-                assert!(df.get_column_names().contains(&"count"));
+                assert!(df.get_column_names().contains(&"department".into()));
+                assert!(df.get_column_names().contains(&"salary_sum".into()));
+                assert!(df.get_column_names().contains(&"age_mean".into()));
+                assert!(df.get_column_names().contains(&"count".into()));
             }
             Err(e) => {
                 panic!("group_by_agg failed: {}", e);
@@ -1259,10 +1259,10 @@ mod tests {
                 // Verify results have correct structure and departments
                 assert_eq!(results.len(), 4);
                 let depts: Vec<&str> = results.iter().map(|(dept, _, _)| dept.as_str()).collect();
-                assert!(depts.contains(&"Engineering"));
-                assert!(depts.contains(&"HR"));
-                assert!(depts.contains(&"Marketing"));
-                assert!(depts.contains(&"Sales"));
+                assert!(depts.contains(&"Engineering".into()));
+                assert!(depts.contains(&"HR".into()));
+                assert!(depts.contains(&"Marketing".into()));
+                assert!(depts.contains(&"Sales".into()));
 
                 // Check counts
                 let eng_result = results
@@ -1576,8 +1576,8 @@ mod tests {
         match pivoted {
             Value::DataFrame(df) => {
                 // Should have id and value_sum columns
-                assert!(df.get_column_names().contains(&"id"));
-                assert!(df.get_column_names().contains(&"value_sum"));
+                assert!(df.get_column_names().contains(&"id".into()));
+                assert!(df.get_column_names().contains(&"value_sum".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1606,9 +1606,9 @@ mod tests {
         match unpivoted {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 4); // 2 ids * 2 categories
-                assert!(df.get_column_names().contains(&"id"));
-                assert!(df.get_column_names().contains(&"category"));
-                assert!(df.get_column_names().contains(&"value"));
+                assert!(df.get_column_names().contains(&"id".into()));
+                assert!(df.get_column_names().contains(&"category".into()));
+                assert!(df.get_column_names().contains(&"value".into()));
             }
             _ => panic!("Expected DataFrame"),
         }

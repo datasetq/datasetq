@@ -84,7 +84,7 @@ fn print_version() {
     println!("Rustc: {}", rustc_version);
 
     // Show enabled features
-    let features: Vec<&str> = vec![];
+    let mut features: Vec<&str> = vec![];
     #[cfg(feature = "csv")]
     features.push("csv");
     #[cfg(feature = "json")]

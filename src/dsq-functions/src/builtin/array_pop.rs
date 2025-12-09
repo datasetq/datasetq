@@ -102,8 +102,8 @@ mod tests {
 
     #[test]
     fn test_builtin_array_pop_dataframe() {
-        let s1 = Series::new("col1".into(), &[1i64, 2i64]);
-        let s2 = Series::new("col2".into(), &["a", "b"]);
+        let s1 = Series::new("col1".into().into(), &[1i64, 2i64]);
+        let s2 = Series::new("col2".into().into(), &["a", "b"]);
         let df = DataFrame::new(vec![s1, s2]).unwrap();
         let result = builtin_array_pop(&[Value::DataFrame(df)]).unwrap();
         match result {
@@ -117,23 +117,27 @@ mod tests {
 
     #[test]
     fn test_builtin_array_pop_empty_dataframe() {
-        let df = DataFrame::new(vec![Series::new("empty".into(), Vec::<String>::new())]).unwrap();
+        let df = DataFrame::new(vec![Series::new(
+            "empty".into().into(),
+            Vec::<String>::new(),
+        )])
+        .unwrap();
         let result = builtin_array_pop(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Null);
     }
 
     #[test]
     fn test_builtin_array_pop_series() {
-        let s1 = Series::new("".into(), &[1i64, 2i64, 3i64]);
-        let list_series = Series::new("list_col".into(), &[s1]);
+        let s1 = Series::new("".into().into(), &[1i64, 2i64, 3i64]);
+        let list_series = Series::new("list_col".into().into(), &[s1]);
         let result = builtin_array_pop(&[Value::Series(list_series)]).unwrap();
         assert_eq!(result, Value::Int(3));
     }
 
     #[test]
     fn test_builtin_array_pop_empty_series() {
-        let s1 = Series::new("".into(), &[] as &[i64]);
-        let list_series = Series::new("list_col".into(), &[s1]);
+        let s1 = Series::new("".into().into(), &[] as &[i64]);
+        let list_series = Series::new("list_col".into().into(), &[s1]);
         let result = builtin_array_pop(&[Value::Series(list_series)]).unwrap();
         assert_eq!(result, Value::Null);
     }

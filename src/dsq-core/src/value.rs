@@ -534,10 +534,10 @@ mod tests {
         );
         assert_eq!(Value::array(vec![]).len(), Some(0));
 
-        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3]).into()]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into().into(), vec![1, 2, 3]).into()]).unwrap();
         assert_eq!(Value::DataFrame(df).len(), Some(3));
 
-        let series = Series::new("test".into(), vec![1, 2, 3]);
+        let series = Series::new("test".into().into(), vec![1, 2, 3]);
         assert_eq!(Value::Series(series).len(), Some(3));
 
         assert!(Value::string("").is_empty());
@@ -791,9 +791,9 @@ mod tests {
         assert_ne!(Value::bool(true), Value::bool(false));
 
         // DataFrame/Series comparison (always false)
-        let df = DataFrame::new(vec![Series::new("a".into(), vec![1, 2, 3]).into()]).unwrap();
+        let df = DataFrame::new(vec![Series::new("a".into().into(), vec![1, 2, 3]).into()]).unwrap();
         assert_ne!(Value::dataframe(df.clone()), Value::dataframe(df));
-        let series = Series::new("test".into(), vec![1, 2, 3]);
+        let series = Series::new("test".into().into(), vec![1, 2, 3]);
         assert_ne!(Value::series(series.clone()), Value::series(series));
     }
 
@@ -835,8 +835,8 @@ mod tests {
         let df = data.to_dataframe().unwrap();
         assert_eq!(df.height(), 2);
         assert_eq!(df.width(), 2);
-        assert!(df.get_column_names().contains(&"name"));
-        assert!(df.get_column_names().contains(&"age"));
+        assert!(df.get_column_names().contains(&"name".into()));
+        assert!(df.get_column_names().contains(&"age".into()));
 
         // Empty array
         let empty = Value::array(vec![]);
@@ -890,8 +890,8 @@ mod tests {
     #[test]
     fn test_dataframe_to_json() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
-            Series::new("age".into(), vec![30i64, 25i64]).into(),
+            Series::new("name".into().into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into().into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 
@@ -921,7 +921,7 @@ mod tests {
 
     #[test]
     fn test_series_to_json() {
-        let series = Series::new("ages".into(), vec![30i64, 25i64, 35i64]);
+        let series = Series::new("ages".into().into(), vec![30i64, 25i64, 35i64]);
         let value = Value::Series(series);
         let json = value.to_json().unwrap();
 
@@ -939,8 +939,8 @@ mod tests {
     #[test]
     fn test_lazyframe_to_json() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
-            Series::new("age".into(), vec![30i64, 25i64]).into(),
+            Series::new("name".into().into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into().into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 
@@ -959,8 +959,8 @@ mod tests {
     #[test]
     fn test_indexing_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]).into(),
-            Series::new("age".into(), vec![30i64, 25i64, 35i64]).into(),
+            Series::new("name".into().into(), vec!["Alice", "Bob", "Charlie"]).into(),
+            Series::new("age".into().into(), vec![30i64, 25i64, 35i64]).into(),
         ])
         .unwrap();
 
@@ -992,8 +992,8 @@ mod tests {
     #[test]
     fn test_field_access_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
-            Series::new("age".into(), vec![30i64, 25i64]).into(),
+            Series::new("name".into().into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into().into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 
