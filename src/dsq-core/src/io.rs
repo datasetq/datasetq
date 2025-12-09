@@ -923,7 +923,7 @@ mod tests {
         assert!(result.is_err(), "Expected error for non-existent file");
 
         // Test writing to invalid path
-        let df = DataFrame::new(vec![Series::new("test".into(), vec![1i64])]).unwrap();
+        let df = DataFrame::new(vec![Series::new("test".into(), vec![1i64]).into()]).unwrap();
         let df_value = Value::DataFrame(df);
         let invalid_path = Path::new("/invalid/path/file.csv");
         let write_options = WriteOptions::default();
@@ -946,9 +946,9 @@ mod tests {
     #[ignore = "NDJSON/JsonLines format not fully supported"]
     fn test_write_ndjson() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]),
-            Series::new("age".into(), vec![30i64, 25i64, 35i64]),
-            Series::new("active".into(), vec![true, false, true]),
+            Series::new("name".into(), vec!["Alice", "Bob", "Charlie"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64, 35i64]).into(),
+            Series::new("active".into(), vec![true, false, true]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -989,8 +989,8 @@ mod tests {
     #[ignore = "JSONL format not fully supported"]
     fn test_write_jsonl() {
         let df = DataFrame::new(vec![
-            Series::new("id".into(), vec![1i64, 2i64]),
-            Series::new("value".into(), vec!["test1", "test2"]),
+            Series::new("id".into(), vec![1i64, 2i64]).into(),
+            Series::new("value".into(), vec!["test1", "test2"]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1047,8 +1047,8 @@ mod tests {
 
         // Test DataFrame with null values
         let df_with_nulls = DataFrame::new(vec![
-            Series::new("name".into(), vec![Some("Alice"), None, Some("Charlie")]),
-            Series::new("age".into(), vec![Some(30i64), Some(25i64), None]),
+            Series::new("name".into(), vec![Some("Alice"), None, Some("Charlie")]).into(),
+            Series::new("age".into(), vec![Some(30i64), Some(25i64), None]).into(),
         ])
         .unwrap();
         let nulls_value = Value::DataFrame(df_with_nulls);
@@ -1128,8 +1128,8 @@ mod tests {
     fn test_read_parquet() {
         // Create a DataFrame and write it to Parquet, then read it back
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]),
-            Series::new("age".into(), vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
 
@@ -1184,8 +1184,8 @@ mod tests {
     #[test]
     fn test_write_json() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]),
-            Series::new("age".into(), vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1218,8 +1218,8 @@ mod tests {
     fn test_write_json5() {
         // JSON5 is currently stubbed to write as JSON
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice"]),
-            Series::new("age".into(), vec![30i64]),
+            Series::new("name".into(), vec!["Alice"]).into(),
+            Series::new("age".into(), vec![30i64]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1244,8 +1244,8 @@ mod tests {
     #[test]
     fn test_write_adt() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]),
-            Series::new("age".into(), vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1317,8 +1317,8 @@ mod tests {
     #[test]
     fn test_write_options_include_header() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), vec!["Alice", "Bob"]),
-            Series::new("age".into(), vec![30i64, 25i64]),
+            Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+            Series::new("age".into(), vec![30i64, 25i64]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);

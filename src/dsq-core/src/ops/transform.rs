@@ -530,7 +530,7 @@ mod tests {
         ])
         .unwrap();
 
-        let mask = Series::new("mask".into().into(), &[true, false, true, false, true]);
+        let mask = Series::new(PlSmallStr::from("mask"), &[true, false, true, false, true]);
         let result = Transform::filter(&df, &mask).unwrap();
 
         assert_eq!(result.height(), 3);
@@ -559,9 +559,11 @@ mod tests {
 
     #[test]
     fn test_rename() {
-        let df = DataFrame::new(vec![
-            Series::new("old_name".into().into(), &[1, 2, 3]).into()
-        ])
+        let df = DataFrame::new(vec![Series::new(
+            <&str as Into<String>>::into("old_name").into(),
+            &[1i32, 2, 3],
+        )
+        .into()])
         .unwrap();
 
         let mut mapping = HashMap::new();
@@ -772,7 +774,7 @@ mod tests {
     #[test]
     fn test_rename_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("old_name".into().into(), &[1, 2, 3]).into()
+            Series::new(PlSmallStr::from("old_name"), &[1, 2, 3]).into()
         ])
         .unwrap();
         let lf = df.lazy();
@@ -1003,7 +1005,7 @@ mod tests {
     #[test]
     fn test_fill_null_lazy() {
         let df = DataFrame::new(vec![
-            Series::new("a".into(), &[Some(1), None, Some(3)]).into()
+            Series::new(PlSmallStr::from("old_name"), &[1, 2, 3]).into()
         ])
         .unwrap();
         let lf = df.lazy();
@@ -1082,7 +1084,7 @@ mod tests {
         let list_series = Series::new("list_col".into(), &[vec![1, 2], vec![3], vec![4, 5, 6]]);
         let df = DataFrame::new(vec![
             list_series.into(),
-            Series::new("other".into(), &[10, 20, 30]),
+            Series::new("other".into(), &[10, 20, 30]).into(),
         ])
         .unwrap();
         let lf = df.lazy();
@@ -1145,8 +1147,8 @@ mod tests {
     #[test]
     fn test_map_columns() {
         let df = DataFrame::new(vec![
-            Series::new("a".into(), &[1, 2, 3]),
-            Series::new("b".into(), &[4, 5, 6]),
+            Series::new("a".into(), &[1, 2, 3]).into(),
+            Series::new("b".into(), &[4, 5, 6]).into(),
         ])
         .unwrap();
 

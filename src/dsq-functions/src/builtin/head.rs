@@ -2,6 +2,8 @@ use crate::FunctionRegistration;
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
+use polars::datatypes::*;
+use polars::prelude::*;
 
 inventory::submit! {
     FunctionRegistration {
@@ -102,8 +104,8 @@ mod tests {
 
     #[test]
     fn test_head_dataframe() {
-        let series = Series::new("col".into().into(), vec![1i64, 2, 3, 4, 5, 6]);
-        let df = DataFrame::new(vec![series]).unwrap();
+        let series: polars::prelude::Series = Series::new("col".into(), &[1i32, 2, 3, 4, 5, 6]);
+        let df = DataFrame::new(vec![series.into()]).unwrap();
         let result = builtin_head(&[Value::DataFrame(df), Value::Int(3)]).unwrap();
         if let Value::DataFrame(head_df) = result {
             assert_eq!(head_df.height(), 3);
@@ -114,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_head_series() {
-        let series = Series::new("col".into().into(), vec![1i64, 2, 3, 4, 5, 6]);
+        let series = Series::new(PlSmallStr::from("col"), vec![1i64, 2, 3, 4, 5, 6]);
         let result = builtin_head(&[Value::Series(series), Value::Int(2)]).unwrap();
         if let Value::Series(head_series) = result {
             assert_eq!(head_series.len(), 2);

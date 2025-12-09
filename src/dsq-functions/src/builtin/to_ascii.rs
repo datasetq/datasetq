@@ -138,8 +138,12 @@ mod tests {
     #[test]
     fn test_to_ascii_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("text".into().into(), &["hello", "world"]),
-            Series::new("number".into().into(), &[1, 2]),
+            Series::new(
+                PlSmallStr::from("text"),
+                vec!["hello".to_string(), "world".to_string()],
+            )
+            .into(),
+            Series::new(PlSmallStr::from("number"), vec![1, 2]).into(),
         ])
         .unwrap();
         let result = builtin_to_ascii(&[Value::DataFrame(df.clone())]).unwrap();
@@ -157,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_to_ascii_series() {
-        let series = Series::new("test".into().into(), &["hi", "there"]);
+        let series = Series::new(PlSmallStr::from("test"), vec!["hi", "there"]);
         let result = builtin_to_ascii(&[Value::Series(series)]).unwrap();
         if let Value::Series(new_series) = result {
             let utf8_series = new_series.str().unwrap();
@@ -214,7 +218,7 @@ mod tests {
 
     #[test]
     fn test_to_ascii_non_string_series() {
-        let series = Series::new("numbers".into().into(), &[1, 2, 3]);
+        let series = Series::new("numbers".into(), &[1, 2, 3]);
         let result = builtin_to_ascii(&[Value::Series(series)]);
         assert!(result.is_err());
         assert!(result

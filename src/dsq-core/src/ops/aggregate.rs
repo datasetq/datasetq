@@ -1068,10 +1068,16 @@ mod tests {
         match result {
             Ok(Value::DataFrame(df)) => {
                 assert_eq!(df.height(), 3); // 3 departments
-                assert!(df.get_column_names().contains(&"department".into()));
-                assert!(df.get_column_names().contains(&"salary_sum".into()));
-                assert!(df.get_column_names().contains(&"age_mean".into()));
-                assert!(df.get_column_names().contains(&"count".into()));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("department")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("salary_sum")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("age_mean")));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("count")));
             }
             Err(e) => {
                 panic!("group_by_agg failed: {}", e);
@@ -1576,10 +1582,11 @@ mod tests {
         match pivoted {
             Value::DataFrame(df) => {
                 // Should have id and value_sum columns
-                assert!(df.get_column_names().contains(&PlSmallStr::from("id")));
                 assert!(df
                     .get_column_names()
-                    .contains(&PlSmallStr::from("value_sum")));
+                    .iter()
+                    .any(|name| **name == PlSmallStr::from("id")));
+                assert!(df.get_column_names().contains(&&"value_sum".into()));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1608,9 +1615,11 @@ mod tests {
         match unpivoted {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 4); // 2 ids * 2 categories
-                assert!(df.get_column_names().contains(&"id".into()));
-                assert!(df.get_column_names().contains(&"category".into()));
-                assert!(df.get_column_names().contains(&"value".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("id")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("category")));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("value")));
             }
             _ => panic!("Expected DataFrame"),
         }

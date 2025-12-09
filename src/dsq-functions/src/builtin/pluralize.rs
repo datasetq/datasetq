@@ -1,7 +1,7 @@
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
-use polars::datatypes::PlSmallStr;
+use polars::datatypes::*;
 use polars::prelude::*;
 use std::borrow::Cow;
 
@@ -256,10 +256,12 @@ mod tests {
     fn test_pluralize_dataframe() {
         use polars::prelude::*;
         let s1 = Series::new(
-            "words".into().into(),
+            PlSmallStr::from("words"),
             vec!["cat".to_string(), "dog".to_string(), "child".to_string()],
-        );
-        let s2 = Series::new("numbers".into().into(), vec![1, 2, 3]);
+        )
+        .cast(&DataType::String)
+        .unwrap();
+        let s2 = Series::new(PlSmallStr::from("numbers"), vec![1, 2, 3]);
         let df = DataFrame::new(vec![s1.into(), s2.into()]).unwrap();
 
         let args = vec![Value::DataFrame(df)];
@@ -288,7 +290,7 @@ mod tests {
     #[test]
     fn test_pluralize_series() {
         use polars::prelude::*;
-        let series = Series::new("words".into().into(), &["cat", "dog", "child"]);
+        let series = Series::new("words".to_string().into(), vec!["cat", "dog", "child"]);
 
         let args = vec![Value::Series(series.clone())];
         let result = builtin_pluralize(&args).unwrap();
@@ -309,7 +311,7 @@ mod tests {
     #[test]
     fn test_pluralize_series_non_string() {
         use polars::prelude::*;
-        let series = Series::new("numbers".into().into(), &[1, 2, 3]);
+        let series = Series::new(PlSmallStr::from("numbers"), vec![1, 2, 3]);
 
         let args = vec![Value::Series(series.clone())];
         let result = builtin_pluralize(&args).unwrap();

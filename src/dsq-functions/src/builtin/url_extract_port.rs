@@ -152,7 +152,7 @@ mod tests {
             "urls".into(),
             &["https://example.com:8080", "http://test.com"],
         );
-        let df = DataFrame::new(vec![urls]).unwrap();
+        let df = DataFrame::new(vec![urls.into()]).unwrap();
         let result = builtin_url_extract_port(&[Value::DataFrame(df)]).unwrap();
         if let Value::DataFrame(result_df) = result {
             let col = result_df.column("urls").unwrap();

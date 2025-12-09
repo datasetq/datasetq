@@ -1156,7 +1156,7 @@ mod tests {
         assert_eq!(result, Value::Int(2));
 
         // Test Series
-        let series = df.column("name").unwrap().clone();
+        let series = Series::new(PlSmallStr::from("test"), vec![1i64, 2, 3]);
         let result = registry
             .call_function("count", &[Value::Series(series)])
             .unwrap();
@@ -1500,8 +1500,8 @@ mod tests {
     fn test_builtin_length_with_dataframe() {
         let registry = BuiltinRegistry::new();
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]),
-            Series::new(PlSmallStr::from("age"), &[25, 30, 35]),
+            Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]).into(),
+            Series::new(PlSmallStr::from("age"), &[25, 30, 35]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -1670,8 +1670,8 @@ mod tests {
 
         // Test with DataFrame input
         let df = DataFrame::new(vec![
-            Series::new("name".into().into(), vec!["Alice"]).into(),
-            Series::new("age".into().into(), vec![25]).into(),
+            Series::new(PlSmallStr::from("name"), &["Alice"]).into(),
+            Series::new(PlSmallStr::from("age"), &[25]).into(),
         ])
         .unwrap();
         let result = builtin_select(&[Value::DataFrame(df.clone()), Value::Bool(true)]).unwrap();
@@ -1709,7 +1709,7 @@ mod tests {
         assert!(result.unwrap_err().to_string().contains("same length"));
 
         // Mismatched lengths for DataFrame mask series
-        let df = DataFrame::new(vec![Series::new(PlSmallStr::from("a"), vec![1])]).unwrap();
+        let df = DataFrame::new(vec![Column::new(PlSmallStr::from("a"), vec![1])]).unwrap();
         let mask_series = Series::new(PlSmallStr::from("mask"), vec![true, false]);
         let result = builtin_select(&[Value::DataFrame(df), Value::Series(mask_series)]);
         assert!(result.is_err());
@@ -1770,8 +1770,8 @@ mod tests {
     #[test]
     fn test_builtin_filter_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("col1"), vec![1, 2, 1, 3]),
-            Series::new(PlSmallStr::from("col2"), vec!["a", "b", "c", "d"]),
+            Series::new(PlSmallStr::from("col1"), vec![1, 2, 1, 3]).into(),
+            Series::new(PlSmallStr::from("col2"), vec!["a", "b", "c", "d"]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -2144,7 +2144,7 @@ mod tests {
 
         // Test popping from DataFrame with rows
         let df = DataFrame::new(vec![
-            ChunkedArray::from_vec(
+            Series::new(
                 PlSmallStr::from("name"),
                 vec![
                     "Alice".to_string(),
@@ -2152,7 +2152,7 @@ mod tests {
                     "Charlie".to_string(),
                 ],
             )
-            .into_column(),
+            .into(),
             Series::new(PlSmallStr::from("age"), vec![25, 30, 35]).into(),
         ])
         .unwrap();
@@ -2168,8 +2168,8 @@ mod tests {
 
         // Test popping from single-row DataFrame
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("id"), vec![42]),
-            Series::new(PlSmallStr::from("value"), vec!["test".to_string()]),
+            Series::new(PlSmallStr::from("id"), vec![42]).into(),
+            Series::new(PlSmallStr::from("value"), vec!["test".to_string()]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -2183,7 +2183,7 @@ mod tests {
         }
 
         // Test popping from empty DataFrame
-        let df = DataFrame::new(vec![Series::new(
+        let df = DataFrame::new(vec![Column::new(
             PlSmallStr::from("empty"),
             Vec::<String>::new(),
         )])
@@ -2516,7 +2516,7 @@ mod tests {
 
         // Test DataFrame input
         let text_series = Series::new(PlSmallStr::from("text"), &["Привет", "Москва", "тест"]);
-        let df = DataFrame::new(vec![text_series]).unwrap();
+        let df = DataFrame::new(vec![text_series.into()]).unwrap();
         let result = builtin_transliterate(&[
             Value::DataFrame(df),
             Value::String("cyrillic".to_string()),
@@ -2884,9 +2884,9 @@ mod tests {
 
         // Create test DataFrame
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("a"), vec![10i64, 20, 30]),
-            Series::new(PlSmallStr::from("b"), vec![1i64, 2, 3]),
-            Series::new(PlSmallStr::from("c"), vec![100.0f64, 200.0, 300.0]),
+            Series::new(PlSmallStr::from("a"), vec![10i64, 20, 30]).into(),
+            Series::new(PlSmallStr::from("b"), vec![1i64, 2, 3]).into(),
+            Series::new(PlSmallStr::from("c"), vec![100.0f64, 200.0, 300.0]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -3064,8 +3064,8 @@ mod tests {
 
         // Create test DataFrame
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("a"), vec![10i64, 20, 30]),
-            Series::new(PlSmallStr::from("b"), vec![1i64, 2, 3]),
+            Series::new(PlSmallStr::from("a"), vec![10i64, 20, 30]).into(),
+            Series::new(PlSmallStr::from("b"), vec![1i64, 2, 3]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -3293,8 +3293,8 @@ mod tests {
 
         // Create a simple DataFrame
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("col1"), &[1.0, 2.0, 3.0]),
-            Series::new(PlSmallStr::from("col2"), &[4.0, 5.0, 6.0]),
+            Series::new(PlSmallStr::from("col1"), &[1.0, 2.0, 3.0]).into(),
+            Series::new(PlSmallStr::from("col2"), &[4.0, 5.0, 6.0]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -3432,8 +3432,8 @@ mod tests {
 
         // Create a simple DataFrame
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("col1"), &[1.0, 2.0, 3.0]),
-            Series::new(PlSmallStr::from("col2"), &[4.0, 5.0, 6.0]),
+            Series::new("col1".into(), &[1.0, 2.0, 3.0]).into(),
+            Series::new("col2".into(), &[4.0, 5.0, 6.0]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -3929,7 +3929,7 @@ mod tests {
             &["Alice", "Bob", "Alice", "Charlie"],
         );
         let ages = Series::new(PlSmallStr::from("age"), &[25, 30, 25, 35]);
-        let df = DataFrame::new(vec![names, ages]).unwrap();
+        let df = DataFrame::new(vec![names.into(), ages.into()]).unwrap();
         let df_val = Value::DataFrame(df);
         let result = registry.call_function("least_frequent", &[df_val]).unwrap();
         // Charlie appears once, others more
@@ -4515,8 +4515,8 @@ mod tests {
             .contains("url_set_port() expects 2 arguments"));
 
         // Test with DataFrame
-        let df = DataFrame::new(vec![Series::new(
-            "urls",
+        let df = DataFrame::new(vec![Column::new(
+            PlSmallStr::from("urls"),
             &["http://example.com/", "https://test.com/path"],
         )])
         .unwrap();

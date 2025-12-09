@@ -2,7 +2,6 @@ use crate::FunctionRegistration;
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
-use polars::datatypes::PlSmallStr;
 use polars::prelude::*;
 
 inventory::submit! {
@@ -173,7 +172,10 @@ mod tests {
     #[test]
     fn test_builtin_var_series() {
         // Create a numeric series
-        let series = Series::new("numbers".into().into(), vec![1i64, 2, 3, 4, 5]);
+        let series = Series::new(
+            <&str as Into<PlSmallStr>>::into("numbers"),
+            vec![1i64, 2, 3, 4, 5],
+        );
         let result = builtin_var(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Float(2.5));
     }
@@ -181,7 +183,7 @@ mod tests {
     #[test]
     fn test_builtin_var_series_small() {
         // Create a series with 1 element
-        let series = Series::new("numbers".into().into(), vec![5i64]);
+        let series = Series::new(<&str as Into<PlSmallStr>>::into("numbers"), vec![5i64]);
         let result = builtin_var(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Null);
     }
@@ -189,7 +191,10 @@ mod tests {
     #[test]
     fn test_builtin_var_series_non_numeric() {
         // Create a non-numeric series
-        let series = Series::<&str>::new("strings".into().into(), vec!["a", "b", "c"]);
+        let series = Series::new(
+            <&str as Into<PlSmallStr>>::into("strings"),
+            &["a", "b", "c"],
+        );
         let result = builtin_var(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Null);
     }
@@ -197,8 +202,14 @@ mod tests {
     #[test]
     fn test_builtin_var_dataframe() {
         // Create a DataFrame with numeric column
-        let series1 = Series::new("numbers".into().into(), vec![1i64, 2, 3, 4, 5]);
-        let series2 = Series::new("strings".into().into(), vec!["a", "b", "c", "d", "e"]);
+        let series1 = Series::new(
+            <&str as Into<PlSmallStr>>::into("numbers"),
+            vec![1i64, 2, 3, 4, 5],
+        );
+        let series2 = Series::new(
+            <&str as Into<PlSmallStr>>::into("strings"),
+            vec!["a", "b", "c", "d", "e"],
+        );
         let df = DataFrame::new(vec![series1.into(), series2.into()]).unwrap();
         let result = builtin_var(&[Value::DataFrame(df)]).unwrap();
 

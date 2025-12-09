@@ -194,29 +194,29 @@ mod tests {
 
     #[test]
     fn test_sum_series_numeric() {
-        let series = Series::new("col".into().into(), vec![1i64, 2, 3]);
+        let series = Series::new(PlSmallStr::from("col"), vec![1i32, 2, 3]);
         let result = builtin_sum(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Int(6));
     }
 
     #[test]
     fn test_sum_series_float() {
-        let series = Series::new("col".into().into(), vec![1.1f64, 2.2, 3.3]);
+        let series = Series::new(PlSmallStr::from("col"), vec![1.1f64, 2.2, 3.3]);
         let result = builtin_sum(&[Value::Series(series)]).unwrap();
         assert_eq!(result, Value::Float(6.6));
     }
 
     #[test]
-    fn test_sum_series_non_numeric() {
-        let series = Series::new("col".into().into(), vec!["a", "b", "c"]);
+    fn test_sum_series_invalid() {
+        let series = Series::new(PlSmallStr::from("col"), vec!["a", "b", "c"]);
         let result = builtin_sum(&[Value::Series(series)]);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_sum_dataframe() {
-        let series1 = Series::new("col1".into().into(), vec![1i64, 2, 3]);
-        let series2 = Series::new("col2".into().into(), vec![4i64, 5, 6]);
+        let series1 = Series::new(PlSmallStr::from("col1"), vec![1i64, 2, 3]).into();
+        let series2 = Series::new(PlSmallStr::from("col2"), vec![4i64, 5, 6]).into();
         let df = DataFrame::new(vec![series1, series2]).unwrap();
         let result = builtin_sum(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Int(21)); // 1+2+3+4+5+6=21
@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_sum_dataframe_no_numeric() {
-        let series = Series::new("col".into().into(), vec!["a", "b", "c"]);
+        let series = Series::new(PlSmallStr::from("col"), vec!["a", "b", "c"]).into();
         let df = DataFrame::new(vec![series]).unwrap();
         let result = builtin_sum(&[Value::DataFrame(df)]).unwrap();
         assert_eq!(result, Value::Null);

@@ -79,7 +79,7 @@ pub fn builtin_transpose(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
-    use polars::prelude::{DataFrame, NamedFrom, Series};
+    use polars::prelude::{DataFrame, NamedFrom, PlSmallStr, Series};
 
     #[test]
     fn test_builtin_transpose_array() {
@@ -167,9 +167,9 @@ mod tests {
     #[test]
     fn test_builtin_transpose_dataframe() {
         // Create a simple DataFrame
-        let series1 = Series::new("col1".into().into(), vec![1i64, 2]);
-        let series2 = Series::new("col2".into().into(), vec![3i64, 4]);
-        let df = DataFrame::new(vec![series1, series2]).unwrap();
+        let series1 = Series::new(PlSmallStr::from("col1"), vec![1i64, 2i64]);
+        let series2 = Series::new(PlSmallStr::from("col2"), vec![3i64, 4i64]);
+        let df = DataFrame::new(vec![series1.into(), series2.into()]).unwrap();
         let result = builtin_transpose(&[Value::DataFrame(df)]).unwrap();
 
         if let Value::DataFrame(transposed_df) = result {

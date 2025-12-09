@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn test_builtin_max_by_dataframe_string() {
         // This would require creating a DataFrame, but for simplicity, test the error case
-        let df = Value::DataFrame(DataFrame::new(Vec::<polars::prelude::Series>::new()).unwrap()); // Empty DF
+        let df = Value::DataFrame(DataFrame::new(Vec::<polars::prelude::Column>::new()).unwrap()); // Empty DF
         let result = builtin_max_by(&[df, Value::String("nonexistent".to_string())]);
         assert!(result.is_err());
     }

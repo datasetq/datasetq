@@ -53,6 +53,7 @@ pub fn builtin_tail(args: &[Value]) -> Result<Value> {
 mod tests {
     use super::*;
     use dsq_shared::value::Value;
+    use polars::datatypes::PlSmallStr;
     use polars::prelude::*;
 
     #[test]
@@ -99,8 +100,11 @@ mod tests {
 
     #[test]
     fn test_tail_dataframe() {
-        let series = Series::new("col".into().into(), vec![1i64, 2, 3, 4, 5, 6]);
-        let df = DataFrame::new(vec![series]).unwrap();
+        let series = Series::new(
+            PlSmallStr::from("col"),
+            &[1i64, 2i64, 3i64, 4i64, 5i64, 6i64],
+        );
+        let df = DataFrame::new(vec![series.into()]).unwrap();
         let result = builtin_tail(&[Value::DataFrame(df), Value::Int(3)]).unwrap();
         if let Value::DataFrame(tail_df) = result {
             assert_eq!(tail_df.height(), 3);
@@ -111,7 +115,7 @@ mod tests {
 
     #[test]
     fn test_tail_series() {
-        let series = Series::new("col".into().into(), vec![1i64, 2, 3, 4, 5, 6]);
+        let series = Series::new(PlSmallStr::from("col"), vec![1i64, 2, 3, 4, 5, 6]);
         let result = builtin_tail(&[Value::Series(series), Value::Int(2)]).unwrap();
         if let Value::Series(tail_series) = result {
             assert_eq!(tail_series.len(), 2);

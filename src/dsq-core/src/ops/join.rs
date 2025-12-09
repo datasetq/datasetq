@@ -909,19 +909,16 @@ mod tests {
     use super::*;
 
     fn create_left_dataframe() -> DataFrame {
-        let id = Column::new("id".into(), Series::new("".into(), &[1, 2, 3, 4]));
-        let name = Column::new(
-            "name".into(),
-            Series::new("".into(), &["Alice", "Bob", "Charlie", "Dave"]),
-        );
-        let dept_id = Column::new("dept_id".into(), Series::new("".into(), &[10, 20, 10, 30]));
+        let id = Column::new("id".into(), &[1, 2, 3, 4]);
+        let name = Column::new("name".into(), &["Alice", "Bob", "Charlie", "Dave"]);
+        let dept_id = Column::new("dept_id".into(), &[10, 20, 10, 30]);
         DataFrame::new(vec![id, name, dept_id]).unwrap()
     }
 
     fn create_right_dataframe() -> DataFrame {
-        let id = Series::new("id".into(), &[10, 20, 40]);
-        let dept_name = Series::new("dept_name".into(), &["Engineering", "Sales", "Marketing"]);
-        let budget = Series::new("budget".into(), &[100000, 50000, 75000]);
+        let id = Column::new("id".into(), &[10, 20, 40]);
+        let dept_name = Column::new("dept_name".into(), &["Engineering", "Sales", "Marketing"]);
+        let budget = Column::new("budget".into(), &[100000, 50000, 75000]);
         DataFrame::new(vec![id, dept_name, budget]).unwrap()
     }
 
@@ -995,8 +992,10 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 3); // All right rows should be present (10,20,40), but 40 has no match
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"dept_name".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("dept_name")));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1019,8 +1018,10 @@ mod tests {
         match result {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 5); // 4 left + 1 unmatched right (40)
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"dept_name".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("dept_name")));
             }
             _ => panic!("Expected DataFrame"),
         }
@@ -1216,20 +1217,20 @@ mod tests {
     #[test]
     fn test_join_multiple() {
         let df1 = DataFrame::new(vec![
-            Series::new("id".into(), &[1, 2]),
-            Series::new("name".into(), &["Alice", "Bob"]),
+            Column::new("id".into(), &[1, 2]),
+            Column::new("name".into(), &["Alice", "Bob"]),
         ])
         .unwrap();
 
         let df2 = DataFrame::new(vec![
-            Series::new("id".into(), &[1, 2]),
-            Series::new("age".into(), &[30, 25]),
+            Column::new("id".into(), &[1, 2]),
+            Column::new("age".into(), &[30, 25]),
         ])
         .unwrap();
 
         let df3 = DataFrame::new(vec![
-            Series::new("id".into(), &[1, 2]),
-            Series::new("city".into(), &["NYC", "LA"]),
+            Column::new("id".into(), &[1, 2]),
+            Column::new("city".into(), &["NYC", "LA"]),
         ])
         .unwrap();
 
@@ -1285,8 +1286,10 @@ mod tests {
             Value::DataFrame(df) => {
                 assert_eq!(df.height(), 3);
                 // Check that columns are present
-                assert!(df.get_column_names().contains(&"name".into()));
-                assert!(df.get_column_names().contains(&"dept_name".into()));
+                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
+                assert!(df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("dept_name")));
             }
             _ => panic!("Expected DataFrame"),
         }

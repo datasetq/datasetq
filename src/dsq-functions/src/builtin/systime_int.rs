@@ -96,14 +96,16 @@ mod tests {
     #[test]
     fn test_builtin_systime_int_with_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name".into().into(), &["Alice", "Bob"]),
-            Series::new("age".into().into(), &[25, 30]),
+            Series::new(PlSmallStr::from("name"), &["Alice", "Bob"]).into(),
+            Series::new(PlSmallStr::from("age"), &[25, 30]).into(),
         ])
         .unwrap();
         let result = builtin_systime_int(&[Value::DataFrame(df)]).unwrap();
         match result {
             Value::DataFrame(result_df) => {
-                assert!(result_df.get_column_names().contains(&"systime_int".into()));
+                assert!(result_df
+                    .get_column_names()
+                    .contains(&&PlSmallStr::from("systime_int")));
                 assert_eq!(result_df.height(), 2);
             }
             _ => panic!("Expected DataFrame, got {:?}", result),
@@ -112,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_builtin_systime_int_with_series() {
-        let series = Series::new("test".into().into(), &[1, 2, 3]);
+        let series = Series::new(PlSmallStr::from("test"), &[1, 2, 3]);
         let result = builtin_systime_int(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(result_series) => {

@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn test_rstrip_non_string_series() {
-        let series = Series::new("numbers".into::<String>().into(), vec![1i32, 2, 3]);
+        let series = Series::new("numbers".into(), vec![1i32, 2, 3]);
         let result = builtin_rstrip(&[Value::Series(series.clone())]).unwrap();
         if let Value::Series(result_series) = result {
             assert_eq!(result_series.name(), series.name());

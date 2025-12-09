@@ -164,7 +164,7 @@ mod tests {
                 "invalid",
             ],
         );
-        let df = DataFrame::new(vec![urls]).unwrap();
+        let df = DataFrame::new(vec![urls.into()]).unwrap();
         let result = builtin_url_extract_path(&[Value::DataFrame(df)]).unwrap();
         match result {
             Value::DataFrame(result_df) => {

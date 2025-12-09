@@ -69,9 +69,9 @@ mod tests {
 
     #[test]
     fn test_reverse_dataframe() {
-        let names = Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]);
-        let ages = Series::new("age".into().into(), &[25, 30, 35]);
-        let df = DataFrame::new(vec![names, ages]).unwrap();
+        let names = Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]);
+        let ages = Series::new(PlSmallStr::from("age"), &[25, 30, 35]);
+        let df = DataFrame::new(vec![names.into(), ages.into()]).unwrap();
 
         let result = builtin_reverse(&[Value::DataFrame(df.clone())]).unwrap();
         match result {
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_reverse_series() {
-        let series = Series::new("test".into().into(), &[1, 2, 3]);
+        let series = Series::new(PlSmallStr::from("test"), &[1, 2, 3]);
         let result = builtin_reverse(&[Value::Series(series)]).unwrap();
         match result {
             Value::Series(reversed_series) => {

@@ -1157,10 +1157,10 @@ mod tests {
                 Value::DataFrame(df) => {
                     // Check that the DataFrame has the correct columns
                     let column_names = df.get_column_names();
-                    assert!(column_names.contains(&"id".into()));
-                    assert!(column_names.contains(&"US City Name".into()));
-                    assert!(column_names.contains(&"population".into()));
-                    assert!(column_names.contains(&"country".into()));
+                    assert!(column_names.contains(&&PlSmallStr::from("id")));
+                    assert!(column_names.contains(&&PlSmallStr::from("US City Name")));
+                    assert!(column_names.contains(&&PlSmallStr::from("population")));
+                    assert!(column_names.contains(&&PlSmallStr::from("country")));
 
                     // Note: Bracket notation with spaces in field names is not yet supported
                     // This is a known limitation tracked in TODO.md

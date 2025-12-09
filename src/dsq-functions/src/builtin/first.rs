@@ -75,9 +75,12 @@ mod tests {
 
     #[test]
     fn test_first_dataframe_with_rows() {
-        let series1 = Series::new("col1".into().into(), vec![1i64, 2]);
-        let series2 = Series::new("col2".into().into(), vec!["a", "b"]);
-        let df = DataFrame::new(vec![series1, series2]).unwrap();
+        let series1 = Series::new(PlSmallStr::from("col1"), vec![1i64, 2]);
+        let series2 = Series::new(
+            PlSmallStr::from("col2"),
+            vec!["a".to_string(), "b".to_string()],
+        );
+        let df = DataFrame::new(vec![series1.into(), series2.into()]).unwrap();
         let result = builtin_first(&[Value::DataFrame(df)]).unwrap();
 
         if let Value::Object(obj) = result {

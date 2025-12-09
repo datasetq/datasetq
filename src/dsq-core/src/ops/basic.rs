@@ -873,9 +873,9 @@ mod tests {
     #[test]
     fn test_select() {
         let df = DataFrame::new(vec![
-            Series::<i32>::new("a".to_string(), vec![1, 2, 3]).into(),
-            Series::<i32>::new("b".to_string(), vec![4, 5, 6]).into(),
-            Series::<i32>::new("c".to_string(), vec![7, 8, 9]).into(),
+            Series::new(PlSmallStr::from("a"), vec![1, 2, 3]).into(),
+            Series::new(PlSmallStr::from("b"), vec![4, 5, 6]).into(),
+            Series::new(PlSmallStr::from("c"), vec![7, 8, 9]).into(),
         ])
         .unwrap();
 
@@ -894,12 +894,12 @@ mod tests {
     #[test]
     fn test_filter() {
         let df = DataFrame::new(vec![
-            Series::<i32>::new("a".to_string(), vec![1, 2, 3, 4, 5]).into(),
-            Series::<i32>::new("b".to_string(), vec![10, 20, 30, 40, 50]).into(),
+            Series::new("a".into(), vec![1, 2, 3, 4, 5]).into(),
+            Series::new("b".into(), vec![10, 20, 30, 40, 50]).into(),
         ])
         .unwrap();
 
-        let mask = Series::new("mask".into().into(), vec![true, false, true, false, true]);
+        let mask = Series::new("mask".into(), vec![true, false, true, false, true]);
         let filtered = filter(&df, &mask).unwrap();
 
         assert_eq!(filtered.height(), 3);
@@ -911,8 +911,8 @@ mod tests {
     #[test]
     fn test_sort() {
         let df = DataFrame::new(vec![
-            Series::<i32>::new("a".to_string(), vec![3, 1, 4, 1, 5]).into(),
-            Series::<&str>::new("b".to_string(), vec!["c", "a", "d", "b", "e"]).into(),
+            Series::new(PlSmallStr::from("a"), vec![3, 1, 4, 1, 5]).into(),
+            Series::new(PlSmallStr::from("b"), vec!["c", "a", "d", "b", "e"]).into(),
         ])
         .unwrap();
 
@@ -929,8 +929,8 @@ mod tests {
     #[test]
     fn test_rename() {
         let df = DataFrame::new(vec![
-            Series::<i32>::new("old_name".to_string(), vec![1, 2, 3]).into(),
-            Series::<i32>::new("keep_name".to_string(), vec![4, 5, 6]).into(),
+            Series::new(PlSmallStr::from("old_name"), vec![1, 2, 3]).into(),
+            Series::new(PlSmallStr::from("keep_name"), vec![4, 5, 6]).into(),
         ])
         .unwrap();
 
@@ -941,14 +941,14 @@ mod tests {
         assert!(renamed
             .get_column_names()
             .iter()
-            .any(|name| name == &PlSmallStr::from("new_name")));
+            .any(|name| *name == &PlSmallStr::from("new_name")));
         assert!(renamed
             .get_column_names()
             .iter()
-            .any(|name| name == &PlSmallStr::from("keep_name")));
+            .any(|name| *name == &PlSmallStr::from("keep_name")));
         assert!(!renamed
             .get_column_names()
             .iter()
-            .any(|name| name == &PlSmallStr::from("old_name")));
+            .any(|name| *name == &PlSmallStr::from("old_name")));
     }
 }

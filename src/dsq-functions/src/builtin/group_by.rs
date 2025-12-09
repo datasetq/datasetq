@@ -340,8 +340,12 @@ mod tests {
             Series::new(
                 "department".into(),
                 &["Engineering", "Sales", "Engineering"],
+            )
+            .into(),
+            polars::prelude::Column::new(
+                PlSmallStr::from("salary"),
+                vec![75000i64, 82000i64, 95000i64],
             ),
-            Series::new("salary".into().into(), &[75000, 82000, 95000]),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -408,8 +412,8 @@ mod tests {
 
         // Test DataFrame grouping
         let df = DataFrame::new(vec![
-            Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]),
-            Series::new("group".into().into(), &["A", "B", "A"]),
+            Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]).into(),
+            Series::new(PlSmallStr::from("group"), &["A", "B", "A"]).into(),
         ])
         .unwrap();
         let df_val = Value::DataFrame(df);
@@ -425,10 +429,11 @@ mod tests {
         let df = DataFrame::new(vec![Series::new(
             "name".into(),
             &["Alice", "Bob", "Charlie"],
-        )])
+        )
+        .into()])
         .unwrap();
         let df_val = Value::DataFrame(df);
-        let series = Series::new("group".into().into(), &["A", "B", "A"]);
+        let series = Series::new("group".into(), &["A", "B", "A"]);
         let series_val = Value::Series(series);
         let result = builtin_group_by(&[df_val, series_val]).unwrap();
         match result {

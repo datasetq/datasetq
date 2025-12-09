@@ -60,9 +60,15 @@ fn test_pipeline_with_aggregation() {
     match result {
         Value::DataFrame(df) => {
             assert_eq!(df.height(), 3); // 3 departments
-            assert!(df.get_column_names().contains(&"department".into()));
-            assert!(df.get_column_names().contains(&"age_mean".into()));
-            assert!(df.get_column_names().contains(&"salary_sum".into()));
+            assert!(df
+                .get_column_names()
+                .contains(&(&PlSmallStr::from("department"))));
+            assert!(df
+                .get_column_names()
+                .contains(&(&PlSmallStr::from("age_mean"))));
+            assert!(df
+                .get_column_names()
+                .contains(&(&PlSmallStr::from("salary_sum"))));
         }
         _ => panic!("Expected DataFrame"),
     }
@@ -150,7 +156,7 @@ fn test_filter_operation() {
     match result {
         Value::DataFrame(filtered_df) => {
             assert_eq!(filtered_df.height(), 3); // Alice(30), Charlie(35), Dave(28) should pass age > 27
-            let names = filtered_df.column("name").unwrap().utf8().unwrap();
+            let names = filtered_df.column("name").unwrap().str().unwrap();
             let ages = filtered_df.column("age").unwrap().i32().unwrap();
             // Should contain Alice, Charlie, Dave (Bob is 25, filtered out)
             assert!(
@@ -827,7 +833,7 @@ fn test_pipeline_filter_method() {
         Value::DataFrame(filtered_df) => {
             // Only Charlie (age 35) has age > 30
             assert_eq!(filtered_df.height(), 1);
-            let names = filtered_df.column("name").unwrap().utf8().unwrap();
+            let names = filtered_df.column("name").unwrap().str().unwrap();
             assert_eq!(names.get(0).unwrap(), "Charlie");
         }
         _ => panic!("Expected DataFrame"),
@@ -848,7 +854,9 @@ fn test_pipeline_group_by_method() {
     match result {
         Value::DataFrame(grouped_df) => {
             assert_eq!(grouped_df.height(), 3); // 3 departments
-            assert!(grouped_df.get_column_names().contains(&"department".into()));
+            assert!(grouped_df
+                .get_column_names()
+                .contains(&&PlSmallStr::from("department")));
         }
         _ => panic!("Expected DataFrame"),
     }
@@ -869,8 +877,12 @@ fn test_pipeline_aggregate_method() {
     match result {
         Value::DataFrame(agg_df) => {
             assert_eq!(agg_df.height(), 3); // 3 departments
-            assert!(agg_df.get_column_names().contains(&"department".into()));
-            assert!(agg_df.get_column_names().contains(&"count".into()));
+            assert!(agg_df
+                .get_column_names()
+                .contains(&&PlSmallStr::from("department")));
+            assert!(agg_df
+                .get_column_names()
+                .contains(&&PlSmallStr::from("count")));
         }
         _ => panic!("Expected DataFrame"),
     }

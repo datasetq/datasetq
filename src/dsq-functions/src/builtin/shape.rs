@@ -43,9 +43,9 @@ mod tests {
     #[test]
     fn test_shape_dataframe() {
         let df = DataFrame::new(vec![
-            Series::new("name".into().into(), &["Alice", "Bob", "Charlie"]),
-            Series::new("age".into().into(), &[25, 30, 35]),
-            Series::new("score".into().into(), &[85.5, 92.0, 78.3]),
+            Series::new("name".into(), &["Alice", "Bob", "Charlie"]).into(),
+            Series::new("age".into(), &[25, 30, 35]).into(),
+            Series::new("score".into(), &[85.5, 92.0, 78.3]).into(),
         ])
         .unwrap();
 
