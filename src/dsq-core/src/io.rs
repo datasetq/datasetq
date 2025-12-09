@@ -15,8 +15,8 @@ use crate::Value;
 use dsq_formats::format::detect_format_from_content;
 use dsq_formats::{
     deserialize_adt, deserialize_csv, deserialize_json, deserialize_parquet, serialize_adt,
-    serialize_csv, serialize_parquet, DataFormat, FormatReadOptions, FormatWriteOptions,
-    ReadOptions as DsFormatReadOptions,
+    serialize_csv, serialize_json, serialize_parquet, DataFormat, FormatReadOptions,
+    FormatWriteOptions, ReadOptions as DsFormatReadOptions,
 };
 
 #[cfg(not(target_arch = "wasm32"))]

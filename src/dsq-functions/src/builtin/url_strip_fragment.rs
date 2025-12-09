@@ -55,16 +55,16 @@ pub fn builtin_url_strip_fragment(args: &[Value]) -> Result<Value> {
                                 ))
                             })?
                             .apply(|s| {
-                                s.and_then(|s| match Url::parse(s) {
+                                s.map(|s| match Url::parse(s) {
                                     Ok(mut url) => {
                                         url.set_fragment(None);
-                                        Some(Cow::Owned(url.to_string()))
+                                        Cow::Owned(url.to_string())
                                     }
                                     Err(_) => {
                                         if let Some(pos) = s.find('#') {
-                                            Some(Cow::Owned(s[..pos].to_string()))
+                                            Cow::Owned(s[..pos].to_string())
                                         } else {
-                                            Some(Cow::Owned(s.to_string()))
+                                            Cow::Owned(s.to_string())
                                         }
                                     }
                                 })
@@ -76,7 +76,7 @@ pub fn builtin_url_strip_fragment(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -99,16 +99,16 @@ pub fn builtin_url_strip_fragment(args: &[Value]) -> Result<Value> {
                         ))
                     })?
                     .apply(|s| {
-                        s.and_then(|s| match Url::parse(s) {
+                        s.map(|s| match Url::parse(s) {
                             Ok(mut url) => {
                                 url.set_fragment(None);
-                                Some(Cow::Owned(url.to_string()))
+                                Cow::Owned(url.to_string())
                             }
                             Err(_) => {
                                 if let Some(pos) = s.find('#') {
-                                    Some(Cow::Owned(s[..pos].to_string()))
+                                    Cow::Owned(s[..pos].to_string())
                                 } else {
-                                    Some(Cow::Owned(s.to_string()))
+                                    Cow::Owned(s.to_string())
                                 }
                             }
                         })

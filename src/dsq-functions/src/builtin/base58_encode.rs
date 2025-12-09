@@ -43,7 +43,7 @@ pub fn builtin_base58_encode(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }

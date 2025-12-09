@@ -878,10 +878,9 @@ impl<W: Write> JsonWriter<W> {
     /// Finish writing and return the underlying writer
     pub fn finish(mut self) -> Result<W> {
         self.writer.flush()?;
-        Ok(self
-            .writer
+        self.writer
             .into_inner()
-            .map_err(|e| Error::operation(format!("Failed to finish JSON writer: {}", e)))?)
+            .map_err(|e| Error::operation(format!("Failed to finish JSON writer: {}", e)))
     }
 }
 

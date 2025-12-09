@@ -79,7 +79,7 @@ pub fn builtin_start_of_month(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }

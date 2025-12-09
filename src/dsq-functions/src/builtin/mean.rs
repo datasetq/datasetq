@@ -56,10 +56,7 @@ pub fn builtin_mean(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                Ok(series
-                    .mean()
-                    .map(|m| Value::Float(m))
-                    .unwrap_or(Value::Null))
+                Ok(series.mean().map(Value::Float).unwrap_or(Value::Null))
             } else {
                 Ok(Value::Null)
             }

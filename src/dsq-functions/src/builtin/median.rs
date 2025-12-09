@@ -25,7 +25,7 @@ pub fn builtin_median(args: &[Value]) -> Result<Value> {
             }
             values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let mid = values.len() / 2;
-            if values.len() % 2 == 0 {
+            if values.len().is_multiple_of(2) {
                 Ok(Value::Float((values[mid - 1] + values[mid]) / 2.0))
             } else {
                 Ok(Value::Float(values[mid]))
@@ -47,10 +47,7 @@ pub fn builtin_median(args: &[Value]) -> Result<Value> {
         }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
-                Ok(series
-                    .median()
-                    .map(|m| Value::Float(m))
-                    .unwrap_or(Value::Null))
+                Ok(series.median().map(Value::Float).unwrap_or(Value::Null))
             } else {
                 Ok(Value::Null)
             }

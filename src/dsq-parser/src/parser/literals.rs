@@ -104,15 +104,12 @@ pub(crate) fn parse_number_literal(input: &str) -> IResult<&str, Expr> {
                     && !s.starts_with("-0")
                 {
                     false
-                } else if s.starts_with("-0")
-                    && s.len() > 2
-                    && !s.starts_with("-0.")
-                    && !s.starts_with("-0e")
-                    && !s.starts_with("-0E")
-                {
-                    false
                 } else {
-                    true
+                    !(s.starts_with("-0")
+                        && s.len() > 2
+                        && !s.starts_with("-0.")
+                        && !s.starts_with("-0e")
+                        && !s.starts_with("-0E"))
                 }
             },
         ),

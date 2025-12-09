@@ -291,14 +291,6 @@ mod tests {
     }
 
     #[test]
-    fn test_output_writer_new() {
-        let config = create_test_config();
-        let _writer = OutputWriter::new(config);
-        // Just check it creates successfully
-        assert!(true); // Placeholder assertion
-    }
-
-    #[test]
     fn test_write_to_stdout_dataframe() {
         let config = create_test_config();
         let writer = OutputWriter::new(config);

@@ -50,7 +50,7 @@ pub fn builtin_buffer(args: &[Value]) -> Result<Value> {
 
                 for start in (0..total_rows).step_by(size) {
                     let end = (start + size).min(total_rows);
-                    let batch_df = df.slice(start as i64, (end - start) as usize);
+                    let batch_df = df.slice(start as i64, end - start);
                     batches.push(Value::DataFrame(batch_df));
                 }
                 Ok(Value::Array(batches))
@@ -60,7 +60,7 @@ pub fn builtin_buffer(args: &[Value]) -> Result<Value> {
             }
         }
         Value::Series(series) => {
-            if series.len() == 0 {
+            if series.is_empty() {
                 return Ok(Value::Array(vec![]));
             }
 
@@ -71,7 +71,7 @@ pub fn builtin_buffer(args: &[Value]) -> Result<Value> {
 
                 for start in (0..total_len).step_by(size) {
                     let end = (start + size).min(total_len);
-                    let batch_series = series.slice(start as i64, (end - start) as usize);
+                    let batch_series = series.slice(start as i64, end - start);
                     batches.push(Value::Series(batch_series));
                 }
                 Ok(Value::Array(batches))
@@ -82,7 +82,7 @@ pub fn builtin_buffer(args: &[Value]) -> Result<Value> {
         }
         _ => {
             // For other types, wrap in an array as a single batch
-            if let Some(_) = batch_size {
+            if batch_size.is_some() {
                 // If batch size is specified but input is not a collection, return as single-item batches
                 Ok(Value::Array(vec![input.clone()]))
             } else {

@@ -34,7 +34,7 @@ pub fn builtin_first(args: &[Value]) -> Result<Value> {
                 let mut row_obj = HashMap::new();
                 for col_name in df.get_column_names() {
                     if let Ok(series) = df.column(col_name) {
-                        if let Some(val) = series.get(0).ok() {
+                        if let Ok(val) = series.get(0) {
                             let value = value_from_any_value(val).unwrap_or(Value::Null);
                             row_obj.insert(col_name.to_string(), value);
                         }

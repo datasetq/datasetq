@@ -87,7 +87,7 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
                     let mut row_obj = HashMap::new();
                     for col_name in df.get_column_names() {
                         if let Ok(s) = df.column(col_name) {
-                            if let Some(val) = s.get(max_idx).ok() {
+                            if let Ok(val) = s.get(max_idx) {
                                 let value = value_from_any_value(val).unwrap_or(Value::Null);
                                 row_obj.insert(col_name.to_string(), value);
                             }
@@ -120,7 +120,7 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
             let mut row_obj = HashMap::new();
             for col_name in df.get_column_names() {
                 if let Ok(s) = df.column(col_name) {
-                    if let Some(val) = s.get(max_idx).ok() {
+                    if let Ok(val) = s.get(max_idx) {
                         let value = value_from_any_value(val).unwrap_or(Value::Null);
                         row_obj.insert(col_name.to_string(), value);
                     }

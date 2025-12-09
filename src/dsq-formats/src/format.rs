@@ -228,13 +228,13 @@ pub fn detect_format_from_content(bytes: &[u8]) -> Option<DataFormat> {
     // Try to detect text-based formats
     if let Ok(text) = std::str::from_utf8(bytes) {
         // Try to detect JSON formats first
-        if serde_json::from_str::<serde_json::Value>(&text).is_ok() {
+        if serde_json::from_str::<serde_json::Value>(text).is_ok() {
             return Some(DataFormat::Json);
         }
 
         // Check for JsonLines format (each line is a JSON value)
         let lines: Vec<&str> = text.lines().take(5).collect();
-        if lines.len() >= 1 {
+        if !lines.is_empty() {
             let mut valid_json_lines = 0;
             let mut total_lines = 0;
             for line in &lines {

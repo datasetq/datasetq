@@ -3,48 +3,6 @@
 //! This crate provides all built-in functions available in dsq filters,
 //! including jq-compatible functions and DataFrame-specific operations.
 
-#![allow(
-    clippy::manual_range_contains,
-    clippy::match_result_ok,
-    clippy::len_zero,
-    clippy::needless_pass_by_value,
-    clippy::similar_names,
-    clippy::too_many_lines,
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::cast_possible_wrap,
-    clippy::float_cmp,
-    clippy::module_name_repetitions,
-    clippy::match_same_arms,
-    clippy::redundant_else,
-    clippy::redundant_closure,
-    clippy::unnecessary_cast,
-    clippy::redundant_pattern_matching,
-    clippy::needless_return,
-    clippy::uninlined_format_args,
-    clippy::match_wildcard_for_single_variants,
-    clippy::single_match_else,
-    clippy::if_not_else,
-    clippy::map_unwrap_or,
-    clippy::from_over_into,
-    clippy::or_fun_call,
-    clippy::iter_over_hash_type,
-    clippy::useless_conversion,
-    clippy::option_map_or_none,
-    clippy::needless_borrow,
-    clippy::for_kv_map,
-    clippy::needless_range_loop,
-    clippy::manual_is_multiple_of,
-    clippy::collapsible_else_if,
-    clippy::manual_map,
-    clippy::if_same_then_else,
-    clippy::assign_op_pattern,
-    clippy::manual_strip,
-    clippy::option_map_unit_fn,
-    clippy::bind_instead_of_map
-)]
-
 pub mod builtin;
 
 // Re-export inventory for use by builtin modules
@@ -305,7 +263,7 @@ inventory::submit! {
 }
 
 fn builtin_round(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 2 {
+    if args.is_empty() || args.len() > 2 {
         return Err(dsq_shared::error::operation_error(
             "round() expects 1 or 2 arguments",
         ));
@@ -2153,7 +2111,7 @@ mod tests {
                 ],
             )
             .into(),
-            Series::new(PlSmallStr::from("age"), vec![25, 30, 35]).into(),
+            Series::new(PlSmallStr::from("age"), vec![25i64, 30i64, 35i64]).into(),
         ])
         .unwrap();
         let df_value = Value::DataFrame(df);
@@ -2168,7 +2126,7 @@ mod tests {
 
         // Test popping from single-row DataFrame
         let df = DataFrame::new(vec![
-            Series::new(PlSmallStr::from("id"), vec![42]).into(),
+            Series::new(PlSmallStr::from("id"), vec![42i64]).into(),
             Series::new(PlSmallStr::from("value"), vec!["test".to_string()]).into(),
         ])
         .unwrap();

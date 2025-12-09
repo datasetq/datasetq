@@ -97,19 +97,16 @@ pub fn builtin_strflocaltime(args: &[Value]) -> Result<Value> {
                             })?;
                             let local_dt: DateTime<Local> = dt.with_timezone(&Local);
                             Ok(Value::String(local_dt.format(format_str).to_string()))
+                        } else if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                            let dt_utc = Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
+                            let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
+                            Ok(Value::String(local_dt.format(format_str).to_string()))
+                        } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                            let dt_utc = dt.with_timezone(&Utc);
+                            let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
+                            Ok(Value::String(local_dt.format(format_str).to_string()))
                         } else {
-                            if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                                let dt_utc =
-                                    Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
-                                let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
-                                Ok(Value::String(local_dt.format(format_str).to_string()))
-                            } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-                                let dt_utc = dt.with_timezone(&Utc);
-                                let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
-                                Ok(Value::String(local_dt.format(format_str).to_string()))
-                            } else {
-                                Ok(Value::Null)
-                            }
+                            Ok(Value::Null)
                         }
                     }
                     _ => Ok(Value::Null),
@@ -179,26 +176,20 @@ pub fn builtin_strflocaltime(args: &[Value]) -> Result<Value> {
                                             .ok()?;
                                         let local_dt: DateTime<Local> = dt.with_timezone(&Local);
                                         Some(Cow::Owned(local_dt.format(format_str).to_string()))
+                                    } else if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                                    {
+                                        let dt_utc = Utc
+                                            .from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
+                                        let local_dt: DateTime<Local> =
+                                            dt_utc.with_timezone(&Local);
+                                        Some(Cow::Owned(local_dt.format(format_str).to_string()))
+                                    } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                        let dt_utc = dt.with_timezone(&Utc);
+                                        let local_dt: DateTime<Local> =
+                                            dt_utc.with_timezone(&Local);
+                                        Some(Cow::Owned(local_dt.format(format_str).to_string()))
                                     } else {
-                                        if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                                            let dt_utc = Utc.from_utc_datetime(
-                                                &dt.and_hms_opt(0, 0, 0).unwrap(),
-                                            );
-                                            let local_dt: DateTime<Local> =
-                                                dt_utc.with_timezone(&Local);
-                                            Some(Cow::Owned(
-                                                local_dt.format(format_str).to_string(),
-                                            ))
-                                        } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-                                            let dt_utc = dt.with_timezone(&Utc);
-                                            let local_dt: DateTime<Local> =
-                                                dt_utc.with_timezone(&Local);
-                                            Some(Cow::Owned(
-                                                local_dt.format(format_str).to_string(),
-                                            ))
-                                        } else {
-                                            None
-                                        }
+                                        None
                                     }
                                 })
                             })
@@ -209,7 +200,7 @@ pub fn builtin_strflocaltime(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -268,19 +259,17 @@ pub fn builtin_strflocaltime(args: &[Value]) -> Result<Value> {
                                     .ok()?;
                                 let local_dt: DateTime<Local> = dt.with_timezone(&Local);
                                 Some(Cow::Owned(local_dt.format(format_str).to_string()))
+                            } else if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                                let dt_utc =
+                                    Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
+                                let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
+                                Some(Cow::Owned(local_dt.format(format_str).to_string()))
+                            } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                let dt_utc = dt.with_timezone(&Utc);
+                                let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
+                                Some(Cow::Owned(local_dt.format(format_str).to_string()))
                             } else {
-                                if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                                    let dt_utc =
-                                        Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
-                                    let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
-                                    Some(Cow::Owned(local_dt.format(format_str).to_string()))
-                                } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-                                    let dt_utc = dt.with_timezone(&Utc);
-                                    let local_dt: DateTime<Local> = dt_utc.with_timezone(&Local);
-                                    Some(Cow::Owned(local_dt.format(format_str).to_string()))
-                                } else {
-                                    None
-                                }
+                                None
                             }
                         })
                     })

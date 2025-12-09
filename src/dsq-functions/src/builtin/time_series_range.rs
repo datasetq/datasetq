@@ -23,7 +23,7 @@ pub fn builtin_time_series_range(args: &[Value]) -> Result<Value> {
 
     while current <= end {
         timestamps.push(Value::Int(current.timestamp()));
-        current = current + interval;
+        current += interval;
     }
 
     Ok(Value::Array(timestamps))

@@ -43,10 +43,7 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
                 };
                 groups.entry(key_str).or_default().push(item.clone());
             }
-            let mut result: Vec<Value> = groups
-                .into_values()
-                .map(|group| Value::Array(group))
-                .collect();
+            let mut result: Vec<Value> = groups.into_values().map(Value::Array).collect();
             // Sort groups by key
             result.sort_by(|a, b| {
                 if let (Value::Array(a_arr), Value::Array(b_arr)) = (a, b) {
@@ -102,10 +99,7 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
                     groups.entry(key).or_default().push(item.clone());
                 }
             }
-            let mut result: Vec<Value> = groups
-                .into_values()
-                .map(|group| Value::Array(group))
-                .collect();
+            let mut result: Vec<Value> = groups.into_values().map(Value::Array).collect();
             // Sort groups by first element's field for consistency
             result.sort_by(|a, b| {
                 if let (Value::Array(a_arr), Value::Array(b_arr)) = (a, b) {

@@ -2,7 +2,7 @@ use dsq_shared::value::Value;
 use dsq_shared::Result;
 
 pub fn builtin_spaces_to_tabs(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 2 {
+    if args.is_empty() || args.len() > 2 {
         return Err(dsq_shared::error::operation_error(
             "spaces_to_tabs() expects 1 or 2 arguments",
         ));

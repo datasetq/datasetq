@@ -83,7 +83,7 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
             Ok(Value::Null)
         }
         Value::Series(series) => {
-            if series.len() == 0 {
+            if series.is_empty() {
                 return Ok(Value::Null);
             }
             let mut counts: HashMap<String, (Value, usize)> = HashMap::new();

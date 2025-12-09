@@ -13,7 +13,7 @@ pub fn builtin_snake_case(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
-        Value::String(s) => return Ok(Value::String(s.to_snake_case())),
+        Value::String(s) => Ok(Value::String(s.to_snake_case())),
         Value::Array(arr) => {
             let converted: Vec<Value> = arr
                 .iter()
@@ -22,7 +22,7 @@ pub fn builtin_snake_case(args: &[Value]) -> Result<Value> {
                     _ => Value::String(v.to_string().to_snake_case()),
                 })
                 .collect();
-            return Ok(Value::Array(converted));
+            Ok(Value::Array(converted))
         }
         Value::DataFrame(df) => {
             let mut new_series = Vec::new();
@@ -40,18 +40,16 @@ pub fn builtin_snake_case(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
             match DataFrame::new(new_series) {
-                Ok(new_df) => return Ok(Value::DataFrame(new_df)),
-                Err(e) => {
-                    return Err(dsq_shared::error::operation_error(format!(
-                        "snake_case() failed on DataFrame: {}",
-                        e
-                    )));
-                }
+                Ok(new_df) => Ok(Value::DataFrame(new_df)),
+                Err(e) => Err(dsq_shared::error::operation_error(format!(
+                    "snake_case() failed on DataFrame: {}",
+                    e
+                ))),
             }
         }
         Value::Series(series) => {
@@ -61,16 +59,14 @@ pub fn builtin_snake_case(args: &[Value]) -> Result<Value> {
                     .unwrap()
                     .apply(|s| s.map(|s| Cow::Owned(s.to_snake_case())))
                     .into_series();
-                return Ok(Value::Series(snake_series));
+                Ok(Value::Series(snake_series))
             } else {
-                return Ok(Value::Series(series.clone()));
+                Ok(Value::Series(series.clone()))
             }
         }
-        _ => {
-            return Err(dsq_shared::error::operation_error(
-                "snake_case() requires string, array, DataFrame, or Series",
-            ));
-        }
+        _ => Err(dsq_shared::error::operation_error(
+            "snake_case() requires string, array, DataFrame, or Series",
+        )),
     }
 }
 

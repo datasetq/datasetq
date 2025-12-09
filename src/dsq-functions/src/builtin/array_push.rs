@@ -84,7 +84,7 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series_vec.push(s.into());
+                        new_series_vec.push(s);
                     }
                 }
             }

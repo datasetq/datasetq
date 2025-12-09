@@ -83,17 +83,14 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                                 dsq_shared::error::operation_error("Invalid timestamp")
                             })?;
                             Ok(Value::String(dt.format(format_str).to_string()))
+                        } else if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                            let dt_utc = Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
+                            Ok(Value::String(dt_utc.format(format_str).to_string()))
+                        } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                            let dt_utc = dt.with_timezone(&Utc);
+                            Ok(Value::String(dt_utc.format(format_str).to_string()))
                         } else {
-                            if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                                let dt_utc =
-                                    Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
-                                Ok(Value::String(dt_utc.format(format_str).to_string()))
-                            } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-                                let dt_utc = dt.with_timezone(&Utc);
-                                Ok(Value::String(dt_utc.format(format_str).to_string()))
-                            } else {
-                                Ok(Value::Null)
-                            }
+                            Ok(Value::Null)
                         }
                     }
                     _ => Ok(Value::Null),
@@ -158,18 +155,16 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                                             })
                                             .ok()?;
                                         Some(Cow::Owned(dt.format(format_str).to_string()))
+                                    } else if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                                    {
+                                        let dt_utc = Utc
+                                            .from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
+                                        Some(Cow::Owned(dt_utc.format(format_str).to_string()))
+                                    } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                        let dt_utc = dt.with_timezone(&Utc);
+                                        Some(Cow::Owned(dt_utc.format(format_str).to_string()))
                                     } else {
-                                        if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                                            let dt_utc = Utc.from_utc_datetime(
-                                                &dt.and_hms_opt(0, 0, 0).unwrap(),
-                                            );
-                                            Some(Cow::Owned(dt_utc.format(format_str).to_string()))
-                                        } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-                                            let dt_utc = dt.with_timezone(&Utc);
-                                            Some(Cow::Owned(dt_utc.format(format_str).to_string()))
-                                        } else {
-                                            None
-                                        }
+                                        None
                                     }
                                 })
                             })
@@ -180,7 +175,7 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -236,17 +231,15 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                                     })
                                     .ok()?;
                                 Some(Cow::Owned(dt.format(format_str).to_string()))
+                            } else if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                                let dt_utc =
+                                    Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
+                                Some(Cow::Owned(dt_utc.format(format_str).to_string()))
+                            } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+                                let dt_utc = dt.with_timezone(&Utc);
+                                Some(Cow::Owned(dt_utc.format(format_str).to_string()))
                             } else {
-                                if let Ok(dt) = NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                                    let dt_utc =
-                                        Utc.from_utc_datetime(&dt.and_hms_opt(0, 0, 0).unwrap());
-                                    Some(Cow::Owned(dt_utc.format(format_str).to_string()))
-                                } else if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
-                                    let dt_utc = dt.with_timezone(&Utc);
-                                    Some(Cow::Owned(dt_utc.format(format_str).to_string()))
-                                } else {
-                                    None
-                                }
+                                None
                             }
                         })
                     })

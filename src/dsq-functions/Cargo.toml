@@ -31,32 +31,32 @@ thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
-rand = { version = "0.9", optional = true }
-base32 = "0.5"
-base58 = "0.2"
-base64 = "0.21"
-url = "2.4"
-sha2 = "0.10"
-uuid = { version = "1.0", features = ["v4", "v7", "js"] }
+rand = { workspace = true, optional = true }
+base32 = { workspace = true }
+base58 = { workspace = true }
+base64 = { workspace = true }
+url = { workspace = true }
+sha2 = { workspace = true }
+uuid = { workspace = true, features = ["v4", "v7", "js"] }
 chrono = { workspace = true }
-md5 = "0.8"
-sha1 = "0.10"
-unidecode = "0.3"
-num-format = "0.4"
-heck = "0.5"
-smartstring = "1.0"
-inventory = "0.3"
+md5 = { workspace = true }
+sha1 = { workspace = true }
+unidecode = { workspace = true }
+num-format = { workspace = true }
+heck = { workspace = true }
+smartstring = { workspace = true }
+inventory = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.51", features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
+polars = { workspace = true, features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
-wasm-bindgen = "0.2"
-js-sys = "0.3"
+polars = { workspace = true, default-features = false, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
 
 [features]
 rand = ["dep:rand"]
 
 [dev-dependencies]
-tempfile = "3.8"
+tempfile = { workspace = true }

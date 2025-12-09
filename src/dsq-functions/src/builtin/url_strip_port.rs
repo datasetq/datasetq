@@ -63,7 +63,7 @@ pub fn builtin_url_strip_port(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -86,12 +86,12 @@ pub fn builtin_url_strip_port(args: &[Value]) -> Result<Value> {
                         ))
                     })?
                     .apply(|s| {
-                        s.and_then(|s| match Url::parse(s) {
+                        s.map(|s| match Url::parse(s) {
                             Ok(mut url) => {
                                 url.set_port(None).unwrap();
-                                Some(Cow::Owned(url.to_string()))
+                                Cow::Owned(url.to_string())
                             }
-                            Err(_) => Some(Cow::Owned(s.to_string())),
+                            Err(_) => Cow::Owned(s.to_string()),
                         })
                     })
                     .into_series();

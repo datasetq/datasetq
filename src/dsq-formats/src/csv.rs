@@ -698,10 +698,9 @@ impl<W: Write> CsvWriter<W> {
     /// Finish writing and return the underlying writer
     pub fn finish(mut self) -> Result<W> {
         self.writer.flush()?;
-        Ok(self
-            .writer
+        self.writer
             .into_inner()
-            .map_err(|e| Error::operation(format!("Failed to finish CSV writer: {}", e)))?)
+            .map_err(|e| Error::operation(format!("Failed to finish CSV writer: {}", e)))
     }
 }
 
@@ -786,7 +785,7 @@ pub fn detect_csv_dialect<R: Read>(mut reader: R) -> Result<DsqCsvReadOptions> {
 
     for &quote in &quote_chars {
         let quote_count: usize = sample.as_bytes().iter().filter(|&&b| b == quote).count();
-        if quote_count > 0 && quote_count % 2 == 0 {
+        if quote_count > 0 && quote_count.is_multiple_of(2) {
             quote_char = Some(quote);
             break;
         }

@@ -3,7 +3,7 @@ use dsq_shared::Result;
 use inventory;
 
 pub fn builtin_range(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 3 {
+    if args.is_empty() || args.len() > 3 {
         return Err(dsq_shared::error::operation_error(
             "range() expects 1-3 arguments",
         ));
@@ -40,12 +40,10 @@ pub fn builtin_range(args: &[Value]) -> Result<Value> {
                 ));
             }
         }
+    } else if start <= end {
+        1
     } else {
-        if start <= end {
-            1
-        } else {
-            -1
-        }
+        -1
     };
 
     let mut result = Vec::new();

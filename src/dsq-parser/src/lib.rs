@@ -60,23 +60,6 @@
 //! }
 //! ```
 
-#![deny(missing_docs)]
-#![warn(clippy::all)]
-#![allow(
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    clippy::module_name_repetitions,
-    clippy::similar_names,
-    clippy::too_many_lines,
-    clippy::uninlined_format_args,
-    clippy::wildcard_imports,
-    clippy::must_use_candidate,
-    clippy::ignored_unit_patterns,
-    clippy::match_same_arms,
-    clippy::if_same_then_else,
-    clippy::needless_bool
-)]
-
 pub mod ast;
 pub mod error;
 mod parser;

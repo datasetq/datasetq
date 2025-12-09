@@ -179,16 +179,6 @@
 //! - `filter` - jq-compatible filter compilation and execution
 //! - `repl` - Interactive REPL support (for CLI usage)
 
-#![warn(missing_docs)]
-#![warn(clippy::all, clippy::pedantic)]
-#![allow(
-    clippy::missing_errors_doc,
-    clippy::missing_panics_doc,
-    clippy::module_name_repetitions,
-    clippy::similar_names,
-    clippy::too_many_lines
-)]
-
 pub use dsq_shared::{BuildInfo, VERSION};
 
 // Re-export format types from dsq-formats

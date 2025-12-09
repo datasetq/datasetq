@@ -149,7 +149,7 @@ impl FileReader {
                 .map_err(Error::from)?;
 
         if let Some(cols) = parquet_opts.2.or_else(|| options.columns.clone()) {
-            reader = reader.select(cols.iter().map(|s| col(s)).collect::<Vec<_>>());
+            reader = reader.select(cols.iter().map(col).collect::<Vec<_>>());
         }
 
         if let Some(max_rows) = options.max_rows {

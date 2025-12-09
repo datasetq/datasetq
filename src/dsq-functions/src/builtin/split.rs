@@ -6,7 +6,7 @@ use serde_json;
 use std::borrow::Cow;
 
 pub fn builtin_split(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 2 {
+    if args.is_empty() || args.len() > 2 {
         return Err(dsq_shared::error::operation_error(
             "split() expects 1 or 2 arguments",
         ));
@@ -66,18 +66,18 @@ pub fn builtin_split(args: &[Value]) -> Result<Value> {
                             .str()
                             .unwrap()
                             .apply(|s| {
-                                s.and_then(|s| {
+                                s.map(|s| {
                                     let parts: Vec<String> = if separator.is_empty() {
                                         s.chars().map(|c| c.to_string()).collect()
                                     } else {
                                         s.split(&separator).map(|part| part.to_string()).collect()
                                     };
-                                    Some(Cow::Owned(
+                                    Cow::Owned(
                                         serde_json::to_string(&Value::Array(
                                             parts.into_iter().map(Value::String).collect(),
                                         ))
                                         .unwrap_or("null".to_string()),
-                                    ))
+                                    )
                                 })
                             })
                             .into_series();
@@ -87,7 +87,7 @@ pub fn builtin_split(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -105,18 +105,18 @@ pub fn builtin_split(args: &[Value]) -> Result<Value> {
                     .str()
                     .unwrap()
                     .apply(|s| {
-                        s.and_then(|s| {
+                        s.map(|s| {
                             let parts: Vec<String> = if separator.is_empty() {
                                 s.chars().map(|c| c.to_string()).collect()
                             } else {
                                 s.split(&separator).map(|part| part.to_string()).collect()
                             };
-                            Some(Cow::Owned(
+                            Cow::Owned(
                                 serde_json::to_string(&Value::Array(
                                     parts.into_iter().map(Value::String).collect(),
                                 ))
                                 .unwrap_or("null".to_string()),
-                            ))
+                            )
                         })
                     })
                     .into_series();

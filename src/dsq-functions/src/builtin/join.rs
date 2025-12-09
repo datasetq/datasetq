@@ -4,7 +4,7 @@ use inventory;
 use polars::prelude::*;
 
 pub fn builtin_join(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 {
+    if args.is_empty() {
         return Err(dsq_shared::error::operation_error(
             "join() expects at least 1 argument",
         ));
@@ -50,7 +50,7 @@ pub fn builtin_join(args: &[Value]) -> Result<Value> {
         "".to_string()
     };
 
-    let values = if args.len() > 1 { &args[1..] } else { &args };
+    let values = if args.len() > 1 { &args[1..] } else { args };
 
     fn value_to_join_string(v: &Value) -> String {
         match v {

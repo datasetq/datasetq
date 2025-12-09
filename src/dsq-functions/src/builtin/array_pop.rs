@@ -1,7 +1,6 @@
-use dsq_shared::value::{value_from_any_value, Value};
+use dsq_shared::value::{df_row_to_value, value_from_any_value, Value};
 use dsq_shared::Result;
 use polars::prelude::*;
-use std::collections::HashMap;
 
 use crate::inventory;
 use crate::FunctionRegistration;
@@ -25,18 +24,9 @@ pub fn builtin_array_pop(args: &[Value]) -> Result<Value> {
             if df.height() == 0 {
                 Ok(Value::Null)
             } else {
-                // Return last row as object
+                // Return last row as object using the robust conversion
                 let last_idx = df.height() - 1;
-                let mut row_obj = HashMap::new();
-                for col_name in df.get_column_names() {
-                    if let Ok(series) = df.column(col_name) {
-                        if let Some(val) = series.get(last_idx).ok() {
-                            let value = value_from_any_value(val).unwrap_or(Value::Null);
-                            row_obj.insert(col_name.to_string(), value);
-                        }
-                    }
-                }
-                Ok(Value::Object(row_obj))
+                df_row_to_value(df, last_idx)
             }
         }
         Value::Series(series) => {
@@ -44,7 +34,7 @@ pub fn builtin_array_pop(args: &[Value]) -> Result<Value> {
                 if series.len() == 1 {
                     match series.list().unwrap().get_as_series(0) {
                         Some(list_series) => {
-                            if list_series.len() > 0 {
+                            if !list_series.is_empty() {
                                 let last_idx = list_series.len() - 1;
                                 match list_series.get(last_idx) {
                                     Ok(val) => Ok(value_from_any_value(val).unwrap_or(Value::Null)),

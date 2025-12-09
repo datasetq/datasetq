@@ -21,7 +21,7 @@ pub fn builtin_acos(args: &[Value]) -> Result<Value> {
     match &args[0] {
         Value::Int(i) => {
             let x = *i as f64;
-            if x < -1.0 || x > 1.0 {
+            if !(-1.0..=1.0).contains(&x) {
                 return Err(dsq_shared::error::operation_error(
                     "acos() domain error: argument must be between -1 and 1",
                 ));
@@ -42,7 +42,7 @@ pub fn builtin_acos(args: &[Value]) -> Result<Value> {
                 match val {
                     Value::Int(i) => {
                         let x = *i as f64;
-                        if x < -1.0 || x > 1.0 {
+                        if !(-1.0..=1.0).contains(&x) {
                             return Err(dsq_shared::error::operation_error(
                                 "acos() domain error: argument must be between -1 and 1",
                             ));
@@ -80,7 +80,7 @@ pub fn builtin_acos(args: &[Value]) -> Result<Value> {
                         let acos_series = f64_series
                             .apply(|opt_f| {
                                 opt_f.and_then(|f| {
-                                    if f < -1.0 || f > 1.0 {
+                                    if !(-1.0..=1.0).contains(&f) {
                                         None
                                     } else {
                                         Some(f.acos())
@@ -94,7 +94,7 @@ pub fn builtin_acos(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -117,7 +117,7 @@ pub fn builtin_acos(args: &[Value]) -> Result<Value> {
                 let acos_series = f64_series
                     .apply(|opt_f| {
                         opt_f.and_then(|f| {
-                            if f < -1.0 || f > 1.0 {
+                            if !(-1.0..=1.0).contains(&f) {
                                 None
                             } else {
                                 Some(f.acos())

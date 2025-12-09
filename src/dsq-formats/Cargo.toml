@@ -18,7 +18,7 @@ arrow = { workspace = true }
 chrono = { workspace = true }
 
 # Avro support
-apache-avro = { version = "0.16", features = ["snappy"] }
+apache-avro = { workspace = true, features = ["snappy"] }
 
 # Serialization
 serde = { workspace = true }
@@ -34,7 +34,7 @@ dsq-shared = { path = "../dsq-shared" }
 # Utilities
 regex = { workspace = true }
 indexmap = { workspace = true }
-paste = "1.0"
+paste = { workspace = true }
 
 # Logging
 log = { workspace = true }
@@ -43,18 +43,18 @@ log = { workspace = true }
 clap = { workspace = true, optional = true }
 
 # Profiling
-coz = { version = "0.1", optional = true }
+coz = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { version = "0.51", features = ["lazy", "csv", "json", "temporal", "strings", "ipc", "avro"] }
+polars = { workspace = true, features = ["lazy", "csv", "json", "temporal", "strings", "ipc", "avro"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "temporal", "strings"] }
+polars = { workspace = true, default-features = false, features = ["lazy", "csv", "json", "temporal", "strings"] }
 
 [dev-dependencies]
-tempfile = "3.8"
-criterion = "0.5"
-proptest = "1.4"
+tempfile = { workspace = true }
+criterion = { workspace = true }
+proptest = { workspace = true }
 
 [features]
 default = ["all-formats"]

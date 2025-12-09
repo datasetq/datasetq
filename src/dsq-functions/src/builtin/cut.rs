@@ -47,7 +47,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
         if let Ok(series) = df.column(col_name) {
             let mut s = series.clone();
             s.rename(PlSmallStr::from(col_name));
-            selected_series.push(s.into());
+            selected_series.push(s);
         }
         // Ignore non-existent columns
     }

@@ -11,7 +11,7 @@ inventory::submit! {
 }
 
 pub fn builtin_roundup(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 2 {
+    if args.is_empty() || args.len() > 2 {
         return Err(dsq_shared::error::operation_error(
             "roundup() expects 1 or 2 arguments",
         ));

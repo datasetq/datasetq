@@ -5,7 +5,7 @@ use inventory;
 use polars::prelude::*;
 
 pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 2 {
+    if args.is_empty() || args.len() > 2 {
         return Err(dsq_shared::error::operation_error(
             "start_of_week() expects 1 or 2 arguments",
         ));
@@ -127,7 +127,7 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }

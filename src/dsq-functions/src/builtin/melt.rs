@@ -5,7 +5,7 @@ use polars::datatypes::PlSmallStr;
 use polars::prelude::*;
 
 pub fn builtin_melt(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 3 {
+    if args.is_empty() || args.len() > 3 {
         return Err(dsq_shared::error::operation_error(
             "melt() expects 1-3 arguments",
         ));

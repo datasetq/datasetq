@@ -65,7 +65,7 @@ pub fn builtin_url_strip_protocol(args: &[Value]) -> Result<Value> {
                                 ))
                             })?
                             .apply(|s| {
-                                s.and_then(|s| match Url::parse(s) {
+                                s.map(|s| match Url::parse(s) {
                                     Ok(url) => {
                                         let mut result = String::new();
                                         if let Some(host) = url.host_str() {
@@ -85,9 +85,9 @@ pub fn builtin_url_strip_protocol(args: &[Value]) -> Result<Value> {
                                             result.push('#');
                                             result.push_str(fragment);
                                         }
-                                        Some(Cow::Owned(result))
+                                        Cow::Owned(result)
                                     }
-                                    Err(_) => Some(Cow::Owned(s.to_string())),
+                                    Err(_) => Cow::Owned(s.to_string()),
                                 })
                             })
                             .into_series();
@@ -97,7 +97,7 @@ pub fn builtin_url_strip_protocol(args: &[Value]) -> Result<Value> {
                     } else {
                         let mut s = series.clone();
                         s.rename(col_name.clone());
-                        new_series.push(s.into());
+                        new_series.push(s);
                     }
                 }
             }
@@ -120,7 +120,7 @@ pub fn builtin_url_strip_protocol(args: &[Value]) -> Result<Value> {
                         ))
                     })?
                     .apply(|s| {
-                        s.and_then(|s| match Url::parse(s) {
+                        s.map(|s| match Url::parse(s) {
                             Ok(url) => {
                                 let mut result = String::new();
                                 if let Some(host) = url.host_str() {
@@ -140,9 +140,9 @@ pub fn builtin_url_strip_protocol(args: &[Value]) -> Result<Value> {
                                     result.push('#');
                                     result.push_str(fragment);
                                 }
-                                Some(Cow::Owned(result))
+                                Cow::Owned(result)
                             }
-                            Err(_) => Some(Cow::Owned(s.to_string())),
+                            Err(_) => Cow::Owned(s.to_string()),
                         })
                     })
                     .into_series();

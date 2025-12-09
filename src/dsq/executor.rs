@@ -381,13 +381,6 @@ impl Executor {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_executor_new() {
-        let config = Config::default();
-        let _executor = Executor::new(config.clone());
-        // Just check that it creates successfully
-        assert!(true); // Placeholder, as there's not much to assert on the executor itself
-    }
 
     #[tokio::test]
     async fn test_execute_filter_on_value_identity() {

@@ -31,7 +31,7 @@ pub fn builtin_map(args: &[Value]) -> Result<Value> {
                     for item in arr {
                         if let Value::Object(obj) = item {
                             let mut new_obj = HashMap::new();
-                            for (key, _) in template {
+                            for key in template.keys() {
                                 if let Some(val) = obj.get(key) {
                                     new_obj.insert(key.clone(), val.clone());
                                 } else {
@@ -62,11 +62,11 @@ pub fn builtin_map(args: &[Value]) -> Result<Value> {
                 (Value::DataFrame(df), Value::Object(template)) => {
                     // Select columns specified in template
                     let mut selected_series = Vec::new();
-                    for (key, _) in template {
+                    for key in template.keys() {
                         if let Ok(series) = df.column(key) {
                             let mut s = series.clone();
                             s.rename(key.as_str().into());
-                            selected_series.push(s.into());
+                            selected_series.push(s);
                         }
                     }
                     match DataFrame::new(selected_series) {

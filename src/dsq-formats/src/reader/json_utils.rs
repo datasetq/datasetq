@@ -36,24 +36,22 @@ pub fn json_to_dataframe(value: &serde_json::Value, options: &ReadOptions) -> Re
                     }
                     series_vec.push(Series::new(col.as_str().into(), values).into());
                 }
-            } else {
-                if let Some(serde_json::Value::Object(obj)) = arr_slice.first() {
-                    // Pre-allocate with known column count
-                    let column_count = obj.len();
-                    series_vec.reserve(column_count);
+            } else if let Some(serde_json::Value::Object(obj)) = arr_slice.first() {
+                // Pre-allocate with known column count
+                let column_count = obj.len();
+                series_vec.reserve(column_count);
 
-                    for key in obj.keys() {
-                        // Pre-allocate values vector with exact capacity
-                        let mut values = Vec::with_capacity(row_count);
-                        for item in arr_slice {
-                            if let Some(val) = item.get(key) {
-                                values.push(json_value_to_anyvalue(val));
-                            } else {
-                                values.push(AnyValue::Null);
-                            }
+                for key in obj.keys() {
+                    // Pre-allocate values vector with exact capacity
+                    let mut values = Vec::with_capacity(row_count);
+                    for item in arr_slice {
+                        if let Some(val) = item.get(key) {
+                            values.push(json_value_to_anyvalue(val));
+                        } else {
+                            values.push(AnyValue::Null);
                         }
-                        series_vec.push(Series::new(key.as_str().into(), values).into());
                     }
+                    series_vec.push(Series::new(key.as_str().into(), values).into());
                 }
             }
             DataFrame::new(series_vec).map_err(Error::from)
