@@ -42,6 +42,9 @@ pub mod file_writer;
 pub mod memory_writer;
 pub mod traits;
 
+// Options
+pub mod options;
+
 // Re-export writer types
 pub use file_writer::{to_path, to_path_with_format, FileWriter};
 pub use memory_writer::{to_memory, MemoryWriter};

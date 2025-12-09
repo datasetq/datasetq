@@ -1,6 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use dsq_core::ops::{basic::SortOptions, OperationPipeline};
 use dsq_shared::value::Value;
+use polars::datatypes::PlSmallStr;
 use polars::prelude::*;
 
 fn benchmark_pipeline_execution(c: &mut Criterion) {
@@ -8,23 +9,26 @@ fn benchmark_pipeline_execution(c: &mut Criterion) {
 
     // Create test DataFrame
     let df = DataFrame::new(vec![
-        Series::new("id", (0..10_000).collect::<Vec<i64>>()),
+        Series::new(PlSmallStr::from("id"), (0..10_000).collect::<Vec<i64>>()).into(),
         Series::new(
-            "name",
+            PlSmallStr::from("name"),
             (0..10_000)
                 .map(|i| format!("Item {}", i))
                 .collect::<Vec<String>>(),
-        ),
+        )
+        .into(),
         Series::new(
-            "value",
+            PlSmallStr::from("value"),
             (0..10_000).map(|i| i as f64 * 1.5).collect::<Vec<f64>>(),
-        ),
+        )
+        .into(),
         Series::new(
-            "category",
+            PlSmallStr::from("category"),
             (0..10_000)
                 .map(|i| format!("Cat{}", i % 10))
                 .collect::<Vec<String>>(),
-        ),
+        )
+        .into(),
     ])
     .unwrap();
     let df_val = Value::dataframe(df);
@@ -40,8 +44,8 @@ fn benchmark_pipeline_execution(c: &mut Criterion) {
                     "name".to_string(),
                     "value".to_string(),
                 ])
-                .sort(vec![SortOptions::desc("value")]);
-            black_box(pipeline.execute(df_val.clone()).unwrap())
+                .sort(vec![SortOptions::desc("value".to_string())]);
+            std::hint::black_box(pipeline.execute(df_val.clone()).unwrap())
         })
     });
 
@@ -62,9 +66,9 @@ fn benchmark_pipeline_execution(c: &mut Criterion) {
                     }
                     Ok(false)
                 })
-                .sort(vec![SortOptions::desc("value")])
+                .sort(vec![SortOptions::desc("value".to_string())])
                 .head(100);
-            black_box(pipeline.execute(df_val.clone()).unwrap())
+            std::hint::black_box(pipeline.execute(df_val.clone()).unwrap())
         })
     });
 
@@ -72,7 +76,7 @@ fn benchmark_pipeline_execution(c: &mut Criterion) {
     group.bench_function("group_by", |b| {
         b.iter(|| {
             let pipeline = OperationPipeline::new().group_by(vec!["category".to_string()]);
-            black_box(pipeline.execute(df_val.clone()).unwrap())
+            std::hint::black_box(pipeline.execute(df_val.clone()).unwrap())
         })
     });
 
@@ -83,8 +87,12 @@ fn benchmark_pipeline_overhead(c: &mut Criterion) {
     let mut group = c.benchmark_group("pipeline_overhead");
 
     let df = DataFrame::new(vec![
-        Series::new("id", (0..1_000).collect::<Vec<i64>>()),
-        Series::new("value", (0..1_000).map(|i| i as f64).collect::<Vec<f64>>()),
+        Series::new("id".into(), (0..1_000).collect::<Vec<i64>>()).into(),
+        Series::new(
+            "value".into(),
+            (0..1_000).map(|i| i as f64).collect::<Vec<f64>>(),
+        )
+        .into(),
     ])
     .unwrap();
     let df_val = Value::dataframe(df);
@@ -93,7 +101,7 @@ fn benchmark_pipeline_overhead(c: &mut Criterion) {
     group.bench_function("empty_pipeline", |b| {
         b.iter(|| {
             let pipeline = OperationPipeline::new();
-            black_box(pipeline.execute(df_val.clone()).unwrap())
+            std::hint::black_box(pipeline.execute(df_val.clone()).unwrap())
         })
     });
 
@@ -101,7 +109,7 @@ fn benchmark_pipeline_overhead(c: &mut Criterion) {
     group.bench_function("single_operation", |b| {
         b.iter(|| {
             let pipeline = OperationPipeline::new().select(vec!["id".to_string()]);
-            black_box(pipeline.execute(df_val.clone()).unwrap())
+            std::hint::black_box(pipeline.execute(df_val.clone()).unwrap())
         })
     });
 
@@ -112,7 +120,7 @@ fn benchmark_pipeline_overhead(c: &mut Criterion) {
                 .select(vec!["id".to_string(), "value".to_string()])
                 .select(vec!["id".to_string(), "value".to_string()])
                 .select(vec!["id".to_string(), "value".to_string()]);
-            black_box(pipeline.execute(df_val.clone()).unwrap())
+            std::hint::black_box(pipeline.execute(df_val.clone()).unwrap())
         })
     });
 

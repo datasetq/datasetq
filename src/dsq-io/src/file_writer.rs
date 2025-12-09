@@ -1,5 +1,7 @@
 use crate::{Error, Result};
-use dsq_formats::{format::DataFormat, serialize, FormatWriteOptions, WriteOptions};
+use dsq_formats::{
+    format::DataFormat, serialize, FormatWriteOptions, ParquetCompression, WriteOptions,
+};
 use dsq_shared::value::Value;
 use polars::prelude::*;
 
@@ -91,7 +93,7 @@ impl FileWriter {
                 pretty: false,
             },
             DataFormat::Parquet => FormatWriteOptions::Parquet {
-                compression: dsq_formats::ParquetCompression::Snappy,
+                compression: ParquetCompression::Snappy,
             },
             _ => FormatWriteOptions::default(),
         }

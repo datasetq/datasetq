@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::io::Write;
 use std::process::Command;
 use std::time::Duration;
@@ -20,7 +20,7 @@ fn generate_csv_data(rows: usize) -> String {
             } else {
                 "C"
             },
-            (i as f64) * 3.14
+            (i as f64) * std::f64::consts::PI
         ));
     }
     data
@@ -41,7 +41,7 @@ fn generate_json_data(rows: usize) -> String {
             } else {
                 "C"
             },
-            (i as f64) * 3.14
+            (i as f64) * std::f64::consts::PI
         ));
     }
     format!("[{}]", items.join(","))
@@ -62,7 +62,7 @@ fn generate_jsonl_data(rows: usize) -> String {
             } else {
                 "C"
             },
-            (i as f64) * 3.14
+            (i as f64) * std::f64::consts::PI
         ));
         data.push('\n');
     }
@@ -92,13 +92,13 @@ fn bench_select(c: &mut Criterion) {
         let jsonl_data = generate_jsonl_data(*size);
         let mut jsonl_file = NamedTempFile::new().unwrap();
         jsonl_file.write_all(jsonl_data.as_bytes()).unwrap();
-        let jsonl_path = jsonl_file.path().to_str().unwrap();
+        let _jsonl_path = jsonl_file.path().to_str().unwrap();
 
         // DSQ - CSV
         group.bench_with_input(BenchmarkId::new("dsq_csv", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("cargo")
-                    .args(&["run", "--release", "--", csv_path, ".[] | {id, name}"])
+                    .args(["run", "--release", "--", csv_path, ".[] | {id, name}"])
                     .output()
                     .expect("Failed to execute dsq");
             });
@@ -108,7 +108,7 @@ fn bench_select(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("jq_json", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("jq")
-                    .args(&[".[] | {id, name}", json_path])
+                    .args([".[] | {id, name}", json_path])
                     .output()
                     .ok(); // Use ok() since jq might not be installed
             });
@@ -118,7 +118,7 @@ fn bench_select(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("mlr_csv", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("mlr")
-                    .args(&["--csv", "cut", "-f", "id,name", json_path])
+                    .args(["--csv", "cut", "-f", "id,name", json_path])
                     .output()
                     .ok(); // Use ok() since mlr might not be installed
             });
@@ -150,7 +150,7 @@ fn bench_filter(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("dsq", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("cargo")
-                    .args(&[
+                    .args([
                         "run",
                         "--release",
                         "--",
@@ -166,7 +166,7 @@ fn bench_filter(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("jq", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("jq")
-                    .args(&[".[] | select(.value > 5000)", json_path])
+                    .args([".[] | select(.value > 5000)", json_path])
                     .output()
                     .ok();
             });
@@ -176,7 +176,7 @@ fn bench_filter(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("mlr", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("mlr")
-                    .args(&["--csv", "filter", "$value > 5000", csv_path])
+                    .args(["--csv", "filter", "$value > 5000", csv_path])
                     .output()
                     .ok();
             });
@@ -211,7 +211,7 @@ fn bench_aggregation(c: &mut Criterion) {
             |b, _| {
                 b.iter(|| {
                     let _output = Command::new("cargo")
-                        .args(&[
+                        .args([
                             "run",
                             "--release",
                             "--",
@@ -231,7 +231,7 @@ fn bench_aggregation(c: &mut Criterion) {
             |b, _| {
                 b.iter(|| {
                     let _output = Command::new("jq")
-                        .args(&[
+                        .args([
                             "group_by(.category) | map({category: .[0].category, avg: (map(.score) | add / length)})",
                             json_path
                         ])
@@ -245,7 +245,7 @@ fn bench_aggregation(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("mlr", size), size, |b, _| {
             b.iter(|| {
                 let _output = Command::new("mlr")
-                    .args(&[
+                    .args([
                         "--csv", "stats1", "-a", "mean", "-f", "score", "-g", "category", csv_path,
                     ])
                     .output()
@@ -282,7 +282,7 @@ fn bench_io(c: &mut Criterion) {
             |b, _| {
                 b.iter(|| {
                     let _output = Command::new("cargo")
-                        .args(&["run", "--release", "--", csv_path, "."])
+                        .args(["run", "--release", "--", csv_path, "."])
                         .output()
                         .expect("Failed to execute dsq");
                 });
@@ -295,7 +295,7 @@ fn bench_io(c: &mut Criterion) {
             size,
             |b, _| {
                 b.iter(|| {
-                    let _output = Command::new("jq").args(&[".", json_path]).output().ok();
+                    let _output = Command::new("jq").args([".", json_path]).output().ok();
                 });
             },
         );
@@ -307,7 +307,7 @@ fn bench_io(c: &mut Criterion) {
             |b, _| {
                 b.iter(|| {
                     let _output = Command::new("mlr")
-                        .args(&["--csv", "cat", csv_path])
+                        .args(["--csv", "cat", csv_path])
                         .output()
                         .ok();
                 });

@@ -2,8 +2,6 @@ use crate::FunctionRegistration;
 use dsq_shared::value::Value;
 use dsq_shared::Result;
 use inventory;
-use polars::datatypes::*;
-use polars::prelude::*;
 
 inventory::submit! {
     FunctionRegistration {

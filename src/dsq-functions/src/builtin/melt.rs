@@ -2,7 +2,7 @@ use dsq_shared::value::{value_from_any_value, Value};
 use dsq_shared::Result;
 use inventory;
 use polars::datatypes::PlSmallStr;
-use polars::prelude::{DataFrame, NamedFrom, Series};
+use polars::prelude::*;
 
 pub fn builtin_melt(args: &[Value]) -> Result<Value> {
     if args.len() < 1 || args.len() > 3 {
@@ -145,8 +145,7 @@ inventory::submit! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dsq_shared::value::Value;
-    use polars::prelude::{Column, DataFrame, NamedFrom, Series};
+    use polars::prelude::{DataFrame, Series};
 
     #[test]
     fn test_builtin_melt_basic() {

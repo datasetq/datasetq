@@ -1,5 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use dsq_shared::value::Value;
+use polars::datatypes::PlSmallStr;
 use polars::prelude::*;
 use std::collections::HashMap;
 
@@ -32,7 +33,7 @@ fn benchmark_json_conversion(c: &mut Criterion) {
     group.bench_function("to_json_small", |b| {
         b.iter(|| {
             let array = Value::array(small_array.clone());
-            black_box(array.to_json().unwrap())
+            std::hint::black_box(array.to_json().unwrap())
         })
     });
 
@@ -40,7 +41,7 @@ fn benchmark_json_conversion(c: &mut Criterion) {
     group.bench_function("to_json_medium", |b| {
         b.iter(|| {
             let array = Value::array(medium_array.clone());
-            black_box(array.to_json().unwrap())
+            std::hint::black_box(array.to_json().unwrap())
         })
     });
 
@@ -69,7 +70,7 @@ fn benchmark_dataframe_conversion(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _size| {
             b.iter(|| {
                 let val = Value::array(array.clone());
-                black_box(val.to_dataframe().unwrap())
+                std::hint::black_box(val.to_dataframe().unwrap())
             })
         });
     }
@@ -81,21 +82,25 @@ fn benchmark_value_indexing(c: &mut Criterion) {
     let mut group = c.benchmark_group("value_indexing");
 
     // Create test array
-    let array: Vec<Value> = (0..1000).map(|i| Value::int(i)).collect();
+    let array: Vec<Value> = (0..1000).map(Value::int).collect();
     let array_val = Value::array(array);
 
     group.bench_function("array_index", |b| {
         b.iter(|| {
             for i in 0..100 {
-                black_box(array_val.index(i).unwrap());
+                std::hint::black_box(array_val.index(i).unwrap());
             }
         })
     });
 
     // Create test DataFrame
     let df = DataFrame::new(vec![
-        Series::new("id", (0..1000).collect::<Vec<i64>>()),
-        Series::new("value", (0..1000).map(|i| i as f64).collect::<Vec<f64>>()),
+        Series::new(PlSmallStr::from("id"), (0..1000).collect::<Vec<i64>>()).into(),
+        Series::new(
+            PlSmallStr::from("value"),
+            (0..1000).map(|i| i as f64).collect::<Vec<f64>>(),
+        )
+        .into(),
     ])
     .unwrap();
     let df_val = Value::dataframe(df);
@@ -103,7 +108,7 @@ fn benchmark_value_indexing(c: &mut Criterion) {
     group.bench_function("dataframe_index", |b| {
         b.iter(|| {
             for i in 0..100 {
-                black_box(df_val.index(i).unwrap());
+                std::hint::black_box(df_val.index(i).unwrap());
             }
         })
     });
@@ -129,11 +134,11 @@ fn benchmark_field_access(c: &mut Criterion) {
     ]));
 
     group.bench_function("direct_field", |b| {
-        b.iter(|| black_box(obj.field("name").unwrap()))
+        b.iter(|| std::hint::black_box(obj.field("name").unwrap()))
     });
 
     group.bench_function("nested_field", |b| {
-        b.iter(|| black_box(obj.field_path(&["nested", "inner"]).unwrap()))
+        b.iter(|| std::hint::black_box(obj.field_path(&["nested", "inner"]).unwrap()))
     });
 
     // Create array of objects for field access
@@ -148,7 +153,7 @@ fn benchmark_field_access(c: &mut Criterion) {
     let array_val = Value::array(array);
 
     group.bench_function("array_field_map", |b| {
-        b.iter(|| black_box(array_val.field("name").unwrap()))
+        b.iter(|| std::hint::black_box(array_val.field("name").unwrap()))
     });
 
     group.finish();
@@ -162,21 +167,27 @@ fn benchmark_value_cloning(c: &mut Criterion) {
     let large_array = Value::array((0..10_000).map(Value::int).collect());
 
     let df = DataFrame::new(vec![
-        Series::new("id", (0..10_000).collect::<Vec<i64>>()),
-        Series::new("value", (0..10_000).map(|i| i as f64).collect::<Vec<f64>>()),
+        Series::new(PlSmallStr::from("id"), (0..10_000).collect::<Vec<i64>>()).into(),
+        Series::new(
+            PlSmallStr::from("value"),
+            (0..10_000).map(|i| i as f64).collect::<Vec<f64>>(),
+        )
+        .into(),
     ])
     .unwrap();
     let df_val = Value::dataframe(df);
 
     group.bench_function("clone_small_array", |b| {
-        b.iter(|| black_box(small_array.clone()))
+        b.iter(|| std::hint::black_box(small_array.clone()))
     });
 
     group.bench_function("clone_large_array", |b| {
-        b.iter(|| black_box(large_array.clone()))
+        b.iter(|| std::hint::black_box(large_array.clone()))
     });
 
-    group.bench_function("clone_dataframe", |b| b.iter(|| black_box(df_val.clone())));
+    group.bench_function("clone_dataframe", |b| {
+        b.iter(|| std::hint::black_box(df_val.clone()))
+    });
 
     group.finish();
 }

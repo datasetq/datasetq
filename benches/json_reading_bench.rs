@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use polars::prelude::*;
 use std::io::Cursor;
 
@@ -21,7 +21,7 @@ fn generate_json_data(rows: usize) -> String {
             } else {
                 "C"
             },
-            (i as f64) * 3.14
+            (i as f64) * std::f64::consts::PI
         ));
     }
     format!("[{}]", items.join(","))
@@ -35,7 +35,7 @@ fn bench_polars_native_json(c: &mut Criterion) {
         b.iter(|| {
             let cursor = Cursor::new(json_1k.as_bytes());
             let df = JsonReader::new(cursor).finish().unwrap();
-            black_box(df);
+            std::hint::black_box(df);
         });
     });
 
@@ -43,7 +43,7 @@ fn bench_polars_native_json(c: &mut Criterion) {
         b.iter(|| {
             let cursor = Cursor::new(json_10k.as_bytes());
             let df = JsonReader::new(cursor).finish().unwrap();
-            black_box(df);
+            std::hint::black_box(df);
         });
     });
 }
@@ -55,14 +55,14 @@ fn bench_serde_json_parse(c: &mut Criterion) {
     c.bench_function("serde_json_1k", |b| {
         b.iter(|| {
             let value: serde_json::Value = serde_json::from_str(&json_1k).unwrap();
-            black_box(value);
+            std::hint::black_box(value);
         });
     });
 
     c.bench_function("serde_json_10k", |b| {
         b.iter(|| {
             let value: serde_json::Value = serde_json::from_str(&json_10k).unwrap();
-            black_box(value);
+            std::hint::black_box(value);
         });
     });
 }
@@ -75,7 +75,7 @@ fn bench_current_full_flow(c: &mut Criterion) {
         b.iter(|| {
             let value: serde_json::Value = serde_json::from_str(&json_1k).unwrap();
             let df = json_to_dataframe(&value, &ReadOptions::default()).unwrap();
-            black_box(df);
+            std::hint::black_box(df);
         });
     });
 
@@ -83,7 +83,7 @@ fn bench_current_full_flow(c: &mut Criterion) {
         b.iter(|| {
             let value: serde_json::Value = serde_json::from_str(&json_10k).unwrap();
             let df = json_to_dataframe(&value, &ReadOptions::default()).unwrap();
-            black_box(df);
+            std::hint::black_box(df);
         });
     });
 }

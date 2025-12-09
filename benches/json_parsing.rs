@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use dsq_formats::reader::{deserialize_json, FormatReadOptions, ReadOptions};
 use std::io::Cursor;
 
@@ -48,7 +48,7 @@ fn benchmark_json_parsing(c: &mut Criterion) {
             let cursor = Cursor::new(small_json_str.as_bytes());
             let options = ReadOptions::default();
             let format_options = FormatReadOptions::default();
-            black_box(deserialize_json(cursor, &options, &format_options).unwrap())
+            std::hint::black_box(deserialize_json(cursor, &options, &format_options).unwrap())
         })
     });
 
@@ -58,7 +58,7 @@ fn benchmark_json_parsing(c: &mut Criterion) {
             let cursor = Cursor::new(medium_json_str.as_bytes());
             let options = ReadOptions::default();
             let format_options = FormatReadOptions::default();
-            black_box(deserialize_json(cursor, &options, &format_options).unwrap())
+            std::hint::black_box(deserialize_json(cursor, &options, &format_options).unwrap())
         })
     });
 
@@ -68,7 +68,7 @@ fn benchmark_json_parsing(c: &mut Criterion) {
             let cursor = Cursor::new(large_json_str.as_bytes());
             let options = ReadOptions::default();
             let format_options = FormatReadOptions::default();
-            black_box(deserialize_json(cursor, &options, &format_options).unwrap())
+            std::hint::black_box(deserialize_json(cursor, &options, &format_options).unwrap())
         })
     });
 

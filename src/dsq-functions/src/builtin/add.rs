@@ -274,19 +274,6 @@ mod tests {
     use super::*;
     use dsq_shared::value::Value;
 
-    fn create_test_dataframe() -> DataFrame {
-        let names: Series = Series::new(PlSmallStr::from("name"), &["Alice", "Bob", "Charlie"]);
-        let ages = Column::new(
-            PlSmallStr::from("age"),
-            Series::new("".into(), &[25, 30, 35]),
-        );
-        let scores = Column::new(
-            PlSmallStr::from("score"),
-            Series::new("".into(), &[85.5, 92.0, 78.3]),
-        );
-        DataFrame::new(vec![names.into(), ages, scores]).unwrap()
-    }
-
     #[test]
     fn test_builtin_add_with_dataframe() {
         let df = DataFrame::new(vec![Column::new(

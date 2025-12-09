@@ -937,7 +937,7 @@ mod tests {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path();
         let unsupported_value = Value::String("unsupported".to_string());
-        let write_result2 = write_file_sync(&unsupported_value, path, &write_options);
+        let _write_result2 = write_file_sync(&unsupported_value, path, &write_options);
         // This might succeed or fail depending on implementation, but shouldn't panic
         // Just ensure it doesn't crash
     }
@@ -1413,7 +1413,7 @@ mod tests {
         let mut temp_file = NamedTempFile::new().unwrap();
         temp_file.write_all(malformed_json.as_bytes()).unwrap();
         let path = temp_file.path();
-        let result3 = read_file_sync(path, &options);
+        let _result3 = read_file_sync(path, &options);
         // This might succeed if it falls back to NDJSON, or fail
         // Just ensure it doesn't panic
     }
@@ -1447,7 +1447,7 @@ mod tests {
         let path = temp_file.path();
 
         let options = ReadOptions::default();
-        let result = read_file_sync(path, &options);
+        let _result = read_file_sync(path, &options);
         // This might succeed or fail depending on implementation
         // Just ensure it doesn't panic
     }

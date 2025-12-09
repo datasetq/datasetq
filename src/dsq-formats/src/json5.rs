@@ -1358,7 +1358,6 @@ invalid json5 line
 
     #[test]
     fn test_convenience_functions() {
-        use std::io::Write;
         use tempfile::NamedTempFile;
 
         let df = df! {
@@ -1367,7 +1366,7 @@ invalid json5 line
         }
         .unwrap();
 
-        let mut temp_file = NamedTempFile::new().unwrap();
+        let temp_file = NamedTempFile::new().unwrap();
         write_json5_file(&df, temp_file.path()).unwrap();
 
         let read_df = read_json5_file(temp_file.path()).unwrap();

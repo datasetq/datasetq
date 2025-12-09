@@ -11,6 +11,8 @@ use serde_json::{Number as JsonNumber, Value as JsonValue};
 use std::collections::HashMap;
 
 #[cfg(not(target_arch = "wasm32"))]
+#[allow(unused_imports)]
+use polars::prelude::*;
 use rayon::prelude::*;
 
 /// A value type that bridges between jaq's JSON values and Polars `DataFrames`
@@ -974,7 +976,7 @@ pub fn is_truthy(v: &Value) -> bool {
 mod tests {
     use super::*;
     use num_bigint::BigInt;
-    use polars::prelude::*;
+
     use serde_json::json;
 
     #[test]
@@ -1488,8 +1490,12 @@ mod tests {
         let df = data.to_dataframe().unwrap();
         assert_eq!(df.height(), 2);
         assert_eq!(df.width(), 2);
-        assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
-        assert!(df.get_column_names().contains(&&PlSmallStr::from("age")));
+        assert!(df
+            .get_column_names()
+            .contains(&&polars::datatypes::PlSmallStr::from("name")));
+        assert!(df
+            .get_column_names()
+            .contains(&&polars::datatypes::PlSmallStr::from("age")));
 
         // Empty array
         let empty = Value::array(vec![]);

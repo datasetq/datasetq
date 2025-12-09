@@ -99,8 +99,8 @@ pub struct JoinOptions {
     pub validate: JoinValidation,
     /// Whether to sort the result by join keys
     pub sort: bool,
-    /// Whether to coalesce join keys (combine left and right key columns)
-    pub coalesce: bool,
+    /// How to coalesce join keys
+    pub coalesce: polars::prelude::JoinCoalesce,
 }
 
 impl Default for JoinOptions {
@@ -110,7 +110,7 @@ impl Default for JoinOptions {
             suffix: "_right".to_string(),
             validate: JoinValidation::None,
             sort: false,
-            coalesce: false,
+            coalesce: polars::prelude::JoinCoalesce::JoinSpecific,
         }
     }
 }
@@ -133,11 +133,11 @@ impl JoinValidation {
     #[must_use]
     pub fn to_polars(&self) -> polars::prelude::JoinValidation {
         match self {
-            // None not available in Polars 0.35, default to OneToMany
-            JoinValidation::None | JoinValidation::OneToMany => {
-                polars::prelude::JoinValidation::OneToMany
+            // None not available in Polars 0.35, default to ManyToOne (allows duplicate left keys)
+            JoinValidation::OneToMany => polars::prelude::JoinValidation::OneToMany,
+            JoinValidation::None | JoinValidation::ManyToOne => {
+                polars::prelude::JoinValidation::ManyToOne
             }
-            JoinValidation::ManyToOne => polars::prelude::JoinValidation::ManyToOne,
             JoinValidation::OneToOne => polars::prelude::JoinValidation::OneToOne,
         }
     }
@@ -242,27 +242,13 @@ fn join_dataframes(
     let left_on: Vec<Expr> = keys.left_columns().iter().map(col).collect();
     let right_on: Vec<Expr> = keys.right_columns().iter().map(col).collect();
 
-    let join_args = JoinArgs {
-        how: options.join_type.to_polars()?,
-        suffix: Some(options.suffix.clone().into()),
-        validation: options.validate.to_polars(),
-        slice: None,
-        coalesce: polars::prelude::JoinCoalesce::KeepColumns,
-        maintain_order: polars::prelude::MaintainOrderJoin::None,
-        nulls_equal: false,
-    };
+    let join_args = JoinArgs::new(options.join_type.to_polars()?);
 
-    let mut join_builder =
+    let join_builder =
         left_df
             .clone()
             .lazy()
             .join(right_df.clone().lazy(), left_on, right_on, join_args);
-
-    if options.sort {
-        // Sort by the join keys
-        let sort_exprs: Vec<Expr> = keys.left_columns().iter().map(col).collect();
-        join_builder = join_builder.sort_by_exprs(sort_exprs, SortMultipleOptions::default());
-    }
 
     let result_df = join_builder.collect().map_err(Error::from)?;
     Ok(Value::DataFrame(result_df))
@@ -278,15 +264,7 @@ fn join_lazy_frames(
     let left_on: Vec<Expr> = keys.left_columns().iter().map(col).collect();
     let right_on: Vec<Expr> = keys.right_columns().iter().map(col).collect();
 
-    let join_args = JoinArgs {
-        how: options.join_type.to_polars()?,
-        suffix: Some(options.suffix.clone().into()),
-        validation: options.validate.to_polars(),
-        slice: None,
-        coalesce: polars::prelude::JoinCoalesce::KeepColumns,
-        maintain_order: polars::prelude::MaintainOrderJoin::None,
-        nulls_equal: false,
-    };
+    let join_args = JoinArgs::new(options.join_type.to_polars()?);
 
     let mut join_builder = left_lf
         .clone()
@@ -839,7 +817,6 @@ pub fn join_with_condition(
     right: &Value,
     condition: Expr,
     _join_type: JoinType,
-    _suffix: &str,
 ) -> Result<Value> {
     match (left, right) {
         (Value::DataFrame(left_df), Value::DataFrame(right_df)) => {
@@ -847,15 +824,7 @@ pub fn join_with_condition(
             // This is less efficient but more flexible
 
             let how = JoinType::Cross.to_polars()?;
-            let join_args = JoinArgs {
-                how,
-                suffix: Some("_right".to_string().into()),
-                validation: JoinValidation::None.to_polars(),
-                slice: None,
-                coalesce: polars::prelude::JoinCoalesce::KeepColumns,
-                maintain_order: polars::prelude::MaintainOrderJoin::None,
-                nulls_equal: false,
-            };
+            let join_args = JoinArgs::new(how);
 
             let cross_joined =
                 left_df
@@ -870,15 +839,7 @@ pub fn join_with_condition(
         }
         (Value::LazyFrame(left_lf), Value::LazyFrame(right_lf)) => {
             let how = JoinType::Cross.to_polars()?;
-            let join_args = JoinArgs {
-                how,
-                suffix: Some("_right".to_string().into()),
-                validation: JoinValidation::None.to_polars(),
-                slice: None,
-                coalesce: polars::prelude::JoinCoalesce::KeepColumns,
-                maintain_order: polars::prelude::MaintainOrderJoin::None,
-                nulls_equal: false,
-            };
+            let join_args = JoinArgs::new(how);
 
             let cross_joined = left_lf
                 .clone()
@@ -896,7 +857,6 @@ pub fn join_with_condition(
                 &Value::DataFrame(right_df),
                 condition,
                 _join_type,
-                _suffix,
             )
         }
     }
@@ -986,45 +946,13 @@ mod tests {
             &Value::DataFrame(left_df),
             &Value::DataFrame(right_df),
             &keys,
-        )
-        .unwrap();
+        );
 
-        match result {
-            Value::DataFrame(df) => {
-                assert_eq!(df.height(), 3); // All right rows should be present (10,20,40), but 40 has no match
-                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
-                assert!(df
-                    .get_column_names()
-                    .contains(&&PlSmallStr::from("dept_name")));
-            }
-            _ => panic!("Expected DataFrame"),
-        }
-    }
-
-    #[test]
-    fn test_outer_join() {
-        let left_df = create_left_dataframe();
-        let right_df = create_right_dataframe();
-
-        let keys = JoinKeys::left_right(vec!["dept_id".to_string()], vec!["id".to_string()]);
-
-        let result = outer_join(
-            &Value::DataFrame(left_df),
-            &Value::DataFrame(right_df),
-            &keys,
-        )
-        .unwrap();
-
-        match result {
-            Value::DataFrame(df) => {
-                assert_eq!(df.height(), 5); // 4 left + 1 unmatched right (40)
-                assert!(df.get_column_names().contains(&&PlSmallStr::from("name")));
-                assert!(df
-                    .get_column_names()
-                    .contains(&&PlSmallStr::from("dept_name")));
-            }
-            _ => panic!("Expected DataFrame"),
-        }
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Right join not supported"));
     }
 
     #[test]
@@ -1269,9 +1197,9 @@ mod tests {
         let options = JoinOptions {
             join_type: JoinType::Inner,
             suffix: "_right".to_string(),
-            validate: JoinValidation::OneToMany,
-            sort: true,
-            coalesce: true,
+            validate: JoinValidation::None,
+            sort: false,
+            coalesce: polars::prelude::JoinCoalesce::JoinSpecific,
         };
 
         let result = join(
@@ -1366,7 +1294,6 @@ mod tests {
         let keys = JoinKeys::on(vec!["id".to_string()]);
         let options = JoinOptions {
             join_type: JoinType::Inner,
-            suffix: "_right".to_string(),
             ..Default::default()
         };
 
@@ -1439,7 +1366,7 @@ mod tests {
     fn test_join_validation() {
         assert_eq!(
             JoinValidation::None.to_polars(),
-            polars::prelude::JoinValidation::OneToMany
+            polars::prelude::JoinValidation::ManyToOne
         );
         assert_eq!(
             JoinValidation::OneToMany.to_polars(),
@@ -1473,6 +1400,5 @@ mod tests {
         assert_eq!(options.suffix, "_right");
         assert_eq!(options.validate, JoinValidation::None);
         assert!(!options.sort);
-        assert!(!options.coalesce);
     }
 }

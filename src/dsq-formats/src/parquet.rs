@@ -293,7 +293,6 @@ pub fn detect_parquet_format<P: AsRef<Path>>(path: P) -> Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
     use tempfile::NamedTempFile;
 
     fn create_test_dataframe() -> DataFrame {

@@ -22,7 +22,7 @@ serde_json = { workspace = true }
 
 # Local crates
 dsq-shared = { path = "../dsq-shared" }
-dsq-formats = { path = "../dsq-formats", features = ["all-formats"] }
+dsq-formats = { path = "../dsq-formats", features = ["all-formats", "parquet"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 polars = { workspace = true }

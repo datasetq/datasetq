@@ -7,7 +7,7 @@ use std::collections::HashMap;
 fn create_test_dataframe() -> DataFrame {
     df! {
         "name" => ["Alice", "Bob", "Charlie", "Dave"],
-        "age" => [30, 25, 35, 28],
+        "age" => [30i64, 25i64, 35i64, 28i64],
         "department" => ["Engineering", "Sales", "Engineering", "Marketing"],
         "salary" => [75000, 50000, 80000, 60000]
     }
@@ -35,7 +35,7 @@ fn test_operation_pipeline() {
             assert_eq!(df.height(), 2);
             assert_eq!(df.width(), 3);
             // Should be sorted by age descending, so Charlie (35) should be first
-            let ages = df.column("age").unwrap().i32().unwrap();
+            let ages = df.column("age").unwrap().i64().unwrap();
             assert_eq!(ages.get(0), Some(35));
         }
         _ => panic!("Expected DataFrame"),
@@ -835,6 +835,8 @@ fn test_pipeline_filter_method() {
             assert_eq!(filtered_df.height(), 1);
             let names = filtered_df.column("name").unwrap().str().unwrap();
             assert_eq!(names.get(0).unwrap(), "Charlie");
+            let ages = filtered_df.column("age").unwrap().i32().unwrap();
+            assert_eq!(ages.get(0).unwrap(), 35);
         }
         _ => panic!("Expected DataFrame"),
     }
@@ -852,13 +854,18 @@ fn test_pipeline_group_by_method() {
         .unwrap();
 
     match result {
-        Value::DataFrame(grouped_df) => {
-            assert_eq!(grouped_df.height(), 3); // 3 departments
-            assert!(grouped_df
-                .get_column_names()
-                .contains(&&PlSmallStr::from("department")));
+        Value::Array(arr) => {
+            assert_eq!(arr.len(), 3); // 3 departments
+                                      // Check that each group has department
+            for item in arr {
+                if let Value::Object(obj) = item {
+                    assert!(obj.contains_key("department"));
+                } else {
+                    panic!("Expected Object in array");
+                }
+            }
         }
-        _ => panic!("Expected DataFrame"),
+        _ => panic!("Expected Array"),
     }
 }
 

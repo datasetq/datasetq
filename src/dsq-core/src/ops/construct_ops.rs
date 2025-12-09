@@ -75,10 +75,6 @@ impl ObjectConstructOperation {
 
 impl Operation for ObjectConstructOperation {
     fn apply(&self, value: &Value) -> Result<Value> {
-        if matches!(value, Value::Null) {
-            return Ok(Value::Null);
-        }
-
         let mut obj = std::collections::HashMap::new();
 
         for (key_op, value_op) in &self.field_ops {

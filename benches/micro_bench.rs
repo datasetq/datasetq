@@ -1,4 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+
 use dsq_core::io::{read_file_sync, ReadOptions};
 use dsq_core::ops::OperationPipeline;
 use dsq_core::Value;
@@ -21,7 +22,7 @@ fn generate_csv_bytes(rows: usize) -> Vec<u8> {
             } else {
                 "C"
             },
-            (i as f64) * 3.14
+            (i as f64) * std::f64::consts::PI
         ));
     }
     data.into_bytes()
@@ -42,7 +43,7 @@ fn generate_json_bytes(rows: usize) -> Vec<u8> {
             } else {
                 "C"
             },
-            (i as f64) * 3.14
+            (i as f64) * std::f64::consts::PI
         ));
     }
     format!("[{}]", items.join(",")).into_bytes()
@@ -63,7 +64,7 @@ fn bench_csv_read(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             b.iter(|| {
                 let options = ReadOptions::default();
-                let _value = read_file_sync(black_box(csv_path), &options).unwrap();
+                let _value = read_file_sync(std::hint::black_box(csv_path), &options).unwrap();
             });
         });
     }
@@ -86,7 +87,7 @@ fn bench_json_read(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             b.iter(|| {
                 let options = ReadOptions::default();
-                let _value = read_file_sync(black_box(json_path), &options).unwrap();
+                let _value = read_file_sync(std::hint::black_box(json_path), &options).unwrap();
             });
         });
     }
@@ -101,27 +102,35 @@ fn bench_value_operations(c: &mut Criterion) {
     // Create a large dataframe
     use polars::prelude::*;
     let size = 10000;
-    let id_series = Series::new("id", (0..size).collect::<Vec<i64>>());
+    let id_series = Series::new("id".into(), (0..size).collect::<Vec<i64>>());
     let name_series = Series::new(
-        "name",
+        "name".into(),
         (0..size)
             .map(|i| format!("Person{}", i))
             .collect::<Vec<String>>(),
     );
-    let value_series = Series::new("value", (0..size).map(|i| i * 100).collect::<Vec<i64>>());
+    let value_series = Series::new(
+        "value".into(),
+        (0..size).map(|i| i * 100).collect::<Vec<i64>>(),
+    );
 
-    let df = DataFrame::new(vec![id_series, name_series, value_series]).unwrap();
+    let df = DataFrame::new(vec![
+        id_series.into(),
+        name_series.into(),
+        value_series.into(),
+    ])
+    .unwrap();
     let value = Value::DataFrame(df);
 
     group.bench_function("clone_dataframe", |b| {
         b.iter(|| {
-            let _cloned = black_box(value.clone());
+            let _cloned = std::hint::black_box(value.clone());
         });
     });
 
     group.bench_function("to_json_conversion", |b| {
         b.iter(|| {
-            let _json = black_box(value.to_json());
+            let _json = std::hint::black_box(value.to_json());
         });
     });
 
@@ -145,14 +154,18 @@ fn bench_pipeline(c: &mut Criterion) {
         b.iter(|| {
             let pipeline =
                 OperationPipeline::new().select(vec!["id".to_string(), "name".to_string()]);
-            let _result = pipeline.execute(black_box(&value).clone()).unwrap();
+            let _result = pipeline
+                .execute(std::hint::black_box(&value).clone())
+                .unwrap();
         });
     });
 
     group.bench_function("head_operation", |b| {
         b.iter(|| {
             let pipeline = OperationPipeline::new().head(100);
-            let _result = pipeline.execute(black_box(&value).clone()).unwrap();
+            let _result = pipeline
+                .execute(std::hint::black_box(&value).clone())
+                .unwrap();
         });
     });
 
@@ -169,7 +182,7 @@ fn bench_allocations(c: &mut Criterion) {
             for i in 0..10000 {
                 v.push(format!("Item{}", i));
             }
-            black_box(v);
+            std::hint::black_box(v);
         });
     });
 
@@ -179,7 +192,7 @@ fn bench_allocations(c: &mut Criterion) {
             for i in 0..10000 {
                 v.push(format!("Item{}", i));
             }
-            black_box(v);
+            std::hint::black_box(v);
         });
     });
 

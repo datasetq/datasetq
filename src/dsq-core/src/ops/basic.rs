@@ -693,7 +693,31 @@ fn series_value_at(series: &Series, idx: usize) -> Result<Value> {
                 .map_err(|e| Error::operation(format!("Failed to get bool: {e}")))?;
             Ok(ca.get(idx).map_or(Value::Null, Value::Bool))
         }
-        DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
+        DataType::Int8 => {
+            let ca = series
+                .i8()
+                .map_err(|e| Error::operation(format!("Failed to get int: {e}")))?;
+            Ok(ca
+                .get(idx)
+                .map_or(Value::Null, |x| Value::Int(i64::from(x))))
+        }
+        DataType::Int16 => {
+            let ca = series
+                .i16()
+                .map_err(|e| Error::operation(format!("Failed to get int: {e}")))?;
+            Ok(ca
+                .get(idx)
+                .map_or(Value::Null, |x| Value::Int(i64::from(x))))
+        }
+        DataType::Int32 => {
+            let ca = series
+                .i32()
+                .map_err(|e| Error::operation(format!("Failed to get int: {e}")))?;
+            Ok(ca
+                .get(idx)
+                .map_or(Value::Null, |x| Value::Int(i64::from(x))))
+        }
+        DataType::Int64 => {
             let ca = series
                 .i64()
                 .map_err(|e| Error::operation(format!("Failed to get int: {e}")))?;

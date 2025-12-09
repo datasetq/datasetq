@@ -2642,7 +2642,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn test_builtin_keys() {
         let registry = BuiltinRegistry::new();
 

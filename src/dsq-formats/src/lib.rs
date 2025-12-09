@@ -283,7 +283,6 @@ mod tests {
 
     #[test]
     fn test_format_detection_re_export() {
-        use std::io::Cursor;
         // Test that detect_format_from_content is re-exported
         let json_data = b"{\"test\": \"data\"}";
         let result = detect_format_from_content(json_data);
