@@ -8,6 +8,12 @@ use std::any::Any;
 
 use super::traits::{Context, Operation};
 
+/// Type alias for field operation pairs in object construction
+type FieldOpPair = (
+    Box<dyn Operation + Send + Sync>,
+    Option<Vec<Box<dyn Operation + Send + Sync>>>,
+);
+
 /// Object construction operation
 ///
 /// Creates a new object by evaluating key-value pairs from operations.
@@ -17,20 +23,12 @@ pub struct ObjectConstructOperation {
     /// For each pair, the key operation produces the field name,
     /// and the value operations (if present) produce the field value.
     /// If no value operations are provided, the key is used as a field access.
-    pub field_ops: Vec<(
-        Box<dyn Operation + Send + Sync>,
-        Option<Vec<Box<dyn Operation + Send + Sync>>>,
-    )>,
+    pub field_ops: Vec<FieldOpPair>,
 }
 
 impl ObjectConstructOperation {
     /// Creates a new object construction operation with the given field operations
-    pub fn new(
-        field_ops: Vec<(
-            Box<dyn Operation + Send + Sync>,
-            Option<Vec<Box<dyn Operation + Send + Sync>>>,
-        )>,
-    ) -> Self {
+    pub fn new(field_ops: Vec<FieldOpPair>) -> Self {
         Self { field_ops }
     }
 }

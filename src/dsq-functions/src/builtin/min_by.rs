@@ -46,10 +46,10 @@ pub fn builtin_min_by(args: &[Value]) -> Result<Value> {
             }
             let mut min_idx = 0;
             let mut min_key = &key_arr[0];
-            for i in 1..arr.len() {
-                if compare_values_for_sorting(&key_arr[i], min_key) == std::cmp::Ordering::Less {
+            for (i, key) in key_arr.iter().enumerate().skip(1) {
+                if compare_values_for_sorting(key, min_key) == std::cmp::Ordering::Less {
                     min_idx = i;
-                    min_key = &key_arr[i];
+                    min_key = key;
                 }
             }
             Ok(arr[min_idx].clone())

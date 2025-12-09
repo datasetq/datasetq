@@ -31,8 +31,10 @@ pub trait DataReader {
 
     /// Peek at the first few rows without consuming the reader
     fn peek(&mut self, rows: usize) -> Result<DataFrame> {
-        let mut options = ReadOptions::default();
-        options.max_rows = Some(rows);
+        let options = ReadOptions {
+            max_rows: Some(rows),
+            ..Default::default()
+        };
         match self.read(&options)? {
             Value::DataFrame(df) => Ok(df),
             Value::LazyFrame(lf) => lf.collect().map_err(crate::error::Error::from),

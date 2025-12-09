@@ -46,10 +46,10 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
             }
             let mut max_idx = 0;
             let mut max_key = &key_arr[0];
-            for i in 1..arr.len() {
-                if compare_values_for_sorting(&key_arr[i], max_key) == std::cmp::Ordering::Greater {
+            for (i, key) in key_arr.iter().enumerate().skip(1) {
+                if compare_values_for_sorting(key, max_key) == std::cmp::Ordering::Greater {
                     max_idx = i;
-                    max_key = &key_arr[i];
+                    max_key = key;
                 }
             }
             Ok(arr[max_idx].clone())
@@ -110,10 +110,10 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
             }
             let mut max_idx = 0;
             let mut max_key = &key_arr[0];
-            for i in 1..df.height() {
-                if compare_values_for_sorting(&key_arr[i], max_key) == std::cmp::Ordering::Greater {
+            for (i, key) in key_arr.iter().enumerate().skip(1).take(df.height() - 1) {
+                if compare_values_for_sorting(key, max_key) == std::cmp::Ordering::Greater {
                     max_idx = i;
-                    max_key = &key_arr[i];
+                    max_key = key;
                 }
             }
             // Return the row as object

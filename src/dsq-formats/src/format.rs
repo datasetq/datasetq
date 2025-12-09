@@ -65,7 +65,7 @@ impl DataFormat {
     }
 
     /// Parse format from string (for CLI arguments)
-    pub fn from_str(s: &str) -> Result<Self> {
+    pub fn parse(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "csv" => Ok(Self::Csv),
             "tsv" => Ok(Self::Tsv),
@@ -176,7 +176,7 @@ impl FromStr for DataFormat {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::from_str(s).map_err(|e| e.to_string())
+        Self::parse(s).map_err(|e| e.to_string())
     }
 }
 

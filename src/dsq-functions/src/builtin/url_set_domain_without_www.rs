@@ -17,11 +17,10 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
             match Url::parse(s) {
                 Ok(mut url) => {
                     if let Some(host) = url.host_str() {
-                        let new_host = if host.starts_with("www.") {
-                            host[4..].to_string()
-                        } else {
-                            host.to_string()
-                        };
+                        let new_host = host
+                            .strip_prefix("www.")
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| host.to_string());
                         url.set_host(Some(&new_host))
                             .map_err(|_| dsq_shared::error::operation_error("Invalid domain"))?;
                         Ok(Value::String(url.to_string()))
@@ -63,11 +62,10 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
                                 s.and_then(|s| match Url::parse(s) {
                                     Ok(mut url) => {
                                         if let Some(host) = url.host_str() {
-                                            let new_host = if host.starts_with("www.") {
-                                                host[4..].to_string()
-                                            } else {
-                                                host.to_string()
-                                            };
+                                            let new_host = host
+                                                .strip_prefix("www.")
+                                                .map(|s| s.to_string())
+                                                .unwrap_or_else(|| host.to_string());
                                             url.set_host(Some(&new_host)).ok()?;
                                             Some(Cow::Owned(url.to_string()))
                                         } else {
@@ -110,11 +108,10 @@ pub fn builtin_url_set_domain_without_www(args: &[Value]) -> Result<Value> {
                         s.and_then(|s| match Url::parse(s) {
                             Ok(mut url) => {
                                 if let Some(host) = url.host_str() {
-                                    let new_host = if host.starts_with("www.") {
-                                        host[4..].to_string()
-                                    } else {
-                                        host.to_string()
-                                    };
+                                    let new_host = host
+                                        .strip_prefix("www.")
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_else(|| host.to_string());
                                     url.set_host(Some(&new_host)).ok()?;
                                     Some(Cow::Owned(url.to_string()))
                                 } else {

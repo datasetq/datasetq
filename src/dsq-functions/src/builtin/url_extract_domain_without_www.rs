@@ -16,11 +16,10 @@ pub fn builtin_url_extract_domain_without_www(args: &[Value]) -> Result<Value> {
         Value::String(s) => match Url::parse(s) {
             Ok(url) => {
                 let domain = url.host_str().unwrap_or("").to_string();
-                let domain = if domain.starts_with("www.") {
-                    domain[4..].to_string()
-                } else {
-                    domain
-                };
+                let domain = domain
+                    .strip_prefix("www.")
+                    .map(|s| s.to_string())
+                    .unwrap_or(domain);
                 Ok(Value::String(domain))
             }
             Err(_) => Ok(Value::String("".to_string())),
@@ -54,11 +53,10 @@ pub fn builtin_url_extract_domain_without_www(args: &[Value]) -> Result<Value> {
                                 s.map(|s| match Url::parse(s) {
                                     Ok(url) => {
                                         let domain = url.host_str().unwrap_or("").to_string();
-                                        let domain = if domain.starts_with("www.") {
-                                            domain[4..].to_string()
-                                        } else {
-                                            domain
-                                        };
+                                        let domain = domain
+                                            .strip_prefix("www.")
+                                            .map(|s| s.to_string())
+                                            .unwrap_or(domain);
                                         Cow::Owned(domain)
                                     }
                                     Err(_) => Cow::Owned("".to_string()),
@@ -97,11 +95,10 @@ pub fn builtin_url_extract_domain_without_www(args: &[Value]) -> Result<Value> {
                         s.map(|s| match Url::parse(s) {
                             Ok(url) => {
                                 let domain = url.host_str().unwrap_or("").to_string();
-                                let domain = if domain.starts_with("www.") {
-                                    domain[4..].to_string()
-                                } else {
-                                    domain
-                                };
+                                let domain = domain
+                                    .strip_prefix("www.")
+                                    .map(|s| s.to_string())
+                                    .unwrap_or(domain);
                                 Cow::Owned(domain)
                             }
                             Err(_) => Cow::Owned("".to_string()),

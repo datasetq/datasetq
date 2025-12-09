@@ -163,11 +163,12 @@ impl ParquetReader {
     pub fn read_lazy(self) -> Result<LazyFrame> {
         use polars::prelude::{PlPath, ScanArgsParquet};
 
-        let mut scan_args = ScanArgsParquet::default();
-        scan_args.n_rows = self.options.n_rows;
-        // scan_args.with_columns = self.options.columns;
-        scan_args.row_index = None;
-        scan_args.parallel = self.options.parallel;
+        let scan_args = ScanArgsParquet {
+            n_rows: self.options.n_rows,
+            row_index: None,
+            parallel: self.options.parallel,
+            ..Default::default()
+        };
 
         LazyFrame::scan_parquet(PlPath::new(self.path.to_str().unwrap()), scan_args)
             .map_err(Error::from)

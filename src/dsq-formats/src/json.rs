@@ -711,11 +711,7 @@ impl<W: Write> JsonWriter<W> {
 
     /// Convert a DataFrame row to a JSON object
     fn dataframe_row_to_json_object(&self, df: &DataFrame, row_idx: usize) -> Result<JsonValue> {
-        let mut obj = if self.options.maintain_order {
-            serde_json::Map::new()
-        } else {
-            serde_json::Map::new()
-        };
+        let mut obj = serde_json::Map::new();
 
         for col_name in df.get_column_names() {
             let series = df.column(col_name).map_err(Error::from)?;

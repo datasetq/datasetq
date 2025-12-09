@@ -100,10 +100,10 @@ pub fn from_json(json: &str) -> Result<Value> {
     let value = Value::from_json(json_val);
     // For arrays, try to convert to DataFrame for better compatibility
     if let Value::Array(_) = &value {
-        match value.to_dataframe() {
-            Ok(df) => return Ok(Value::DataFrame(df)),
-            Err(_) => {} // Fall back to keeping as array
+        if let Ok(df) = value.to_dataframe() {
+            return Ok(Value::DataFrame(df));
         }
+        // Fall back to keeping as array
     }
     // Keep as JSON value for compatibility with jq-like operations
     Ok(value)

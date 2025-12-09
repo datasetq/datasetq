@@ -8,6 +8,10 @@ use std::any::Any;
 
 use super::traits::{AssignmentOperator, Context, Operation};
 
+/// Type alias for built-in function implementations
+type BuiltinFunc =
+    std::sync::Arc<dyn Fn(&[crate::value::Value]) -> Result<crate::value::Value> + Send + Sync>;
+
 /// Function call operation
 pub struct FunctionCallOperation {
     /// Function name
@@ -15,9 +19,7 @@ pub struct FunctionCallOperation {
     /// Argument operations
     pub arg_ops: Vec<Box<dyn Operation + Send + Sync>>,
     /// Built-in function implementation
-    pub builtin_func: Option<
-        std::sync::Arc<dyn Fn(&[crate::value::Value]) -> Result<crate::value::Value> + Send + Sync>,
-    >,
+    pub builtin_func: Option<BuiltinFunc>,
 }
 
 impl FunctionCallOperation {
@@ -25,11 +27,7 @@ impl FunctionCallOperation {
     pub fn new(
         function_name: String,
         arg_ops: Vec<Box<dyn Operation + Send + Sync>>,
-        builtin_func: Option<
-            std::sync::Arc<
-                dyn Fn(&[crate::value::Value]) -> Result<crate::value::Value> + Send + Sync,
-            >,
-        >,
+        builtin_func: Option<BuiltinFunc>,
     ) -> Self {
         Self {
             function_name,
