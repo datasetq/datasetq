@@ -239,16 +239,8 @@ fn join_dataframes(
     keys: &JoinKeys,
     options: &JoinOptions,
 ) -> Result<Value> {
-    let left_on: Vec<Expr> = keys
-        .left_columns()
-        .iter()
-        .map(|column_name| col(column_name))
-        .collect();
-    let right_on: Vec<Expr> = keys
-        .right_columns()
-        .iter()
-        .map(|column_name| col(column_name))
-        .collect();
+    let left_on: Vec<Expr> = keys.left_columns().iter().map(col).collect();
+    let right_on: Vec<Expr> = keys.right_columns().iter().map(col).collect();
 
     let join_args = JoinArgs {
         how: options.join_type.to_polars()?,
@@ -268,11 +260,7 @@ fn join_dataframes(
 
     if options.sort {
         // Sort by the join keys
-        let sort_exprs: Vec<Expr> = keys
-            .left_columns()
-            .iter()
-            .map(|column_name| col(column_name))
-            .collect();
+        let sort_exprs: Vec<Expr> = keys.left_columns().iter().map(col).collect();
         join_builder = join_builder.sort_by_exprs(sort_exprs, SortMultipleOptions::default());
     }
 
@@ -287,16 +275,8 @@ fn join_lazy_frames(
     keys: &JoinKeys,
     options: &JoinOptions,
 ) -> Result<Value> {
-    let left_on: Vec<Expr> = keys
-        .left_columns()
-        .iter()
-        .map(|column_name| col(column_name))
-        .collect();
-    let right_on: Vec<Expr> = keys
-        .right_columns()
-        .iter()
-        .map(|column_name| col(column_name))
-        .collect();
+    let left_on: Vec<Expr> = keys.left_columns().iter().map(col).collect();
+    let right_on: Vec<Expr> = keys.right_columns().iter().map(col).collect();
 
     let join_args = JoinArgs {
         how: options.join_type.to_polars()?,
@@ -314,11 +294,7 @@ fn join_lazy_frames(
 
     if options.sort {
         // Sort by the join keys
-        let sort_exprs: Vec<Expr> = keys
-            .left_columns()
-            .iter()
-            .map(|column_name| col(column_name))
-            .collect();
+        let sort_exprs: Vec<Expr> = keys.left_columns().iter().map(col).collect();
         join_builder = join_builder.sort_by_exprs(sort_exprs, SortMultipleOptions::default());
     }
 

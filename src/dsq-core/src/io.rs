@@ -416,7 +416,10 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
         df_columns.push(series);
     }
 
-    let columns: Vec<_> = df_columns.into_iter().map(|s| s.into()).collect();
+    let columns: Vec<_> = df_columns
+        .into_iter()
+        .map(std::convert::Into::into)
+        .collect();
     let df = DataFrame::new(columns)
         .map_err(|e| Error::operation(format!("Failed to create DataFrame: {e}")))?;
 

@@ -589,7 +589,7 @@ async fn validate_files(
             Value::DataFrame(df) => {
                 // Check schema
                 if let Some(ref expected) = expected_schema {
-                    if !schemas_match(&df.schema(), expected) {
+                    if !schemas_match(df.schema(), expected) {
                         eprintln!("  ❌ Schema mismatch");
                         continue;
                     }

@@ -66,12 +66,7 @@ pub fn group_by(value: &Value, columns: &[String]) -> Result<Value> {
         Value::LazyFrame(lf) => {
             let grouped = lf
                 .clone()
-                .group_by(
-                    columns
-                        .iter()
-                        .map(|col_name| col(col_name))
-                        .collect::<Vec<_>>(),
-                )
+                .group_by(columns.iter().map(col).collect::<Vec<_>>())
                 .agg([col("*").count().alias("count")]);
             Ok(Value::LazyFrame(Box::new(grouped)))
         }
@@ -149,8 +144,7 @@ pub fn group_by_agg(
 
     match value {
         Value::DataFrame(df) => {
-            let group_exprs: Vec<Expr> =
-                group_columns.iter().map(|col_name| col(col_name)).collect();
+            let group_exprs: Vec<Expr> = group_columns.iter().map(col).collect();
             let agg_exprs: Vec<Expr> = aggregations
                 .iter()
                 .map(AggregationFunction::to_polars_expr)
@@ -167,8 +161,7 @@ pub fn group_by_agg(
             Ok(Value::DataFrame(grouped))
         }
         Value::LazyFrame(lf) => {
-            let group_exprs: Vec<Expr> =
-                group_columns.iter().map(|col_name| col(col_name)).collect();
+            let group_exprs: Vec<Expr> = group_columns.iter().map(col).collect();
             let agg_exprs: Vec<Expr> = aggregations
                 .iter()
                 .map(AggregationFunction::to_polars_expr)
@@ -224,43 +217,43 @@ impl AggregationFunction {
         match self {
             AggregationFunction::Count => Ok(len().alias("count")),
             AggregationFunction::Sum(col_name) => {
-                Ok(col(col_name).sum().alias(&format!("{col_name}_sum")))
+                Ok(col(col_name).sum().alias(format!("{col_name}_sum")))
             }
             AggregationFunction::Mean(col_name) => {
-                Ok(col(col_name).mean().alias(&format!("{col_name}_mean")))
+                Ok(col(col_name).mean().alias(format!("{col_name}_mean")))
             }
             AggregationFunction::Median(col_name) => {
-                Ok(col(col_name).median().alias(&format!("{col_name}_median")))
+                Ok(col(col_name).median().alias(format!("{col_name}_median")))
             }
             AggregationFunction::Min(col_name) => {
-                Ok(col(col_name).min().alias(&format!("{col_name}_min")))
+                Ok(col(col_name).min().alias(format!("{col_name}_min")))
             }
             AggregationFunction::Max(col_name) => {
-                Ok(col(col_name).max().alias(&format!("{col_name}_max")))
+                Ok(col(col_name).max().alias(format!("{col_name}_max")))
             }
             AggregationFunction::Std(col_name) => {
-                Ok(col(col_name).std(1).alias(&format!("{col_name}_std")))
+                Ok(col(col_name).std(1).alias(format!("{col_name}_std")))
             }
             AggregationFunction::Var(col_name) => {
-                Ok(col(col_name).var(1).alias(&format!("{col_name}_var")))
+                Ok(col(col_name).var(1).alias(format!("{col_name}_var")))
             }
             AggregationFunction::First(col_name) => {
-                Ok(col(col_name).first().alias(&format!("{col_name}_first")))
+                Ok(col(col_name).first().alias(format!("{col_name}_first")))
             }
             AggregationFunction::Last(col_name) => {
-                Ok(col(col_name).last().alias(&format!("{col_name}_last")))
+                Ok(col(col_name).last().alias(format!("{col_name}_last")))
             }
             AggregationFunction::List(col_name) => {
-                Ok(col(col_name).alias(&format!("{col_name}_list")))
+                Ok(col(col_name).alias(format!("{col_name}_list")))
             }
             AggregationFunction::CountUnique(col_name) => Ok(col(col_name)
                 .n_unique()
-                .alias(&format!("{col_name}_nunique"))),
+                .alias(format!("{col_name}_nunique"))),
             AggregationFunction::StringConcat(col_name, separator) => {
                 let _sep = separator.as_deref().unwrap_or(",");
                 // String concatenation in groupby context requires custom aggregation
                 // For now, we'll collect into a list and handle concatenation in array processing
-                Ok(col(col_name).alias(&format!("{col_name}_concat")))
+                Ok(col(col_name).alias(format!("{col_name}_concat")))
             }
         }
     }
@@ -768,7 +761,7 @@ pub fn pivot(
             let pivoted = df
                 .clone()
                 .lazy()
-                .group_by(index_columns.iter().map(|c| col(c)).collect::<Vec<_>>())
+                .group_by(index_columns.iter().map(col).collect::<Vec<_>>())
                 .agg([agg_expr])
                 .collect()
                 .map_err(Error::from)?;
@@ -796,7 +789,7 @@ pub fn pivot(
             // This is a simplified implementation - full pivot would require more complex logic
             let pivoted = lf
                 .clone()
-                .group_by(index_columns.iter().map(|c| col(c)).collect::<Vec<_>>())
+                .group_by(index_columns.iter().map(col).collect::<Vec<_>>())
                 .agg([agg_expr]);
 
             Ok(Value::LazyFrame(Box::new(pivoted)))

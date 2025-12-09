@@ -63,7 +63,13 @@ impl OutputWriter {
             }
             Value::LazyFrame(lf) => {
                 let df = lf.clone().collect()?;
-                self.write_to_stdout(&Value::DataFrame(df))?;
+                // Write DataFrame directly without recursion
+                use polars::prelude::CsvWriter;
+                let mut writer = std::io::stdout();
+                CsvWriter::new(&mut writer)
+                    .include_header(true)
+                    .finish(&mut df.clone())
+                    .map_err(|e| Error::operation(format!("CSV write error: {}", e)))?;
             }
             Value::Array(_) | Value::Object(_) => {
                 // For structured data, write as JSON

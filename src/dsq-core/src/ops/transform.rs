@@ -74,7 +74,7 @@ impl Transform {
 
     /// Select specific columns from a `LazyFrame`
     pub fn select_lazy(lf: LazyFrame, columns: &[String]) -> Result<LazyFrame> {
-        let cols: Vec<Expr> = columns.iter().map(|name| col(name)).collect();
+        let cols: Vec<Expr> = columns.iter().map(col).collect();
         Ok(lf.select(&cols))
     }
 
@@ -112,7 +112,7 @@ impl Transform {
         by_columns: &[String],
         descending: &[bool],
     ) -> Result<LazyFrame> {
-        let exprs: Vec<Expr> = by_columns.iter().map(|name| col(name)).collect();
+        let exprs: Vec<Expr> = by_columns.iter().map(col).collect();
         let options =
             SortMultipleOptions::default().with_order_descending_multi(descending.to_vec());
         Ok(lf.sort_by_exprs(&exprs, options))
@@ -285,7 +285,7 @@ impl Transform {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let cols: Vec<_> = columns.into_iter().map(|s| s.into()).collect();
+        let cols: Vec<_> = columns.into_iter().collect();
         DataFrame::new(cols).map_err(|e| {
             Error::operation(format!("Failed to create DataFrame after fill_null: {e}"))
         })
@@ -403,8 +403,8 @@ impl Transform {
         columns: &[String],
         aggregate_fn: Option<&str>,
     ) -> Result<DataFrame> {
-        let values_expr: Vec<Expr> = values.iter().map(|s| col(s)).collect();
-        let index_expr: Vec<Expr> = index.iter().map(|s| col(s)).collect();
+        let values_expr: Vec<Expr> = values.iter().map(col).collect();
+        let index_expr: Vec<Expr> = index.iter().map(col).collect();
         let _columns_expr = col(columns[0].as_str()); // Simplified to single column
 
         let agg_expr = match aggregate_fn {
@@ -443,7 +443,7 @@ impl Transform {
             .get_columns()
             .iter()
             .map(|s| {
-                let lazy_df = DataFrame::new(vec![s.clone().into()])
+                let lazy_df = DataFrame::new(vec![s.clone()])
                     .map_err(|e| {
                         Error::operation(format!("Failed to create temporary DataFrame: {e}"))
                     })?
@@ -461,7 +461,7 @@ impl Transform {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let cols: Vec<_> = columns.into_iter().map(|s| s.into()).collect();
+        let cols: Vec<_> = columns.into_iter().collect();
         DataFrame::new(cols)
             .map_err(|e| Error::operation(format!("Failed to create result DataFrame: {e}")))
     }
