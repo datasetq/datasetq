@@ -467,9 +467,12 @@ impl Transform {
     }
 
     /// Transpose a `DataFrame`
-    pub fn transpose(_df: &DataFrame, _keep_names_as: Option<&str>) -> Result<DataFrame> {
-        // TODO: Implement transpose
-        Err(Error::operation("Transpose not implemented yet"))
+    pub fn transpose(df: &DataFrame, keep_names_as: Option<&str>) -> Result<DataFrame> {
+        let mut df_mut = df.clone();
+        let transposed = df_mut
+            .transpose(keep_names_as, None)
+            .map_err(|e| Error::operation(format!("Failed to transpose: {e}")))?;
+        Ok(transposed)
     }
 }
 
