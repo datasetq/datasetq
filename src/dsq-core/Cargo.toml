@@ -65,7 +65,7 @@ pretty_assertions = { workspace = true }
 tokio = { workspace = true, features = ["rt", "macros", "fs", "io-util"] }
 polars = { workspace = true, features = ["lazy", "csv", "json", "parquet", "temporal", "strings", "is_in"], optional = true }
 dsq-filter = { path = "../dsq-filter", features = ["rand"] }
-dsq-formats = { path = "../dsq-formats", features = ["parquet"] }
+dsq-formats = { path = "../dsq-formats", features = ["parquet", "avro"] }
 once_cell = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
