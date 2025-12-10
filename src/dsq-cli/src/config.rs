@@ -723,6 +723,9 @@ impl Config {
         if other.raw_output {
             self.display.raw_output = other.raw_output;
         }
+        if other.exit_status {
+            self.display.exit_status = other.exit_status;
+        }
 
         // Merge number format
         if other.number_format.float_precision.is_some() {
@@ -1716,5 +1719,601 @@ verbosity = 3
         assert!(!exec_config.debug_mode);
         assert_eq!(exec_config.batch_size, 10000);
         assert!(exec_config.variables.contains_key("test"));
+    }
+
+    #[test]
+    fn test_serialization_round_trip_toml() {
+        let mut config = Config::default();
+        config.filter.lazy_evaluation = false;
+        config.performance.batch_size = 12345;
+        config.formats.csv.separator = "|".to_string();
+        config
+            .variables
+            .insert("key".to_string(), serde_json::json!({"nested": "value"}));
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("round_trip.toml");
+
+        // Save
+        config.save(&config_path).unwrap();
+
+        // Load back
+        let loaded_config = Config::load_from_file(&config_path).unwrap();
+
+        // Verify
+        assert_eq!(
+            config.filter.lazy_evaluation,
+            loaded_config.filter.lazy_evaluation
+        );
+        assert_eq!(
+            config.performance.batch_size,
+            loaded_config.performance.batch_size
+        );
+        assert_eq!(
+            config.formats.csv.separator,
+            loaded_config.formats.csv.separator
+        );
+        assert_eq!(config.variables, loaded_config.variables);
+    }
+
+    #[test]
+    fn test_serialization_round_trip_yaml() {
+        let mut config = Config::default();
+        config.filter.lazy_evaluation = false;
+        config.performance.batch_size = 12345;
+        config.formats.csv.separator = "|".to_string();
+        config
+            .variables
+            .insert("key".to_string(), serde_json::json!({"nested": "value"}));
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("round_trip.yaml");
+
+        // Save
+        config.save(&config_path).unwrap();
+
+        // Load back
+        let loaded_config = Config::load_from_file(&config_path).unwrap();
+
+        // Verify
+        assert_eq!(
+            config.filter.lazy_evaluation,
+            loaded_config.filter.lazy_evaluation
+        );
+        assert_eq!(
+            config.performance.batch_size,
+            loaded_config.performance.batch_size
+        );
+        assert_eq!(
+            config.formats.csv.separator,
+            loaded_config.formats.csv.separator
+        );
+        assert_eq!(config.variables, loaded_config.variables);
+    }
+
+    #[test]
+    fn test_merge_comprehensive() {
+        let mut base = Config::default();
+        base.filter.lazy_evaluation = true;
+        base.performance.batch_size = 1000;
+
+        let other = Config {
+            filter: FilterConfig {
+                lazy_evaluation: false,
+                dataframe_optimizations: false,
+                optimization_level: "advanced".to_string(),
+                max_recursion_depth: 2000,
+                max_execution_time: Some(600),
+                collect_stats: true,
+                error_mode: "collect".to_string(),
+            },
+            performance: PerformanceConfig {
+                batch_size: 2000,
+                memory_limit: Some(1024 * 1024 * 1024),
+                threads: 8,
+                parallel: false,
+                cache_size: 200,
+            },
+            formats: FormatConfigs {
+                csv: CsvConfig {
+                    separator: ";".to_string(),
+                    has_header: false,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            display: DisplayConfig {
+                color: ColorConfig {
+                    enabled: Some(true),
+                    scheme: "dark".to_string(),
+                    auto_detect: false,
+                },
+                compact: true,
+                ..Default::default()
+            },
+            modules: ModuleConfig {
+                library_paths: vec![std::path::PathBuf::from("/test")],
+                auto_load: vec!["test".to_string()],
+                cache_dir: Some(std::path::PathBuf::from("/cache")),
+            },
+            debug: DebugConfig {
+                verbosity: 3,
+                show_plans: true,
+                show_timing: true,
+                debug_mode: true,
+                log_file: Some(std::path::PathBuf::from("/log")),
+            },
+            variables: {
+                let mut vars = std::collections::HashMap::new();
+                vars.insert("var1".to_string(), serde_json::json!("value1"));
+                vars
+            },
+            ..Default::default()
+        };
+
+        base.merge(other);
+
+        // Check merged values
+        assert!(!base.filter.lazy_evaluation); // changed
+        assert!(!base.filter.dataframe_optimizations); // changed
+        assert_eq!(base.filter.optimization_level, "advanced");
+        assert_eq!(base.filter.max_recursion_depth, 2000);
+        assert_eq!(base.filter.max_execution_time, Some(600));
+        assert!(base.filter.collect_stats);
+        assert_eq!(base.filter.error_mode, "collect");
+
+        assert_eq!(base.performance.batch_size, 2000);
+        assert_eq!(base.performance.memory_limit, Some(1024 * 1024 * 1024));
+        assert_eq!(base.performance.threads, 8);
+        assert!(!base.performance.parallel);
+        assert_eq!(base.performance.cache_size, 200);
+
+        assert_eq!(base.formats.csv.separator, ";");
+        assert!(!base.formats.csv.has_header);
+
+        assert_eq!(base.display.color.enabled, Some(true));
+        assert_eq!(base.display.color.scheme, "dark");
+        assert!(!base.display.color.auto_detect);
+        assert!(base.display.compact);
+
+        assert_eq!(
+            base.modules.library_paths,
+            vec![std::path::PathBuf::from("/test")]
+        );
+        assert_eq!(base.modules.auto_load, vec!["test".to_string()]);
+        assert_eq!(
+            base.modules.cache_dir,
+            Some(std::path::PathBuf::from("/cache"))
+        );
+
+        assert_eq!(base.debug.verbosity, 3);
+        assert!(base.debug.show_plans);
+        assert!(base.debug.show_timing);
+        assert!(base.debug.debug_mode);
+        assert_eq!(base.debug.log_file, Some(std::path::PathBuf::from("/log")));
+
+        assert_eq!(base.variables["var1"], serde_json::json!("value1"));
+    }
+
+    #[test]
+    fn test_merge_partial_override() {
+        let mut base = Config::default();
+        base.filter.lazy_evaluation = true;
+        base.performance.batch_size = 1000;
+
+        let other = Config {
+            filter: FilterConfig {
+                lazy_evaluation: false, // should override
+                ..Default::default()
+            },
+            performance: PerformanceConfig {
+                batch_size: PerformanceConfig::default().batch_size, // should not override since == default
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        base.merge(other);
+
+        assert!(!base.filter.lazy_evaluation); // overridden
+        assert_eq!(base.performance.batch_size, 1000); // not overridden
+    }
+
+    #[test]
+    fn test_parse_memory_limit_edge_cases() {
+        // Test large numbers (use reasonable size)
+        assert_eq!(
+            parse_memory_limit("1000GB").unwrap(),
+            1000usize * 1024 * 1024 * 1024
+        );
+
+        // Test zero
+        assert_eq!(parse_memory_limit("0").unwrap(), 0);
+
+        // Test fractional (should fail)
+        assert!(parse_memory_limit("1.5GB").is_err());
+
+        // Test negative (should fail as usize)
+        assert!(parse_memory_limit("-1GB").is_err());
+
+        // Test mixed case
+        assert_eq!(parse_memory_limit("1Gb").unwrap(), 1024 * 1024 * 1024);
+        assert_eq!(parse_memory_limit("1gB").unwrap(), 1024 * 1024 * 1024);
+
+        // Test whitespace
+        assert!(parse_memory_limit(" 1GB ").is_err()); // no trim
+
+        // Test empty string
+        assert!(parse_memory_limit("").is_err());
+    }
+
+    #[test]
+    fn test_validate_config_edge_cases() {
+        let mut config = Config::default();
+
+        // Valid config
+        assert!(validate_config(&config).is_ok());
+
+        // Test high thread count
+        config.performance.threads = 1024;
+        assert!(validate_config(&config).is_ok());
+        config.performance.threads = 1025;
+        assert!(validate_config(&config).is_err());
+
+        // Test empty CSV separator
+        config = Config::default();
+        config.formats.csv.separator = "".to_string();
+        assert!(validate_config(&config).is_err());
+
+        // Test multi-char CSV separator
+        config.formats.csv.separator = ",;".to_string();
+        assert!(validate_config(&config).is_err());
+
+        // Test empty quote char
+        config = Config::default();
+        config.formats.csv.quote_char = "".to_string();
+        assert!(validate_config(&config).is_err());
+
+        // Test multi-char quote
+        config.formats.csv.quote_char = "\"\"".to_string();
+        assert!(validate_config(&config).is_err());
+
+        // Test zero batch size
+        config = Config::default();
+        config.performance.batch_size = 0;
+        assert!(validate_config(&config).is_err());
+
+        // Test zero recursion depth
+        config = Config::default();
+        config.filter.max_recursion_depth = 0;
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_find_config_file_with_home_edge_cases() {
+        let temp_dir = TempDir::new().unwrap();
+        let temp_path = temp_dir.path();
+
+        // Test with non-existent home
+        assert!(
+            Config::find_config_file_with_home(Some(temp_path), Some("/nonexistent")).is_none()
+        );
+
+        // Test with empty home
+        assert!(Config::find_config_file_with_home(Some(temp_path), Some("")).is_none());
+
+        // Test with home that exists but no config
+        assert!(Config::find_config_file_with_home(Some(temp_path), temp_path.to_str()).is_none());
+
+        // Test priority: current dir over home
+        fs::write(temp_path.join("dsq.toml"), "current").unwrap();
+        let home_dir = TempDir::new().unwrap();
+        fs::create_dir_all(home_dir.path().join(".config").join("dsq")).unwrap();
+        fs::write(
+            home_dir.path().join(".config").join("dsq").join("dsq.toml"),
+            "home",
+        )
+        .unwrap();
+
+        let found = Config::find_config_file_with_home(Some(temp_path), home_dir.path().to_str());
+        assert_eq!(found.unwrap(), temp_path.join("dsq.toml"));
+
+        // Remove current, should find home
+        fs::remove_file(temp_path.join("dsq.toml")).unwrap();
+        let found = Config::find_config_file_with_home(Some(temp_path), home_dir.path().to_str());
+        assert_eq!(
+            found.unwrap(),
+            home_dir.path().join(".config").join("dsq").join("dsq.toml")
+        );
+    }
+
+    #[test]
+    fn test_get_format_read_options() {
+        let config = Config::default();
+
+        // Test CSV
+        let csv_opts = config.get_format_read_options(DataFormat::Csv);
+        assert!(csv_opts.infer_schema);
+
+        // Test JSON
+        let json_opts = config.get_format_read_options(DataFormat::Json);
+        assert!(json_opts.infer_schema);
+
+        // Test Parquet
+        let parquet_opts = config.get_format_read_options(DataFormat::Parquet);
+        assert!(!parquet_opts.infer_schema);
+
+        // Test other formats (should use defaults)
+        let other_opts = config.get_format_read_options(DataFormat::JsonLines);
+        assert!(other_opts.infer_schema);
+    }
+
+    #[test]
+    fn test_get_format_write_options() {
+        let mut config = Config::default();
+
+        // Test CSV
+        let csv_opts = config.get_format_write_options(DataFormat::Csv);
+        assert!(csv_opts.include_header);
+
+        config.formats.csv.has_header = false;
+        let csv_opts = config.get_format_write_options(DataFormat::Csv);
+        assert!(!csv_opts.include_header);
+
+        // Test JSON
+        let json_opts = config.get_format_write_options(DataFormat::Json);
+        assert!(!json_opts.include_header);
+
+        // Test Parquet
+        let parquet_opts = config.get_format_write_options(DataFormat::Parquet);
+        assert!(!parquet_opts.include_header);
+        assert_eq!(parquet_opts.compression, Some("snappy".to_string()));
+
+        config.formats.parquet.compression = "gzip".to_string();
+        let parquet_opts = config.get_format_write_options(DataFormat::Parquet);
+        assert_eq!(parquet_opts.compression, Some("gzip".to_string()));
+    }
+
+    #[test]
+    fn test_variables_conversion_complex() {
+        let mut config = Config::default();
+
+        // Add various JSON types
+        config
+            .variables
+            .insert("string".to_string(), serde_json::json!("hello"));
+        config
+            .variables
+            .insert("number".to_string(), serde_json::json!(42.5));
+        config
+            .variables
+            .insert("integer".to_string(), serde_json::json!(42));
+        config
+            .variables
+            .insert("boolean".to_string(), serde_json::json!(true));
+        config
+            .variables
+            .insert("null".to_string(), serde_json::json!(null));
+        config
+            .variables
+            .insert("array".to_string(), serde_json::json!([1, 2, 3]));
+        config
+            .variables
+            .insert("object".to_string(), serde_json::json!({"key": "value"}));
+
+        let converted = config.get_variables_as_value();
+
+        assert_eq!(converted.len(), 7);
+        assert_eq!(
+            converted["string"],
+            dsq_core::Value::String("hello".to_string())
+        );
+        assert_eq!(converted["number"], dsq_core::Value::Float(42.5));
+        assert_eq!(converted["integer"], dsq_core::Value::Int(42));
+        assert_eq!(converted["boolean"], dsq_core::Value::Bool(true));
+        // Null, array, object conversion depends on dsq_core::Value implementation
+    }
+
+    #[test]
+    fn test_config_load_with_env_and_file() {
+        let temp_dir = TempDir::new().unwrap();
+        let temp_path = temp_dir.path();
+
+        // Create config file
+        let toml_content = r#"
+[filter]
+lazy_evaluation = false
+[performance]
+batch_size = 5000
+"#;
+        fs::create_dir_all(temp_path.join(".config").join("dsq")).unwrap();
+        fs::write(
+            temp_path.join(".config").join("dsq").join("dsq.toml"),
+            toml_content,
+        )
+        .unwrap();
+
+        // Mock env reader with HOME and some DSQ vars
+        let temp_path_str = temp_path.to_str().unwrap().to_string();
+        let env_reader = move |key: &str| match key {
+            "HOME" => Some(temp_path_str.clone()),
+            "DSQ_DEBUG" => Some("true".to_string()),
+            "DSQ_COLORS" => Some("false".to_string()),
+            _ => None,
+        };
+
+        let config = Config::load_with_env_reader(env_reader).unwrap();
+
+        // File settings
+        assert!(!config.filter.lazy_evaluation);
+        assert_eq!(config.performance.batch_size, 5000);
+
+        // Env settings
+        assert!(config.debug.debug_mode);
+        assert_eq!(config.display.color.enabled, Some(false));
+
+        // Defaults
+        assert!(config.filter.dataframe_optimizations);
+    }
+
+    #[test]
+    fn test_apply_cli_edge_cases() {
+        #[cfg(feature = "cli")]
+        {
+            let mut config = Config::default();
+            let mut cli_config = CliConfig::default();
+            cli_config.input_format = Some(DataFormat::Csv);
+            cli_config.output_format = Some(DataFormat::Json);
+            cli_config.limit = Some(1000);
+            cli_config.lazy = false;
+            cli_config.dataframe_optimizations = false;
+            cli_config.compact_output = true;
+            cli_config.raw_output = true;
+            cli_config.sort_keys = true;
+            cli_config.exit_status = true;
+            cli_config.color_output = None;
+            cli_config.csv_separator = Some("|".to_string());
+            cli_config.csv_headers = Some(false);
+            cli_config.batch_size = Some(9999);
+            cli_config.memory_limit = Some("512MB".to_string());
+            cli_config.library_path = vec![std::path::PathBuf::from("/cli/lib")];
+            cli_config.verbose = 5;
+            cli_config.explain = true;
+            cli_config
+                .variables
+                .insert("cli_var".to_string(), serde_json::json!("cli_value"));
+
+            config.apply_cli(&cli_config).unwrap();
+
+            assert_eq!(config.io.default_input_format, Some(DataFormat::Csv));
+            assert_eq!(config.io.default_output_format, Some(DataFormat::Json));
+            assert_eq!(config.io.limit, Some(1000));
+            assert!(!config.filter.lazy_evaluation);
+            assert!(!config.filter.dataframe_optimizations);
+            assert!(config.display.compact);
+            assert!(config.display.raw_output);
+            assert!(config.display.sort_keys);
+            assert!(config.display.exit_status);
+            assert_eq!(config.formats.csv.separator, "|");
+            assert!(!config.formats.csv.has_header);
+            assert_eq!(config.performance.batch_size, 9999);
+            assert_eq!(config.performance.memory_limit, Some(512 * 1024 * 1024));
+            assert_eq!(
+                config.modules.library_paths,
+                vec![std::path::PathBuf::from("/cli/lib")]
+            );
+            assert_eq!(config.debug.verbosity, 5);
+            assert!(config.debug.show_plans);
+            assert_eq!(config.variables["cli_var"], serde_json::json!("cli_value"));
+        }
+    }
+
+    #[test]
+    fn test_merge_csv_config() {
+        let mut config = Config::default();
+        let other = CsvConfig {
+            separator: ";".to_string(),
+            has_header: false,
+            quote_char: "'".to_string(),
+            comment_char: Some("#".to_string()),
+            null_values: vec!["N/A".to_string()],
+            trim_whitespace: true,
+            infer_schema_length: 2000,
+        };
+
+        config.merge_csv_config(other);
+
+        assert_eq!(config.formats.csv.separator, ";");
+        assert!(!config.formats.csv.has_header);
+        assert_eq!(config.formats.csv.quote_char, "'");
+        assert_eq!(config.formats.csv.comment_char, Some("#".to_string()));
+        assert_eq!(config.formats.csv.null_values, vec!["N/A".to_string()]);
+        assert!(config.formats.csv.trim_whitespace);
+        assert_eq!(config.formats.csv.infer_schema_length, 2000);
+    }
+
+    #[test]
+    fn test_merge_json_config() {
+        let mut config = Config::default();
+        let other = JsonConfig {
+            pretty_print: false,
+            maintain_order: true,
+            escape_unicode: true,
+            flatten: true,
+            flatten_separator: "/".to_string(),
+        };
+
+        config.merge_json_config(other);
+
+        assert!(!config.formats.json.pretty_print);
+        assert!(config.formats.json.maintain_order);
+        assert!(config.formats.json.escape_unicode);
+        assert!(config.formats.json.flatten);
+        assert_eq!(config.formats.json.flatten_separator, "/");
+    }
+
+    #[test]
+    fn test_merge_parquet_config() {
+        let mut config = Config::default();
+        let other = ParquetConfig {
+            compression: "gzip".to_string(),
+            write_statistics: false,
+            row_group_size: 2000000,
+            data_page_size: 1000000,
+        };
+
+        config.merge_parquet_config(other);
+
+        assert_eq!(config.formats.parquet.compression, "gzip");
+        assert!(!config.formats.parquet.write_statistics);
+        assert_eq!(config.formats.parquet.row_group_size, 2000000);
+        assert_eq!(config.formats.parquet.data_page_size, 1000000);
+    }
+
+    #[test]
+    fn test_merge_display_config() {
+        let mut config = Config::default();
+        let other = DisplayConfig {
+            color: ColorConfig {
+                enabled: Some(false),
+                scheme: "light".to_string(),
+                auto_detect: false,
+            },
+            compact: true,
+            sort_keys: true,
+            raw_output: true,
+            exit_status: true,
+            number_format: NumberFormatConfig {
+                float_precision: Some(2),
+                scientific_notation: true,
+                scientific_threshold: 1000.0,
+            },
+            datetime_format: DateTimeFormatConfig {
+                date_format: "%d/%m/%Y".to_string(),
+                datetime_format: "%d/%m/%Y %H:%M:%S".to_string(),
+                time_format: "%H:%M".to_string(),
+                timezone: "UTC".to_string(),
+            },
+        };
+
+        config.merge_display_config(other);
+
+        assert_eq!(config.display.color.enabled, Some(false));
+        assert_eq!(config.display.color.scheme, "light");
+        assert!(!config.display.color.auto_detect);
+        assert!(config.display.compact);
+        assert!(config.display.sort_keys);
+        assert!(config.display.raw_output);
+        assert!(config.display.exit_status);
+        assert_eq!(config.display.number_format.float_precision, Some(2));
+        assert!(config.display.number_format.scientific_notation);
+        assert_eq!(config.display.number_format.scientific_threshold, 1000.0);
+        assert_eq!(config.display.datetime_format.date_format, "%d/%m/%Y");
+        assert_eq!(
+            config.display.datetime_format.datetime_format,
+            "%d/%m/%Y %H:%M:%S"
+        );
+        assert_eq!(config.display.datetime_format.time_format, "%H:%M");
+        assert_eq!(config.display.datetime_format.timezone, "UTC");
     }
 }

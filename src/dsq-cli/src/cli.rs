@@ -1397,6 +1397,220 @@ mod tests {
     }
 
     #[test]
+    fn test_filter_from_input_file() {
+        // When no filter specified, first input file is treated as filter
+        let args = vec!["dsq", "input.json"];
+        let cli = parse_args_from(args).unwrap();
+        let config = CliConfig::from(&cli);
+        assert_eq!(config.filter, Some("input.json".to_string()));
+        assert!(config.input_files.is_empty());
+    }
+
+    #[test]
+    fn test_argfile_variables() {
+        use std::env;
+        use std::fs;
+
+        let temp_dir = env::temp_dir();
+        let temp_file = temp_dir.join("test_argfile.json");
+        fs::write(&temp_file, r#"{"key": "value"}"#).unwrap();
+
+        let args = vec!["dsq", "--argfile", "var", temp_file.to_str().unwrap(), "."];
+        let cli = parse_args_from(args).unwrap();
+        let config = CliConfig::from(&cli);
+
+        assert_eq!(
+            config.variables.get("var"),
+            Some(&serde_json::Value::Object(serde_json::Map::from_iter(
+                vec![(
+                    "key".to_string(),
+                    serde_json::Value::String("value".to_string())
+                )]
+            )))
+        );
+
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_argfile_invalid_json() {
+        use std::env;
+        use std::fs;
+
+        let temp_dir = env::temp_dir();
+        let temp_file = temp_dir.join("test_argfile_invalid.json");
+        fs::write(&temp_file, r#"{"invalid": json"#).unwrap();
+
+        let args = vec!["dsq", "--argfile", "var", temp_file.to_str().unwrap(), "."];
+        let cli = parse_args_from(args).unwrap();
+        let config = CliConfig::from(&cli);
+
+        // Invalid JSON should not be added
+        assert!(!config.variables.contains_key("var"));
+
+        // Clean up
+        fs::remove_file(temp_file).unwrap();
+    }
+
+    #[test]
+    fn test_argfile_missing_file() {
+        let args = vec!["dsq", "--argfile", "var", "/nonexistent/file.json", "."];
+        let cli = parse_args_from(args).unwrap();
+        let config = CliConfig::from(&cli);
+
+        // Missing file should not be added
+        assert!(!config.variables.contains_key("var"));
+    }
+
+    #[test]
+    fn test_is_likely_csv() {
+        let config = CliConfig {
+            input_format: Some(DataFormat::Csv),
+            ..Default::default()
+        };
+        assert!(config.is_likely_csv());
+
+        let config = CliConfig {
+            input_files: vec![PathBuf::from("data.csv")],
+            ..Default::default()
+        };
+        assert!(config.is_likely_csv());
+
+        let config = CliConfig {
+            input_files: vec![PathBuf::from("data.tsv")],
+            ..Default::default()
+        };
+        assert!(config.is_likely_csv());
+
+        let config = CliConfig {
+            input_files: vec![PathBuf::from("data.json")],
+            ..Default::default()
+        };
+        assert!(!config.is_likely_csv());
+    }
+
+    #[test]
+    fn test_validate_and_warn_no_warnings() {
+        let config = CliConfig {
+            lazy: false,
+            null_input: false,
+            slurp: false,
+            limit: None,
+            quiet: false,
+            verbose: 0,
+            explain: false,
+            test: false,
+            output: None,
+            csv_separator: None,
+            input_format: Some(DataFormat::Json),
+            ..Default::default()
+        };
+        // Should not panic
+        config.validate_and_warn();
+    }
+
+    #[test]
+    fn test_get_output_format_fallbacks() {
+        let config = CliConfig {
+            output_format: None,
+            output: Some(PathBuf::from("output.parquet")),
+            input_format: Some(DataFormat::Csv),
+            ..Default::default()
+        };
+        // Assuming DataFormat::from_path works for parquet
+        assert_eq!(config.get_output_format(), Some(DataFormat::Parquet));
+
+        let config = CliConfig {
+            output_format: None,
+            output: None,
+            input_format: Some(DataFormat::Json),
+            ..Default::default()
+        };
+        assert_eq!(config.get_output_format(), Some(DataFormat::Json));
+    }
+
+    #[test]
+    fn test_should_use_color_with_no_color_env() {
+        use std::env;
+
+        // Save original value
+        let original = env::var("NO_COLOR");
+
+        env::set_var("NO_COLOR", "1");
+        let config = CliConfig {
+            color_output: Some(true),
+            ..Default::default()
+        };
+        assert!(!config.should_use_color());
+
+        // Restore
+        if let Ok(val) = original {
+            env::set_var("NO_COLOR", val);
+        } else {
+            env::remove_var("NO_COLOR");
+        }
+    }
+
+    #[test]
+    fn test_completions_subcommand() {
+        let args = vec!["dsq", "completions", "bash"];
+        let cli = parse_args_from(args).unwrap();
+
+        match cli.command {
+            Some(Commands::Completions { shell }) => {
+                assert_eq!(shell, clap_complete::Shell::Bash);
+            }
+            _ => panic!("Expected Completions command"),
+        }
+    }
+
+    #[test]
+    fn test_config_edit_subcommand() {
+        let args = vec!["dsq", "config", "edit", "custom.toml"];
+        let cli = parse_args_from(args).unwrap();
+
+        match cli.command {
+            Some(Commands::Config {
+                command: ConfigCommands::Edit { path },
+            }) => {
+                assert_eq!(path, Some(PathBuf::from("custom.toml")));
+            }
+            _ => panic!("Expected Config Edit command"),
+        }
+    }
+
+    #[test]
+    fn test_config_reset_subcommand() {
+        let args = vec![
+            "dsq",
+            "config",
+            "reset",
+            "filter.lazy_evaluation",
+            "--config",
+            "custom.toml",
+        ];
+        let cli = parse_args_from(args).unwrap();
+
+        match cli.command {
+            Some(Commands::Config {
+                command: ConfigCommands::Reset { key, config },
+            }) => {
+                assert_eq!(key, "filter.lazy_evaluation");
+                assert_eq!(config, Some(PathBuf::from("custom.toml")));
+            }
+            _ => panic!("Expected Config Reset command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_args_from_error_cases() {
+        // Test with invalid args
+        let args = vec!["dsq", "--invalid-flag"];
+        assert!(parse_args_from(args).is_err());
+    }
+
+    #[test]
     fn test_subcommand_edge_cases() {
         // Convert without required output
         let args = vec!["dsq", "convert", "input.csv"];

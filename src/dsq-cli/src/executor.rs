@@ -429,4 +429,157 @@ mod tests {
         let explanation = result.unwrap();
         assert!(!explanation.is_empty());
     }
+
+    #[tokio::test]
+    async fn test_execute_filter_on_value_with_filter() {
+        let config = Config::default();
+        let mut executor = Executor::new(config);
+        let input_value = dsq_core::utils::object([
+            ("name", dsq_core::Value::string("Alice")),
+            ("age", dsq_core::Value::int(30)),
+        ]);
+
+        // Test filter ".name"
+        let result = executor
+            .execute_filter_on_value(".name", input_value.clone(), None)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_execute_filter_on_value_with_filter() {
+        let config = Config::default();
+        let mut executor = Executor::new(config);
+        let input_value = dsq_core::utils::object([
+            ("name", dsq_core::Value::string("Alice")),
+            ("age", dsq_core::Value::int(30)),
+        ]);
+
+        // Test filter ".name"
+        let result = executor
+            .execute_filter_on_value(".name", input_value.clone(), None)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_execute_filter_on_value_with_limit() {
+        let mut config = Config::default();
+        config.io.limit = Some(1);
+        let mut executor = Executor::new(config);
+        let input_value = Value::Array(vec![
+            dsq_core::Value::int(1),
+            dsq_core::Value::int(2),
+            dsq_core::Value::int(3),
+        ]);
+
+        // Test with limit
+        let result = executor
+            .execute_filter_on_value(".", input_value, None)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_execute_filter_on_value_invalid_filter() {
+        let config = Config::default();
+        let mut executor = Executor::new(config);
+        let input_value = Value::Null;
+
+        // Test invalid filter
+        let result = executor
+            .execute_filter_on_value("invalid +++", input_value, None)
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_apply_limit_array() {
+        let config = Config::default();
+        let executor = Executor::new(config);
+        let value = Value::Array(vec![
+            Value::int(1),
+            Value::int(2),
+            Value::int(3),
+            Value::int(4),
+        ]);
+        let limited = executor.apply_limit(value, 2).unwrap();
+        match limited {
+            Value::Array(arr) => assert_eq!(arr.len(), 2),
+            _ => panic!("Expected array"),
+        }
+    }
+
+    #[test]
+    fn test_apply_limit_other() {
+        let config = Config::default();
+        let executor = Executor::new(config);
+        let value = Value::string("test");
+        let limited = executor.apply_limit(value.clone(), 1).unwrap();
+        assert_eq!(limited, value);
+    }
+
+    #[test]
+    fn test_validate_filter_invalid() {
+        let config = Config::default();
+        let executor = Executor::new(config);
+
+        // More invalid filters
+        assert!(executor.validate_filter(".").is_ok());
+        assert!(executor.validate_filter("invalid syntax +++").is_err());
+        assert!(executor.validate_filter(".name.").is_err());
+        assert!(executor.validate_filter("(.name").is_err());
+    }
+
+    #[tokio::test]
+    async fn test_read_input() {
+        let config = Config::default();
+        let executor = Executor::new(config);
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(&temp_file, r#"{"name": "test"}"#).unwrap();
+        let path = temp_file.path();
+
+        let result = executor.read_input(path).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_output() {
+        let config = Config::default();
+        let executor = Executor::new(config);
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        let path = temp_file.path();
+        let value = Value::string("test");
+
+        let result = executor.write_output(&value, path).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_execute_filter_with_file() {
+        let config = Config::default();
+        let mut executor = Executor::new(config);
+        let temp_file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(&temp_file, r#"{"name": "Alice"}"#).unwrap();
+        let input_path = temp_file.path();
+
+        let result = executor
+            .execute_filter(".name", Some(input_path), None)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_execute_filter_on_value_with_stats() {
+        let mut config = Config::default();
+        config.debug.verbosity = 1;
+        let mut executor = Executor::new(config);
+        let input_value = Value::Null;
+
+        // Capture stderr for stats, but since it's eprintln, hard to test
+        let result = executor
+            .execute_filter_on_value(".", input_value, None)
+            .await;
+        assert!(result.is_ok());
+    }
 }
