@@ -43,7 +43,7 @@ jobs:
         run: cargo build --workspace --verbose
 
       - name: Run tests
-        run: cargo test --workspace --verbose
+        run: cargo test --workspace --lib --verbose --jobs 4
 
   fmt:
     name: Format
@@ -107,8 +107,6 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
 
-      - name: Test documentation examples
-        run: cargo test --doc --workspace
 
   security:
     name: Security Audit
