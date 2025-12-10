@@ -1265,11 +1265,16 @@ mod tests {
 
     #[test]
     fn test_should_use_color() {
-        let mut config = CliConfig::default();
-        config.color_output = Some(true);
+        let config = CliConfig {
+            color_output: Some(true),
+            ..Default::default()
+        };
         assert!(config.should_use_color());
 
-        config.color_output = Some(false);
+        let config = CliConfig {
+            color_output: Some(false),
+            ..Default::default()
+        };
         assert!(!config.should_use_color());
 
         // For None, it depends on quiet and atty, but since atty is external,
@@ -1289,7 +1294,6 @@ mod tests {
     fn test_should_show_progress() {
         let mut config = CliConfig::default();
         // Test cases where should_show_progress should return false
-        config.verbose = 0;
         assert!(!config.should_show_progress());
 
         config.quiet = true;
@@ -1299,40 +1303,61 @@ mod tests {
 
     #[test]
     fn test_get_output_format() {
-        let mut config = CliConfig::default();
-        config.output_format = Some(DataFormat::Json);
+        let config = CliConfig {
+            output_format: Some(DataFormat::Json),
+            ..Default::default()
+        };
         assert_eq!(config.get_output_format(), Some(DataFormat::Json));
 
-        config.output_format = None;
-        config.output = Some(PathBuf::from("test.json"));
+        let config = CliConfig {
+            output_format: None,
+            output: Some(PathBuf::from("test.json")),
+            ..Default::default()
+        };
         // Assuming DataFormat::from_path works
         assert_eq!(config.get_output_format(), Some(DataFormat::Json));
 
-        config.output = None;
-        config.input_format = Some(DataFormat::Csv);
+        let config = CliConfig {
+            output: None,
+            input_format: Some(DataFormat::Csv),
+            ..Default::default()
+        };
         assert_eq!(config.get_output_format(), Some(DataFormat::Csv));
     }
 
     #[test]
     fn test_is_conversion() {
-        let mut config = CliConfig::default();
-        config.filter = None;
-        config.input_format = Some(DataFormat::Csv);
-        config.output_format = Some(DataFormat::Json);
+        let config = CliConfig {
+            filter: None,
+            input_format: Some(DataFormat::Csv),
+            output_format: Some(DataFormat::Json),
+            ..Default::default()
+        };
         assert!(config.is_conversion());
 
-        config.filter = Some(".".to_string());
+        let config = CliConfig {
+            filter: Some(".".to_string()),
+            input_format: Some(DataFormat::Csv),
+            output_format: Some(DataFormat::Json),
+            ..Default::default()
+        };
         assert!(!config.is_conversion());
 
-        config.filter = None;
-        config.input_format = None;
+        let config = CliConfig {
+            filter: None,
+            input_format: None,
+            output_format: Some(DataFormat::Json),
+            ..Default::default()
+        };
         assert!(!config.is_conversion());
     }
 
     #[test]
     fn test_is_stdin_stdout() {
-        let mut config = CliConfig::default();
-        config.input_files = vec![];
+        let mut config = CliConfig {
+            input_files: vec![],
+            ..Default::default()
+        };
         assert!(config.is_stdin());
 
         config.input_files = vec![PathBuf::from("file.json")];

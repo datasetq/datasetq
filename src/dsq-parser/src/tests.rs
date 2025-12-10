@@ -1241,11 +1241,8 @@ fn test_all_examples() {
     let mut success_count = 0;
     for query in &example_queries {
         println!("Testing example query: {}", query);
-        match parse_success(query) {
-            _ => {
-                success_count += 1;
-            }
-        }
+        parse_success(query);
+        success_count += 1;
     }
 
     println!("Successfully parsed {} example queries", success_count);

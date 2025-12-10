@@ -1294,7 +1294,7 @@ mod tests {
             Value::String("c".to_string()),
         ]);
         let result = registry
-            .call_function("group_concat", &[arr.clone()])
+            .call_function("group_concat", std::slice::from_ref(&arr))
             .unwrap();
         assert_eq!(result, Value::String("a,b,c".to_string()));
 
@@ -1602,7 +1602,7 @@ mod tests {
 
         // Test with array
         let arr = Value::Array(vec![Value::Int(1), Value::Int(2)]);
-        let result = builtin_select(&[arr.clone()]).unwrap();
+        let result = builtin_select(std::slice::from_ref(&arr)).unwrap();
         assert_eq!(result, arr);
 
         // Test with float
@@ -2287,7 +2287,7 @@ mod tests {
         let result = builtin::rand::builtin_rand(&[]).unwrap();
         match result {
             Value::Float(f) => {
-                assert!(f >= 0.0 && f < 1.0);
+                assert!((0.0..1.0).contains(&f));
             }
             _ => panic!("Expected Float"),
         }
@@ -2296,7 +2296,7 @@ mod tests {
         let result = builtin::rand::builtin_rand(&[Value::Int(42)]).unwrap();
         match result {
             Value::Float(f) => {
-                assert!(f >= 0.0 && f < 1.0);
+                assert!((0.0..1.0).contains(&f));
             }
             _ => panic!("Expected Float"),
         }
@@ -3122,7 +3122,9 @@ mod tests {
 
         // Test sorting mixed types (should not change order for unsupported comparisons)
         let arr = Value::Array(vec![Value::Int(1), Value::String("a".to_string())]);
-        let result = registry.call_function("sort", &[arr.clone()]).unwrap();
+        let result = registry
+            .call_function("sort", std::slice::from_ref(&arr))
+            .unwrap();
         assert_eq!(result, arr); // Should remain unchanged
 
         // Test invalid arguments
@@ -3259,9 +3261,9 @@ mod tests {
         let result = registry.call_function("stdev_s", &[df_value]).unwrap();
         match result {
             Value::Object(obj) => {
-                // Should return object with null values (placeholder implementation)
-                assert_eq!(obj.get("col1"), Some(&Value::Null));
-                assert_eq!(obj.get("col2"), Some(&Value::Null));
+                // Sample standard deviation of [1.0, 2.0, 3.0] is 1.0
+                assert_eq!(obj.get("col1"), Some(&Value::Float(1.0)));
+                assert_eq!(obj.get("col2"), Some(&Value::Float(1.0)));
             }
             _ => panic!("Expected object result"),
         }
@@ -3276,8 +3278,11 @@ mod tests {
         let series_value = Value::Series(series);
 
         let result = registry.call_function("stdev_s", &[series_value]).unwrap();
-        // Should return null (placeholder implementation)
-        assert_eq!(result, Value::Null);
+        // Sample standard deviation of [1, 2, 3, 4, 5] is sqrt(2.5) ≈ 1.5811388
+        match result {
+            Value::Float(val) => assert!((val - 1.5811388).abs() < 1e-6),
+            _ => panic!("Expected Float"),
+        }
     }
 
     #[test]
@@ -4581,7 +4586,7 @@ mod tests {
         assert!(result.is_err());
 
         // Test wrong number of arguments
-        let result = registry.call_function("time_series_range", &[start.clone()]);
+        let result = registry.call_function("time_series_range", &[start]);
         assert!(result.is_err());
     }
 

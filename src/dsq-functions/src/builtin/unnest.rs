@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn test_builtin_unnest_non_object() {
         let value = Value::String("not an object".to_string());
-        let result = builtin_unnest(&[value.clone()]).unwrap();
+        let result = builtin_unnest(std::slice::from_ref(&value)).unwrap();
         assert_eq!(result, value);
     }
 

@@ -69,7 +69,7 @@ dsq-formats = { path = "../dsq-formats", features = ["parquet"] }
 once_cell = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { workspace = true, default-features = false, features = ["lazy", "csv", "json", "temporal", "strings", "is_in"], optional = true }
+polars = { workspace = true, features = ["lazy", "csv", "json", "temporal", "strings", "is_in"], optional = true }
 
 [features]
 default = ["all-formats", "io"]

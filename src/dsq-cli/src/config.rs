@@ -1436,22 +1436,22 @@ performance:
     #[cfg(feature = "cli")]
     fn test_cli_override_comprehensive() {
         let mut config = Config::default();
-        let mut cli_config = CliConfig::default();
-
-        // Set various CLI options
-        cli_config.lazy = false;
-        cli_config.dataframe_optimizations = false;
-        cli_config.compact_output = true;
-        cli_config.raw_output = true;
-        cli_config.sort_keys = true;
-        cli_config.color_output = Some(true);
-        cli_config.csv_separator = Some("|".to_string());
-        cli_config.csv_headers = Some(false);
-        cli_config.batch_size = Some(5000);
-        cli_config.memory_limit = Some("2GB".to_string());
-        cli_config.library_path = vec![std::path::PathBuf::from("/lib")];
-        cli_config.verbose = 2;
-        cli_config.explain = true;
+        let mut cli_config = CliConfig {
+            lazy: false,
+            dataframe_optimizations: false,
+            compact_output: true,
+            raw_output: true,
+            sort_keys: true,
+            color_output: Some(true),
+            csv_separator: Some("|".to_string()),
+            csv_headers: Some(false),
+            batch_size: Some(5000),
+            memory_limit: Some("2GB".to_string()),
+            library_path: vec![std::path::PathBuf::from("/lib")],
+            verbose: 2,
+            explain: true,
+            ..Default::default()
+        };
         cli_config
             .variables
             .insert("test".to_string(), serde_json::json!("value"));

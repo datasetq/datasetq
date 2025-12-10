@@ -217,7 +217,7 @@ mod tests {
         let df_value = Value::DataFrame(df);
 
         // Too few arguments
-        let result = builtin_cut(&[df_value.clone()]);
+        let result = builtin_cut(std::slice::from_ref(&df_value));
         assert!(result.is_err());
         assert!(result
             .unwrap_err()

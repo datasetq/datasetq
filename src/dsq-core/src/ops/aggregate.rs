@@ -1482,11 +1482,11 @@ mod tests {
                 assert!(df
                     .get_column_names()
                     .iter()
-                    .any(|name| PlSmallStr::from("id") == *name));
+                    .any(|name| name.as_str() == "id"));
                 assert!(df
                     .get_column_names()
                     .iter()
-                    .any(|name| PlSmallStr::from("value_sum") == *name));
+                    .any(|name| name.as_str() == "value_sum"));
             }
             _ => panic!("Expected DataFrame"),
         }

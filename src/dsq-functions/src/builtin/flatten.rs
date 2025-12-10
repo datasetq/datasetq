@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn test_flatten_non_array() {
         let val = Value::String("hello".to_string());
-        let result = builtin_flatten(&[val.clone()]).unwrap();
+        let result = builtin_flatten(std::slice::from_ref(&val)).unwrap();
         assert_eq!(result, val);
     }
 

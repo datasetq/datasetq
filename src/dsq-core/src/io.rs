@@ -1200,8 +1200,10 @@ mod tests {
         temp_file.write_all(csv_data.as_bytes()).unwrap();
         let path = temp_file.path();
 
-        let mut options = ReadOptions::default();
-        options.n_rows = Some(2);
+        let options = ReadOptions {
+            n_rows: Some(2),
+            ..Default::default()
+        };
         let result = read_file_sync(path, &options).unwrap();
 
         match result {
@@ -1221,8 +1223,10 @@ mod tests {
         temp_file.write_all(csv_data.as_bytes()).unwrap();
         let path = temp_file.path();
 
-        let mut options = ReadOptions::default();
-        options.skip_rows = 1;
+        let options = ReadOptions {
+            skip_rows: 1,
+            ..Default::default()
+        };
         let result = read_file_sync(path, &options).unwrap();
 
         match result {

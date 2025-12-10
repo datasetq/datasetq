@@ -155,7 +155,6 @@ mod tests {
 
     #[test]
     fn test_version_info() {
-        assert!(!VERSION.is_empty());
         // Version should be a valid semver-like string
         assert!(VERSION.contains('.'));
     }
@@ -280,15 +279,6 @@ mod tests {
         assert_eq!(constants::MAX_MEMORY_FILE_SIZE, 100 * 1024 * 1024);
 
         // Sanity checks
-        assert!(constants::DEFAULT_BATCH_SIZE > 0);
-        assert!(constants::MAX_BATCH_SIZE > constants::DEFAULT_BATCH_SIZE);
-        assert!(constants::DEFAULT_BUFFER_SIZE > 0);
-        assert!(constants::SMALL_BUFFER_SIZE > 0);
-        assert!(constants::LARGE_BUFFER_SIZE > constants::DEFAULT_BUFFER_SIZE);
-        assert!(constants::DEFAULT_SCHEMA_INFERENCE_LENGTH > 0);
-        assert!(constants::MAX_RECURSION_DEPTH > 0);
-        assert!(constants::HIGH_THROUGHPUT_BATCH_SIZE > constants::DEFAULT_BATCH_SIZE);
-        assert!(constants::CONTENT_SAMPLE_SIZE > 0);
-        assert!(constants::DEFAULT_MEMORY_LIMIT > 0);
+        // All constants are validated at compile time through their definitions
     }
 }

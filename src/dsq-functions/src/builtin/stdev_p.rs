@@ -1,5 +1,6 @@
 use dsq_shared::value::Value;
 use dsq_shared::Result;
+use polars::prelude::*;
 use std::collections::HashMap;
 
 pub fn builtin_stdev_p(args: &[Value]) -> Result<Value> {
@@ -32,15 +33,70 @@ pub fn builtin_stdev_p(args: &[Value]) -> Result<Value> {
             for col_name in df.get_column_names() {
                 if let Ok(series) = df.column(col_name) {
                     if series.dtype().is_numeric() {
-                        // std calculation for DataFrame columns - placeholder
+                        let mut values = Vec::new();
+                        for i in 0..series.len() {
+                            if let Ok(val) = series.get(i) {
+                                match val {
+                                    AnyValue::Int8(n) => values.push(n as f64),
+                                    AnyValue::Int16(n) => values.push(n as f64),
+                                    AnyValue::Int32(n) => values.push(n as f64),
+                                    AnyValue::Int64(n) => values.push(n as f64),
+                                    AnyValue::UInt8(n) => values.push(n as f64),
+                                    AnyValue::UInt16(n) => values.push(n as f64),
+                                    AnyValue::UInt32(n) => values.push(n as f64),
+                                    AnyValue::UInt64(n) => values.push(n as f64),
+                                    AnyValue::Float32(n) => values.push(n as f64),
+                                    AnyValue::Float64(n) => values.push(n),
+                                    _ => {}
+                                }
+                            }
+                        }
+                        if values.len() >= 2 {
+                            let mean = values.iter().sum::<f64>() / values.len() as f64;
+                            let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>()
+                                / values.len() as f64;
+                            stds.insert(col_name.to_string(), Value::Float(variance.sqrt()));
+                        } else {
+                            stds.insert(col_name.to_string(), Value::Null);
+                        }
+                    } else {
                         stds.insert(col_name.to_string(), Value::Null);
                     }
                 }
             }
             Ok(Value::Object(stds))
         }
-        Value::Series(_series) => {
-            Ok(Value::Null) // Placeholder - std calculation for series
+        Value::Series(series) => {
+            if series.dtype().is_numeric() {
+                let mut values = Vec::new();
+                for i in 0..series.len() {
+                    if let Ok(val) = series.get(i) {
+                        match val {
+                            AnyValue::Int8(n) => values.push(n as f64),
+                            AnyValue::Int16(n) => values.push(n as f64),
+                            AnyValue::Int32(n) => values.push(n as f64),
+                            AnyValue::Int64(n) => values.push(n as f64),
+                            AnyValue::UInt8(n) => values.push(n as f64),
+                            AnyValue::UInt16(n) => values.push(n as f64),
+                            AnyValue::UInt32(n) => values.push(n as f64),
+                            AnyValue::UInt64(n) => values.push(n as f64),
+                            AnyValue::Float32(n) => values.push(n as f64),
+                            AnyValue::Float64(n) => values.push(n),
+                            _ => {}
+                        }
+                    }
+                }
+                if values.len() >= 2 {
+                    let mean = values.iter().sum::<f64>() / values.len() as f64;
+                    let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>()
+                        / values.len() as f64;
+                    Ok(Value::Float(variance.sqrt()))
+                } else {
+                    Ok(Value::Null)
+                }
+            } else {
+                Ok(Value::Null)
+            }
         }
         _ => Err(dsq_shared::error::operation_error(
             "stdev_p() requires array, DataFrame, or Series",
