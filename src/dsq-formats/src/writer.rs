@@ -326,6 +326,7 @@ pub fn serialize_avro<W: Write>(
     }
 
     avro_writer.flush().map_err(Error::from)?;
+    drop(avro_writer); // Drop the writer to release the mutable borrow on buffer
     writer.write_all(&buffer)?;
     Ok(())
 }

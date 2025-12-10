@@ -1,6 +1,6 @@
 # dsq
 
-![Build status](https://github.com/durableprogramming/dsq/actions/workflows/check.yml/badge.svg)
+![Build status](https://github.com/datasetq/datasetq/actions/workflows/check.yml/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/dsq-core.svg)](https://crates.io/crates/dsq-core)
 [![Documentation](https://docs.rs/dsq-core/badge.svg)](https://docs.rs/dsq-core)
 [![Rust 1.69+](https://img.shields.io/badge/rust-1.69+-orange.svg)](https://www.rust-lang.org)

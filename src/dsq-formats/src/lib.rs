@@ -118,6 +118,9 @@ pub use writer::{serialize, serialize_adt};
 #[cfg(feature = "parquet")]
 pub use writer::serialize_parquet;
 
+#[cfg(feature = "avro")]
+pub use writer::serialize_avro;
+
 // Format-specific re-exports
 #[cfg(feature = "csv")]
 pub use csv::{

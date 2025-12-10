@@ -19,6 +19,9 @@ use dsq_formats::{
     FormatWriteOptions, ReadOptions as DsFormatReadOptions,
 };
 
+#[cfg(feature = "avro")]
+use dsq_formats::serialize_avro;
+
 #[cfg(not(target_arch = "wasm32"))]
 use tokio::runtime::Runtime;
 
@@ -210,6 +213,7 @@ pub async fn write_file<P: AsRef<Path>>(
             "json" => DataFormat::Json,
             "jsonl" | "ndjson" => DataFormat::JsonLines,
             "parquet" => DataFormat::Parquet,
+            "avro" => DataFormat::Avro,
             _ => {
                 return Err(Error::operation(format!(
                     "Unsupported output format: {extension}"
@@ -237,6 +241,14 @@ pub async fn write_file<P: AsRef<Path>>(
         }
         DataFormat::Parquet => {
             serialize_parquet(&mut buffer, value, &format_write_options, &format_options)?;
+        }
+        #[cfg(feature = "avro")]
+        DataFormat::Avro => {
+            serialize_avro(&mut buffer, value, &format_write_options, &format_options)?;
+        }
+        #[cfg(not(feature = "avro"))]
+        DataFormat::Avro => {
+            return Err(Error::operation("Avro support not enabled in this build"));
         }
         _ => {
             return Err(Error::operation(format!("Unsupported format: {format:?}")));
