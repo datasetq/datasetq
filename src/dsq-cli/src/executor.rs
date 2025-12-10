@@ -431,23 +431,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_execute_filter_on_value_with_filter() {
-        let config = Config::default();
-        let mut executor = Executor::new(config);
-        let input_value = dsq_core::utils::object([
-            ("name", dsq_core::Value::string("Alice")),
-            ("age", dsq_core::Value::int(30)),
-        ]);
-
-        // Test filter ".name"
-        let result = executor
-            .execute_filter_on_value(".name", input_value.clone(), None)
-            .await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_execute_filter_on_value_with_filter() {
+    async fn test_execute_filter_on_value_with_filter_duplicate() {
         let config = Config::default();
         let mut executor = Executor::new(config);
         let input_value = dsq_core::utils::object([
@@ -491,44 +475,6 @@ mod tests {
             .execute_filter_on_value("invalid +++", input_value, None)
             .await;
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_apply_limit_array() {
-        let config = Config::default();
-        let executor = Executor::new(config);
-        let value = Value::Array(vec![
-            Value::int(1),
-            Value::int(2),
-            Value::int(3),
-            Value::int(4),
-        ]);
-        let limited = executor.apply_limit(value, 2).unwrap();
-        match limited {
-            Value::Array(arr) => assert_eq!(arr.len(), 2),
-            _ => panic!("Expected array"),
-        }
-    }
-
-    #[test]
-    fn test_apply_limit_other() {
-        let config = Config::default();
-        let executor = Executor::new(config);
-        let value = Value::string("test");
-        let limited = executor.apply_limit(value.clone(), 1).unwrap();
-        assert_eq!(limited, value);
-    }
-
-    #[test]
-    fn test_validate_filter_invalid() {
-        let config = Config::default();
-        let executor = Executor::new(config);
-
-        // More invalid filters
-        assert!(executor.validate_filter(".").is_ok());
-        assert!(executor.validate_filter("invalid syntax +++").is_err());
-        assert!(executor.validate_filter(".name.").is_err());
-        assert!(executor.validate_filter("(.name").is_err());
     }
 
     #[tokio::test]

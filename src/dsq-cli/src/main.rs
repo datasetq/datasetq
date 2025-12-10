@@ -1120,4 +1120,548 @@ mod tests {
         assert!(files[2].ends_with("data.jsonl"));
         assert!(files[3].ends_with("data.ndjson"));
     }
+
+    #[test]
+    fn test_parse_dtype_valid() {
+        use polars::prelude::DataType;
+
+        assert_eq!(parse_dtype("bool").unwrap(), DataType::Boolean);
+        assert_eq!(parse_dtype("boolean").unwrap(), DataType::Boolean);
+        assert_eq!(parse_dtype("i8").unwrap(), DataType::Int8);
+        assert_eq!(parse_dtype("int8").unwrap(), DataType::Int8);
+        assert_eq!(parse_dtype("i32").unwrap(), DataType::Int32);
+        assert_eq!(parse_dtype("f64").unwrap(), DataType::Float64);
+        assert_eq!(parse_dtype("str").unwrap(), DataType::String);
+        assert_eq!(parse_dtype("string").unwrap(), DataType::String);
+        assert_eq!(parse_dtype("date").unwrap(), DataType::Date);
+    }
+
+    #[test]
+    fn test_parse_dtype_invalid() {
+        let result = parse_dtype("invalid_type");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Unknown data type"));
+    }
+
+    #[test]
+    fn test_parse_dtype_case_insensitive() {
+        use polars::prelude::DataType;
+
+        assert_eq!(parse_dtype("BOOL").unwrap(), DataType::Boolean);
+        assert_eq!(parse_dtype("String").unwrap(), DataType::String);
+    }
+
+    #[test]
+    fn test_schemas_match_identical() {
+        use polars::prelude::{DataType, Schema};
+
+        let schema1 = Schema::from_iter(vec![
+            ("col1".into(), DataType::Int32),
+            ("col2".into(), DataType::String),
+        ]);
+        let schema2 = Schema::from_iter(vec![
+            ("col1".into(), DataType::Int32),
+            ("col2".into(), DataType::String),
+        ]);
+
+        assert!(schemas_match(&schema1, &schema2));
+    }
+
+    #[test]
+    fn test_schemas_match_different_lengths() {
+        use polars::prelude::{DataType, Schema};
+
+        let schema1 = Schema::from_iter(vec![("col1".into(), DataType::Int32)]);
+        let schema2 = Schema::from_iter(vec![
+            ("col1".into(), DataType::Int32),
+            ("col2".into(), DataType::String),
+        ]);
+
+        assert!(!schemas_match(&schema1, &schema2));
+    }
+
+    #[test]
+    fn test_schemas_match_different_types() {
+        use polars::prelude::{DataType, Schema};
+
+        let schema1 = Schema::from_iter(vec![("col1".into(), DataType::Int32)]);
+        let schema2 = Schema::from_iter(vec![("col1".into(), DataType::String)]);
+
+        assert!(!schemas_match(&schema1, &schema2));
+    }
+
+    #[test]
+    fn test_schemas_match_missing_column() {
+        use polars::prelude::{DataType, Schema};
+
+        let schema1 = Schema::from_iter(vec![
+            ("col1".into(), DataType::Int32),
+            ("col2".into(), DataType::String),
+        ]);
+        let schema2 = Schema::from_iter(vec![
+            ("col1".into(), DataType::Int32),
+            ("col3".into(), DataType::String),
+        ]);
+
+        assert!(!schemas_match(&schema1, &schema2));
+    }
+
+    #[test]
+    fn test_get_config_value_valid_keys() {
+        use crate::config::Config;
+
+        let config = Config::default();
+
+        assert!(get_config_value(&config, "filter.lazy_evaluation").is_ok());
+        assert!(get_config_value(&config, "performance.batch_size").is_ok());
+        assert!(get_config_value(&config, "formats.csv.separator").is_ok());
+    }
+
+    #[test]
+    fn test_get_config_value_invalid_key() {
+        use crate::config::Config;
+
+        let config = Config::default();
+        let result = get_config_value(&config, "invalid.key");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Unknown config key"));
+    }
+
+    #[test]
+    fn test_set_config_value_valid() {
+        use crate::config::Config;
+
+        let mut config = Config::default();
+
+        assert!(set_config_value(&mut config, "filter.lazy_evaluation", "false").is_ok());
+        assert!(!config.filter.lazy_evaluation);
+
+        assert!(set_config_value(&mut config, "performance.batch_size", "100").is_ok());
+        assert_eq!(config.performance.batch_size, 100);
+
+        assert!(set_config_value(&mut config, "formats.csv.separator", ",").is_ok());
+        assert_eq!(config.formats.csv.separator, ",");
+    }
+
+    #[test]
+    fn test_set_config_value_invalid_key() {
+        use crate::config::Config;
+
+        let mut config = Config::default();
+        let result = set_config_value(&mut config, "invalid.key", "value");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Unknown config key"));
+    }
+
+    #[test]
+    fn test_set_config_value_invalid_value() {
+        use crate::config::Config;
+
+        let mut config = Config::default();
+
+        let result = set_config_value(&mut config, "filter.lazy_evaluation", "not_bool");
+        assert!(result.is_err());
+
+        let result = set_config_value(&mut config, "performance.batch_size", "not_number");
+        assert!(result.is_err());
+
+        let result = set_config_value(&mut config, "formats.csv.separator", "too_long");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_handle_example_directory_empty_query() {
+        let temp_dir = TempDir::new().unwrap();
+        let dir_path = temp_dir.path();
+
+        // Create empty query.dsq
+        fs::write(dir_path.join("query.dsq"), "").unwrap();
+        fs::write(dir_path.join("data.csv"), "id,name\n1,Alice").unwrap();
+
+        let result = handle_example_directory(dir_path);
+        assert!(result.is_ok());
+        let (filter, files) = result.unwrap();
+        assert_eq!(filter, "");
+        assert_eq!(files.len(), 1);
+    }
+
+    #[test]
+    fn test_handle_example_directory_unsupported_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let dir_path = temp_dir.path();
+
+        // Create query.dsq
+        fs::write(dir_path.join("query.dsq"), ".[]").unwrap();
+
+        // Create unsupported data files
+        fs::write(dir_path.join("data.txt"), "some text").unwrap();
+        fs::write(dir_path.join("data.xml"), "<xml></xml>").unwrap();
+
+        let result = handle_example_directory(dir_path);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("No data files found"));
+    }
+
+    #[test]
+    fn test_handle_example_directory_mixed_files() {
+        let temp_dir = TempDir::new().unwrap();
+        let dir_path = temp_dir.path();
+
+        // Create query.dsq
+        fs::write(dir_path.join("query.dsq"), ".[]").unwrap();
+
+        // Create mix of supported and unsupported
+        fs::write(dir_path.join("data.csv"), "id,name\n1,Alice").unwrap();
+        fs::write(dir_path.join("data.txt"), "ignored").unwrap();
+        fs::write(dir_path.join("data.json"), "{\"id\":1}").unwrap();
+
+        let result = handle_example_directory(dir_path);
+        assert!(result.is_ok());
+        let (_filter, files) = result.unwrap();
+        assert_eq!(files.len(), 2); // Only csv and json
+        assert!(files.iter().any(|p| p.ends_with("data.csv")));
+        assert!(files.iter().any(|p| p.ends_with("data.json")));
+    }
+
+    #[test]
+    fn test_load_schema_valid() {
+        let temp_dir = TempDir::new().unwrap();
+        let schema_path = temp_dir.path().join("schema.json");
+
+        let schema_content = r#"{
+            "name": "string",
+            "age": "i32",
+            "active": "bool"
+        }"#;
+        fs::write(&schema_path, schema_content).unwrap();
+
+        let result = load_schema(&schema_path);
+        assert!(result.is_ok());
+        let schema = result.unwrap();
+        assert_eq!(schema.len(), 3);
+        assert_eq!(schema.get("name").unwrap().to_string(), "str");
+        assert_eq!(schema.get("age").unwrap().to_string(), "i32");
+        assert_eq!(schema.get("active").unwrap().to_string(), "bool");
+    }
+
+    #[test]
+    fn test_load_schema_invalid_json() {
+        let temp_dir = TempDir::new().unwrap();
+        let schema_path = temp_dir.path().join("schema.json");
+
+        let invalid_json = r#"{
+            "name": "string",
+            "age": "i32",
+            invalid json here
+        }"#;
+        fs::write(&schema_path, invalid_json).unwrap();
+
+        let result = load_schema(&schema_path);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid schema JSON"));
+    }
+
+    #[test]
+    fn test_load_schema_invalid_dtype() {
+        let temp_dir = TempDir::new().unwrap();
+        let schema_path = temp_dir.path().join("schema.json");
+
+        let schema_content = r#"{
+            "name": "invalid_type"
+        }"#;
+        fs::write(&schema_path, schema_content).unwrap();
+
+        let result = load_schema(&schema_path);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Unknown data type"));
+    }
+
+    #[test]
+    fn test_load_schema_file_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let schema_path = temp_dir.path().join("nonexistent.json");
+
+        let result = load_schema(&schema_path);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Failed to read schema file"));
+    }
+
+    #[test]
+    fn test_load_schema_non_string_dtype() {
+        let temp_dir = TempDir::new().unwrap();
+        let schema_path = temp_dir.path().join("schema.json");
+
+        let schema_content = r#"{
+            "name": 123
+        }"#;
+        fs::write(&schema_path, schema_content).unwrap();
+
+        let result = load_schema(&schema_path);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("dtype for name must be string"));
+    }
+
+    #[test]
+    fn test_handle_config_command_show() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let config = Config::default();
+        let result = handle_config_command(ConfigCommands::Show, &config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_handle_config_command_list() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let config = Config::default();
+        let result = handle_config_command(ConfigCommands::List, &config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_handle_config_command_get_valid_key() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let config = Config::default();
+        let result = handle_config_command(
+            ConfigCommands::Get {
+                key: "filter.lazy_evaluation".to_string(),
+            },
+            &config,
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_handle_config_command_get_invalid_key() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let config = Config::default();
+        let result = handle_config_command(
+            ConfigCommands::Get {
+                key: "invalid.key".to_string(),
+            },
+            &config,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_handle_config_command_set_valid() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+
+        let config = Config::default();
+        let result = handle_config_command(
+            ConfigCommands::Set {
+                key: "filter.lazy_evaluation".to_string(),
+                value: "false".to_string(),
+                config: Some(config_path.clone()),
+            },
+            &config,
+        );
+        assert!(result.is_ok());
+        assert!(config_path.exists());
+    }
+
+    #[test]
+    fn test_handle_config_command_set_invalid_key() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+
+        let config = Config::default();
+        let result = handle_config_command(
+            ConfigCommands::Set {
+                key: "invalid.key".to_string(),
+                value: "value".to_string(),
+                config: Some(config_path),
+            },
+            &config,
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_handle_config_command_reset_valid() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("test_config.toml");
+
+        // First set a value
+        let config = Config::default();
+        handle_config_command(
+            ConfigCommands::Set {
+                key: "filter.lazy_evaluation".to_string(),
+                value: "false".to_string(),
+                config: Some(config_path.clone()),
+            },
+            &config,
+        )
+        .unwrap();
+
+        // Then reset it
+        let result = handle_config_command(
+            ConfigCommands::Reset {
+                key: "filter.lazy_evaluation".to_string(),
+                config: Some(config_path),
+            },
+            &config,
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_handle_config_command_init() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("new_config.toml");
+
+        let config = Config::default();
+        let result = handle_config_command(
+            ConfigCommands::Init {
+                path: config_path.clone(),
+                force: false,
+            },
+            &config,
+        );
+        assert!(result.is_ok());
+        assert!(config_path.exists());
+    }
+
+    #[test]
+    fn test_handle_config_command_check_valid() {
+        use crate::cli::ConfigCommands;
+        use crate::config::Config;
+
+        let temp_dir = TempDir::new().unwrap();
+        let config_path = temp_dir.path().join("valid_config.toml");
+
+        // Create a valid config
+        handle_config_command(
+            ConfigCommands::Init {
+                path: config_path.clone(),
+                force: false,
+            },
+            &Config::default(),
+        )
+        .unwrap();
+
+        let config = Config::default();
+        let result = handle_config_command(ConfigCommands::Check { path: config_path }, &config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_generate_completions_bash() {
+        use clap_complete::Shell;
+
+        let result = generate_completions(Shell::Bash);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_generate_completions_zsh() {
+        use clap_complete::Shell;
+
+        let result = generate_completions(Shell::Zsh);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_generate_completions_fish() {
+        use clap_complete::Shell;
+
+        let result = generate_completions(Shell::Fish);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_test_filter_valid() {
+        use crate::cli::CliConfig;
+        use crate::config::Config;
+
+        let cli_config = CliConfig {
+            filter: Some(".name".to_string()),
+            ..Default::default()
+        };
+        let config = Config::default();
+
+        let result = test_filter(&cli_config, &config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_test_filter_from_file() {
+        use crate::cli::CliConfig;
+        use crate::config::Config;
+
+        let temp_dir = TempDir::new().unwrap();
+        let filter_path = temp_dir.path().join("filter.dsq");
+        fs::write(&filter_path, ".[]").unwrap();
+
+        let cli_config = CliConfig {
+            filter_file: Some(filter_path),
+            ..Default::default()
+        };
+        let config = Config::default();
+
+        let result = test_filter(&cli_config, &config);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_setup_logging() {
+        use crate::config::Config;
+
+        let mut config = Config::default();
+        config.debug.verbosity = 1;
+
+        // This should not panic
+        setup_logging(&config);
+    }
+
+    #[test]
+    fn test_print_version() {
+        // This should not panic
+        print_version();
+    }
 }
