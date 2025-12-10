@@ -24,19 +24,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mold clang
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: coverage
 
       - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin --force
+        run: |
+          curl -sL https://github.com/xd009642/tarpaulin/releases/latest/download/cargo-tarpaulin-x86_64-unknown-linux-musl.tar.gz | tar xzv -C ~/.cargo/bin
 
       - name: Run tests with coverage
         run: cargo tarpaulin --workspace --timeout 300 --out Xml --out Html --output-dir coverage
