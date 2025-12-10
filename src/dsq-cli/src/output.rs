@@ -270,6 +270,7 @@ impl OutputWriter {
 mod tests {
     use super::*;
     use dsq_core::Value;
+    use num_bigint::BigInt;
     use std::collections::HashMap;
     use std::fs;
     use tempfile::NamedTempFile;
@@ -593,5 +594,217 @@ mod tests {
 
         let result = writer.write_to_stdout(&nested);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_write_to_stdout_empty_dataframe() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let df = DataFrame::new(vec![]).unwrap();
+        let value = Value::DataFrame(df);
+
+        let result = writer.write_to_stdout(&value);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_write_to_stdout_series() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let series = Series::new("test".into(), vec![1i64, 2i64]);
+        let value = Value::Series(series);
+
+        let result = writer.write_to_stdout(&value);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_write_to_stdout_bigint() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let bigint = BigInt::from(123456789i64);
+        let value = Value::BigInt(bigint);
+
+        let result = writer.write_to_stdout(&value);
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_to_file_invalid_path() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let value = Value::String("test".to_string());
+
+        // Use an invalid path that should fail
+        let invalid_path = std::path::Path::new("/invalid/path/that/does/not/exist/file.txt");
+
+        let result = writer.write_to_file(&value, invalid_path).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_csv() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let df = create_test_dataframe();
+        let value = Value::DataFrame(df);
+
+        // Test CSV to stdout
+        let result = writer
+            .write_with_options(&value, None, Some(DataFormat::Csv), false)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_tsv() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let df = create_test_dataframe();
+        let value = Value::DataFrame(df);
+
+        // Test TSV to stdout
+        let result = writer
+            .write_with_options(&value, None, Some(DataFormat::Tsv), false)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_json_pretty() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let obj = Value::Object(HashMap::from([
+            ("name".to_string(), Value::String("Alice".to_string())),
+            ("age".to_string(), Value::Int(30)),
+        ]));
+
+        // Test JSON pretty to stdout
+        let result = writer
+            .write_with_options(&obj, None, Some(DataFormat::Json), true)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_json_compact() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let obj = Value::Object(HashMap::from([
+            ("name".to_string(), Value::String("Alice".to_string())),
+            ("age".to_string(), Value::Int(30)),
+        ]));
+
+        // Test JSON compact to stdout
+        let result = writer
+            .write_with_options(&obj, None, Some(DataFormat::Json), false)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_jsonlines_array() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let arr = Value::Array(vec![
+            Value::Object(HashMap::from([(
+                "name".to_string(),
+                Value::String("Alice".to_string()),
+            )])),
+            Value::Object(HashMap::from([(
+                "name".to_string(),
+                Value::String("Bob".to_string()),
+            )])),
+        ]);
+
+        // Test JSONLines array to stdout
+        let result = writer
+            .write_with_options(&arr, None, Some(DataFormat::JsonLines), false)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_jsonlines_single() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let obj = Value::Object(HashMap::from([(
+            "name".to_string(),
+            Value::String("Alice".to_string()),
+        )]));
+
+        // Test JSONLines single to stdout
+        let result = writer
+            .write_with_options(&obj, None, Some(DataFormat::JsonLines), false)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_unsupported_format() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let value = Value::String("test".to_string());
+
+        // Test unsupported format to stdout (should print value)
+        let result = writer
+            .write_with_options(&value, None, Some(DataFormat::Parquet), false)
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_csv_non_dataframe_error() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let value = Value::String("not a dataframe".to_string());
+
+        // Test CSV with non-DataFrame to stdout should error
+        let result = writer
+            .write_with_options(&value, None, Some(DataFormat::Csv), false)
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_stdout_tsv_non_dataframe_error() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let value = Value::String("not a dataframe".to_string());
+
+        // Test TSV with non-DataFrame to stdout should error
+        let result = writer
+            .write_with_options(&value, None, Some(DataFormat::Tsv), false)
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_write_with_options_file_special_characters() {
+        let config = create_test_config();
+        let writer = OutputWriter::new(config);
+        let df = DataFrame::new(vec![
+            Series::new("name".into(), vec!["Alice", "Bob\twith\ttabs"]).into(),
+            Series::new(
+                "description".into(),
+                vec!["Line 1\nLine 2", "Special: @#$%"],
+            )
+            .into(),
+        ])
+        .unwrap();
+        let value = Value::DataFrame(df);
+
+        let temp_file = NamedTempFile::new().unwrap();
+        let path = temp_file.path();
+
+        let result = writer
+            .write_with_options(&value, Some(path), Some(DataFormat::Csv), false)
+            .await;
+        assert!(result.is_ok());
+
+        let content = fs::read_to_string(path).unwrap();
+        assert!(content.contains("Bob\twith\ttabs"));
+        assert!(content.contains("Line 1\nLine 2"));
+        assert!(content.contains("Special: @#$%"));
     }
 }

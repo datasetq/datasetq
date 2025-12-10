@@ -50,6 +50,9 @@ anyhow = { workspace = true }
 # Profiling
 coz = { workspace = true, optional = true }
 
+[dev-dependencies]
+num-bigint = { workspace = true }
+
 [features]
 default = ["cli"]
 cli = []

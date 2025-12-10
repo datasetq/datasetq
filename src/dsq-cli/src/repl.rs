@@ -94,7 +94,8 @@ impl Repl {
                     eprintln!("Usage: load <file>");
                     return Ok(CommandResult::Continue);
                 }
-                self.load_file(parts[1]).await?;
+                let path = parts[1..].join(" ");
+                self.load_file(&path).await?;
                 Ok(CommandResult::Continue)
             }
             "clear" => {
@@ -115,8 +116,8 @@ impl Repl {
                     eprintln!("Usage: explain <filter>");
                     return Ok(CommandResult::Continue);
                 }
-                let filter = &parts[1..].join(" ");
-                self.explain_filter(filter)?;
+                let filter = parts[1..].join(" ");
+                self.explain_filter(&filter)?;
                 Ok(CommandResult::Continue)
             }
             "validate" => {
@@ -124,8 +125,8 @@ impl Repl {
                     eprintln!("Usage: validate <filter>");
                     return Ok(CommandResult::Continue);
                 }
-                let filter = &parts[1..].join(" ");
-                self.validate_filter(filter)?;
+                let filter = parts[1..].join(" ");
+                self.validate_filter(&filter)?;
                 Ok(CommandResult::Continue)
             }
             _ => {
@@ -345,6 +346,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_clear_resets_data_and_allows_reload() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Load data
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, r#"{{"initial": "data"}}"#).unwrap();
+        let path = temp_file.path().to_str().unwrap();
+        repl.process_command(&format!("load {}", path))
+            .await
+            .unwrap();
+        assert!(repl.current_data.is_some());
+
+        // Clear
+        repl.process_command("clear").await.unwrap();
+        assert!(repl.current_data.is_none());
+
+        // Load different data
+        let mut temp_file2 = NamedTempFile::new().unwrap();
+        writeln!(temp_file2, r#"{{"new": "data"}}"#).unwrap();
+        let path2 = temp_file2.path().to_str().unwrap();
+        repl.process_command(&format!("load {}", path2))
+            .await
+            .unwrap();
+        assert!(repl.current_data.is_some());
+    }
+
+    #[tokio::test]
     async fn test_process_command_show() {
         let config = Config::default();
         let mut repl = Repl::new(config).unwrap();
@@ -407,6 +436,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_process_command_load_file_with_spaces() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Create a temporary directory and file with spaces in name
+        let temp_dir = tempfile::TempDir::new().unwrap();
+        let file_path = temp_dir.path().join("file with spaces.json");
+        std::fs::write(&file_path, r#"{"name": "test", "value": 42}"#).unwrap();
+        let path_str = file_path.to_str().unwrap();
+
+        let result = repl.process_command(&format!("load {}", path_str)).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), CommandResult::Continue);
+        assert!(repl.current_data.is_some());
+    }
+
+    #[tokio::test]
     async fn test_process_command_explain() {
         let config = Config::default();
         let mut repl = Repl::new(config).unwrap();
@@ -431,6 +477,16 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_process_command_explain_multi_word_filter() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        let result = repl.process_command("explain .items | map(.name)").await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), CommandResult::Continue);
+    }
+
+    #[tokio::test]
     async fn test_process_command_validate() {
         let config = Config::default();
         let mut repl = Repl::new(config).unwrap();
@@ -450,6 +506,18 @@ mod tests {
         let mut repl = Repl::new(config).unwrap();
 
         let result = repl.process_command("validate").await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), CommandResult::Continue);
+    }
+
+    #[tokio::test]
+    async fn test_process_command_validate_multi_word_filter() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        let result = repl
+            .process_command("validate .items | select(.active)")
+            .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), CommandResult::Continue);
     }
@@ -486,6 +554,27 @@ mod tests {
         assert_eq!(result.unwrap(), CommandResult::Continue);
         // Should not add to history when no data
         assert!(repl.history.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_process_command_execute_complex_filter() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Create test data
+        let test_data = Value::from_json(serde_json::json!({
+            "users": [
+                {"name": "Alice", "age": 30},
+                {"name": "Bob", "age": 25}
+            ]
+        }));
+        repl.current_data = Some(test_data);
+
+        let result = repl.process_command(".users | map(.name)").await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), CommandResult::Continue);
+        assert_eq!(repl.history.len(), 1);
+        assert_eq!(repl.history[0], ".users | map(.name)");
     }
 
     #[tokio::test]
@@ -551,6 +640,32 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_show_current_data_different_types() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Test with object
+        repl.current_data = Some(Value::from_json(serde_json::json!({"key": "value"})));
+        let result = repl.show_current_data();
+        assert!(result.is_ok());
+
+        // Test with array
+        repl.current_data = Some(Value::from_json(serde_json::json!([1, 2, 3])));
+        let result = repl.show_current_data();
+        assert!(result.is_ok());
+
+        // Test with number
+        repl.current_data = Some(Value::int(42));
+        let result = repl.show_current_data();
+        assert!(result.is_ok());
+
+        // Test with boolean
+        repl.current_data = Some(Value::Bool(true));
+        let result = repl.show_current_data();
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn test_execute_filter_no_data() {
         let config = Config::default();
         let mut repl = Repl::new(config).unwrap();
@@ -586,6 +701,36 @@ mod tests {
         assert!(result.is_err());
         // Invalid filters should not be added to history
         assert!(repl.history.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_error_handling_load_invalid_json() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Create a file with invalid JSON
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, r#"{{invalid json"#).unwrap();
+        let path = temp_file.path().to_str().unwrap();
+
+        let result = repl.process_command(&format!("load {}", path)).await;
+        // Should fail due to invalid JSON
+        assert!(result.is_err());
+        assert!(repl.current_data.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_error_handling_execute_filter_on_invalid_data() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Set invalid data type for filter
+        repl.current_data = Some(Value::String("not json".to_string()));
+
+        let result = repl.process_command(".invalid").await;
+        // Depending on implementation, might succeed or fail
+        // But should not panic
+        assert!(result.is_ok() || result.is_err());
     }
 
     #[tokio::test]
@@ -630,6 +775,26 @@ mod tests {
         repl.history.push("command2".to_string());
 
         repl.show_history(); // Just ensure it doesn't panic
+    }
+
+    #[tokio::test]
+    async fn test_history_accumulation() {
+        let config = Config::default();
+        let mut repl = Repl::new(config).unwrap();
+
+        // Set data
+        let test_data = Value::from_json(serde_json::json!({"test": "data"}));
+        repl.current_data = Some(test_data);
+
+        // Execute multiple filters
+        repl.process_command(".").await.unwrap();
+        repl.process_command(".test").await.unwrap();
+        repl.process_command("clear").await.unwrap(); // clear doesn't add to history
+        repl.process_command("show").await.unwrap(); // show doesn't add to history
+
+        assert_eq!(repl.history.len(), 2);
+        assert_eq!(repl.history[0], ".");
+        assert_eq!(repl.history[1], ".test");
     }
 
     #[tokio::test]

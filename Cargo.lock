@@ -1253,6 +1253,7 @@ dependencies = [
  "env_logger",
  "getrandom 0.3.4",
  "log",
+ "num-bigint",
  "num_cpus",
  "polars",
  "serde",

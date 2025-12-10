@@ -2161,24 +2161,26 @@ batch_size = 5000
         #[cfg(feature = "cli")]
         {
             let mut config = Config::default();
-            let mut cli_config = CliConfig::default();
-            cli_config.input_format = Some(DataFormat::Csv);
-            cli_config.output_format = Some(DataFormat::Json);
-            cli_config.limit = Some(1000);
-            cli_config.lazy = false;
-            cli_config.dataframe_optimizations = false;
-            cli_config.compact_output = true;
-            cli_config.raw_output = true;
-            cli_config.sort_keys = true;
-            cli_config.exit_status = true;
-            cli_config.color_output = None;
-            cli_config.csv_separator = Some("|".to_string());
-            cli_config.csv_headers = Some(false);
-            cli_config.batch_size = Some(9999);
-            cli_config.memory_limit = Some("512MB".to_string());
-            cli_config.library_path = vec![std::path::PathBuf::from("/cli/lib")];
-            cli_config.verbose = 5;
-            cli_config.explain = true;
+            let mut cli_config = CliConfig {
+                input_format: Some(DataFormat::Csv),
+                output_format: Some(DataFormat::Json),
+                limit: Some(1000),
+                lazy: false,
+                dataframe_optimizations: false,
+                compact_output: true,
+                raw_output: true,
+                sort_keys: true,
+                exit_status: true,
+                color_output: None,
+                csv_separator: Some("|".to_string()),
+                csv_headers: Some(false),
+                batch_size: Some(9999),
+                memory_limit: Some("512MB".to_string()),
+                library_path: vec![std::path::PathBuf::from("/cli/lib")],
+                verbose: 5,
+                explain: true,
+                ..Default::default()
+            };
             cli_config
                 .variables
                 .insert("cli_var".to_string(), serde_json::json!("cli_value"));

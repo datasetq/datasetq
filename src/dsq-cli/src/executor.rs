@@ -491,14 +491,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_write_output() {
+        use polars::prelude::*;
+
         let config = Config::default();
         let executor = Executor::new(config);
-        let temp_file = tempfile::NamedTempFile::new().unwrap();
-        let path = temp_file.path();
-        let value = Value::string("test");
+        let temp_dir = tempfile::tempdir().unwrap();
+        let path = temp_dir.path().join("test.csv");
 
-        let result = executor.write_output(&value, path).await;
+        // Create a simple DataFrame
+        let df = df! {
+            "name" => &["Alice", "Bob"],
+            "age" => &[30, 25],
+        }
+        .unwrap();
+        let value = Value::DataFrame(df);
+
+        let result = executor.write_output(&value, &path).await;
         assert!(result.is_ok());
+
+        // Verify the file was written
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert!(content.contains("Alice"));
+        assert!(content.contains("Bob"));
     }
 
     #[tokio::test]
