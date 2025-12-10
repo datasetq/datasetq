@@ -1,6 +1,6 @@
 # dsq
 
-![Build status](https://github.com/datasetq/datasetq/actions/workflows/check.yml/badge.svg)
+[![CI](https://github.com/datasetq/datasetq/actions/workflows/ci.yml/badge.svg)](https://github.com/datasetq/datasetq/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/dsq-core.svg)](https://crates.io/crates/dsq-core)
 [![Documentation](https://docs.rs/dsq-core/badge.svg)](https://docs.rs/dsq-core)
 [![Rust 1.69+](https://img.shields.io/badge/rust-1.69+-orange.svg)](https://www.rust-lang.org)
@@ -18,11 +18,11 @@ dsq (pronounced "disk") is a high-performance data processing tool that extends 
 
 ### Binaries
 
-Download binaries for Linux, Mac, and Windows from the [releases page](https://github.com/durableprogramming/dsq/releases).
+Download binaries for Linux, Mac, and Windows from the [releases page](https://github.com/datasetq/datasetq/releases).
 
 On Linux:
 ```bash
-curl -fsSL https://github.com/durableprogramming/dsq/releases/latest/download/dsq-$(uname -m)-unknown-linux-musl -o dsq && chmod +x dsq
+curl -fsSL https://github.com/datasetq/datasetq/releases/latest/download/dsq-$(uname -m)-unknown-linux-musl -o dsq && chmod +x dsq
 ```
 
 ### From Source
@@ -30,7 +30,7 @@ curl -fsSL https://github.com/durableprogramming/dsq/releases/latest/download/ds
 Install with Rust toolchain (see <https://rustup.rs/>):
 ```bash
 cargo install --locked dsq
-cargo install --locked --git https://github.com/durableprogramming/dsq  # development version
+cargo install --locked --git https://github.com/datasetq/datasetq  # development version
 ```
 
 Or build from the repository:
