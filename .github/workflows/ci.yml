@@ -103,7 +103,7 @@ jobs:
           shared-key: docs
 
       - name: Check documentation
-        run: cargo doc --workspace --no-deps --all-features
+        run: cargo doc --workspace --no-deps --all-features --jobs 4
         env:
           RUSTDOCFLAGS: -D warnings
 

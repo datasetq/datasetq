@@ -174,23 +174,6 @@ dsq config init                  # Create default config
 
 See [Configuration](docs/CONFIGURATION.md) for details.
 
-## Performance
-
-dsq leverages Polars for high-performance data processing:
-
-* **Lazy Evaluation** - Optimized query planning before execution
-* **Columnar Processing** - Efficient memory layout and SIMD
-* **Parallel Execution** - Multi-threaded where beneficial
-* **Memory Efficiency** - Streaming for large datasets
-
-Example benchmarks (1GB CSV file):
-
-| Tool | Operation | Time | Memory |
-|------|-----------|------|---------|
-| dsq | Group-by aggregation | 2.1s | 450MB |
-| pandas | Similar operation | 8.3s | 1.2GB |
-| duckdb | SQL GROUP BY | 1.8s | 380MB |
-
 ## Contributing
 
 Contributions are welcome! Please ensure:

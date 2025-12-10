@@ -272,6 +272,141 @@ pub fn serialize_parquet<W: Write>(
     Ok(())
 }
 
+/// Serialize Avro data to a writer
+#[cfg(feature = "avro")]
+pub fn serialize_avro<W: Write>(
+    mut writer: W,
+    value: &Value,
+    _options: &WriteOptions,
+    format_options: &FormatWriteOptions,
+) -> Result<()> {
+    use apache_avro::{types::Value as AvroValue, Codec, Writer as AvroWriter};
+
+    let df = match value {
+        Value::DataFrame(df) => df.clone(),
+        Value::LazyFrame(lf) => (*lf).clone().collect().map_err(Error::from)?,
+        _ => {
+            return Err(Error::operation(
+                "Expected DataFrame for Avro serialization",
+            ));
+        }
+    };
+
+    // Get compression codec
+    let codec = match format_options {
+        FormatWriteOptions::Avro { compression } => match compression {
+            AvroCompression::Null => Codec::Null,
+            AvroCompression::Deflate => Codec::Deflate(Default::default()),
+            AvroCompression::Snappy => Codec::Snappy,
+            #[allow(unreachable_patterns)]
+            _ => Codec::Null,
+        },
+        _ => Codec::Null,
+    };
+
+    // Build Avro schema from DataFrame schema
+    let schema = dataframe_to_avro_schema(&df)?;
+
+    // Create temporary buffer since AvroWriter needs seekable writer
+    let mut buffer = Vec::new();
+    let mut avro_writer = AvroWriter::with_codec(&schema, &mut buffer, codec);
+
+    // Write rows
+    for row_idx in 0..df.height() {
+        let mut record_fields = Vec::new();
+
+        for (col_idx, column) in df.get_columns().iter().enumerate() {
+            let field_name = df.get_column_names()[col_idx];
+            let avro_value = polars_value_to_avro(column.get(row_idx).map_err(Error::from)?)?;
+            record_fields.push((field_name.to_string(), avro_value));
+        }
+
+        let record = AvroValue::Record(record_fields);
+        avro_writer.append(record).map_err(Error::from)?;
+    }
+
+    avro_writer.flush().map_err(Error::from)?;
+    writer.write_all(&buffer)?;
+    Ok(())
+}
+
+/// Convert DataFrame schema to Avro schema
+#[cfg(feature = "avro")]
+fn dataframe_to_avro_schema(df: &DataFrame) -> Result<apache_avro::Schema> {
+    use apache_avro::Schema;
+
+    let mut fields = Vec::new();
+
+    for (col_idx, column) in df.get_columns().iter().enumerate() {
+        let field_name = df.get_column_names()[col_idx];
+        let field_schema = polars_dtype_to_avro_schema(column.dtype())?;
+
+        fields.push(apache_avro::schema::RecordField {
+            name: field_name.to_string(),
+            doc: None,
+            aliases: None,
+            default: None,
+            schema: field_schema,
+            order: apache_avro::schema::RecordFieldOrder::Ascending,
+            position: col_idx,
+            custom_attributes: Default::default(),
+        });
+    }
+
+    Ok(Schema::Record(apache_avro::schema::RecordSchema {
+        name: apache_avro::schema::Name::new("record").map_err(Error::from)?,
+        aliases: None,
+        doc: None,
+        fields,
+        lookup: Default::default(),
+        attributes: Default::default(),
+    }))
+}
+
+/// Convert Polars DataType to Avro Schema
+#[cfg(feature = "avro")]
+fn polars_dtype_to_avro_schema(dtype: &DataType) -> Result<apache_avro::Schema> {
+    use apache_avro::Schema;
+
+    match dtype {
+        DataType::Boolean => Ok(Schema::Boolean),
+        DataType::Int8 | DataType::Int16 | DataType::Int32 => Ok(Schema::Int),
+        DataType::Int64 => Ok(Schema::Long),
+        DataType::UInt8 | DataType::UInt16 | DataType::UInt32 => Ok(Schema::Int),
+        DataType::UInt64 => Ok(Schema::Long),
+        DataType::Float32 => Ok(Schema::Float),
+        DataType::Float64 => Ok(Schema::Double),
+        DataType::String => Ok(Schema::String),
+        DataType::Binary => Ok(Schema::Bytes),
+        DataType::Null => Ok(Schema::Null),
+        _ => Ok(Schema::String), // Default to string for unsupported types
+    }
+}
+
+/// Convert Polars AnyValue to Avro Value
+#[cfg(feature = "avro")]
+fn polars_value_to_avro(value: AnyValue) -> Result<apache_avro::types::Value> {
+    use apache_avro::types::Value as AvroValue;
+
+    match value {
+        AnyValue::Null => Ok(AvroValue::Null),
+        AnyValue::Boolean(b) => Ok(AvroValue::Boolean(b)),
+        AnyValue::Int8(i) => Ok(AvroValue::Int(i as i32)),
+        AnyValue::Int16(i) => Ok(AvroValue::Int(i as i32)),
+        AnyValue::Int32(i) => Ok(AvroValue::Int(i)),
+        AnyValue::Int64(i) => Ok(AvroValue::Long(i)),
+        AnyValue::UInt8(u) => Ok(AvroValue::Int(u as i32)),
+        AnyValue::UInt16(u) => Ok(AvroValue::Int(u as i32)),
+        AnyValue::UInt32(u) => Ok(AvroValue::Int(u as i32)),
+        AnyValue::UInt64(u) => Ok(AvroValue::Long(u as i64)),
+        AnyValue::Float32(f) => Ok(AvroValue::Float(f)),
+        AnyValue::Float64(f) => Ok(AvroValue::Double(f)),
+        AnyValue::String(s) => Ok(AvroValue::String(s.to_string())),
+        AnyValue::Binary(b) => Ok(AvroValue::Bytes(b.to_vec())),
+        _ => Ok(AvroValue::String(format!("{}", value))),
+    }
+}
+
 /// Serialize ADT (ASCII Delimited Text) data to a writer
 #[cfg(any(
     feature = "csv",
@@ -375,8 +510,11 @@ pub fn serialize<W: Write>(
         DataFormat::Arrow => Err(Error::Format(FormatError::UnsupportedFeature(
             "Arrow serialization not yet implemented".to_string(),
         ))),
+        #[cfg(feature = "avro")]
+        DataFormat::Avro => serialize_avro(writer, value, options, format_options),
+        #[cfg(not(feature = "avro"))]
         DataFormat::Avro => Err(Error::Format(FormatError::UnsupportedFeature(
-            "Avro serialization not yet implemented".to_string(),
+            "Avro not supported in this build".to_string(),
         ))),
         DataFormat::Excel => Err(Error::Format(FormatError::UnsupportedFeature(
             "Excel serialization not yet implemented".to_string(),
