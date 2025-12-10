@@ -16,6 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Free up disk space
+        run: bash .github/scripts/free_disk_space.sh
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -34,7 +37,7 @@ jobs:
           curl -sL https://github.com/xd009642/tarpaulin/releases/latest/download/cargo-tarpaulin-x86_64-unknown-linux-musl.tar.gz | tar xzv -C ~/.cargo/bin
 
       - name: Run tests with coverage
-        run: cargo tarpaulin --workspace --timeout 300 --out Xml --out Html --output-dir coverage
+        run: cargo tarpaulin --workspace --lib --timeout 300 --out Xml --out Html --output-dir coverage --jobs 4
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
