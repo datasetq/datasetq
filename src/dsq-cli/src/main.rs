@@ -205,8 +205,8 @@ async fn run() -> Result<()> {
 
     let output_path = cli_config.output.as_deref();
 
-    let mut executor = Executor::new(config);
     if input_paths.is_empty() {
+        let mut executor = Executor::new(config);
         if cli_config.null_input {
             executor
                 .execute_filter_on_value(&filter, Value::Null, output_path)
@@ -218,11 +218,52 @@ async fn run() -> Result<()> {
                 .await
                 .map_err(|e| e.into())
         }
-    } else {
-        // For now, just use the first input path
-        // TODO: handle multiple input files
+    } else if input_paths.len() == 1 {
+        // Single input file
+        let mut executor = Executor::new(config);
         executor
             .execute_filter(&filter, Some(&input_paths[0]), output_path)
+            .await
+            .map_err(|e| e.into())
+    } else {
+        // Multiple input files - process each and combine results
+        use dsq_core::io::read_file;
+        use polars::prelude::*;
+
+        let read_options = config.to_read_options();
+        let mut dataframes = Vec::new();
+
+        for input_path in &input_paths {
+            let value = read_file(input_path, &read_options).await?;
+            match value {
+                Value::DataFrame(df) => dataframes.push(df),
+                Value::LazyFrame(lf) => {
+                    let df = lf.collect().map_err(|e| {
+                        anyhow::anyhow!(format!("Failed to collect lazy frame: {}", e))
+                    })?;
+                    dataframes.push(df);
+                }
+                _ => {
+                    return Err(anyhow::anyhow!(format!(
+                        "Input file {} does not contain tabular data",
+                        input_path.display()
+                    )));
+                }
+            }
+        }
+
+        // Concatenate all dataframes
+        let lazy_frames: Vec<_> = dataframes.iter().map(|df| df.clone().lazy()).collect();
+        let combined_df = concat(&lazy_frames, UnionArgs::default())
+            .map_err(|e| anyhow::anyhow!(format!("Failed to concatenate dataframes: {}", e)))?
+            .collect()
+            .map_err(|e| {
+                anyhow::anyhow!(format!("Failed to collect concatenated result: {}", e))
+            })?;
+
+        let mut executor = Executor::new(config);
+        executor
+            .execute_filter_on_value(&filter, Value::DataFrame(combined_df), output_path)
             .await
             .map_err(|e| e.into())
     }

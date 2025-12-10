@@ -12,6 +12,7 @@
     channel = "stable";
     mold.enable = true;
     targets = [ "x86_64-unknown-linux-musl" ];
+    components = [  "rustc" "cargo" "clippy" "rustfmt" "rust-analyzer" "llvm-tools-preview" ];
   };
 
   languages.ruby.enable = true;
