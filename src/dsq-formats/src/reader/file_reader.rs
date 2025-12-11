@@ -2,6 +2,8 @@ use crate::error::{Error, Result};
 use crate::format::DataFormat;
 use crate::reader::options::{FormatReadOptions, ReadOptions};
 use dsq_shared::value::Value;
+#[cfg(feature = "parquet")]
+use polars::prelude::ScanArgsParquet;
 use polars::prelude::*;
 use std::collections::HashMap;
 use std::path::Path;

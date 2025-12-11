@@ -8,6 +8,9 @@ use dsq_shared::value::Value;
 ))]
 use polars::prelude::*;
 
+#[cfg(feature = "parquet")]
+use polars::prelude::ParquetWriter;
+
 use std::io::Write;
 
 /// Options for writing data

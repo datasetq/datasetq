@@ -4,6 +4,9 @@ use crate::reader::options::{FormatReadOptions, ReadOptions};
 use dsq_shared::value::Value;
 use std::io::Read;
 
+#[cfg(feature = "parquet")]
+use polars::prelude::{ParquetReader, SerReader};
+
 /// Deserialize CSV data from a reader
 pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
     reader: R,
@@ -29,8 +32,6 @@ pub fn deserialize_parquet<R: Read + polars::io::mmap::MmapBytesReader + std::io
     options: &ReadOptions,
     format_options: &FormatReadOptions,
 ) -> Result<Value> {
-    use polars::prelude::*;
-
     let parquet_opts = match format_options {
         FormatReadOptions::Parquet {
             parallel: _,
@@ -39,8 +40,6 @@ pub fn deserialize_parquet<R: Read + polars::io::mmap::MmapBytesReader + std::io
         } => columns.clone(),
         _ => None,
     };
-
-    use polars::prelude::SerReader;
 
     let mut parquet_reader = ParquetReader::new(reader);
 

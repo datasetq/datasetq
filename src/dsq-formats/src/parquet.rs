@@ -1,7 +1,10 @@
 #![allow(invalid_reference_casting)]
 
 use crate::error::{Error, Result};
+use polars::io::parquet::read::ParallelStrategy;
+use polars::prelude::ScanArgsParquet;
 use polars::prelude::*;
+use polars::prelude::{ParquetReader as PolarsParquetReader, ParquetWriter as PolarsParquetWriter};
 
 use std::fs::File;
 use std::io::Read;
@@ -137,7 +140,7 @@ impl ParquetReader {
         use polars::prelude::SerReader;
 
         let file = File::open(&self.path)?;
-        let mut pq_reader = polars::prelude::ParquetReader::new(file);
+        let mut pq_reader = PolarsParquetReader::new(file);
 
         if let Some(n_rows) = self.options.n_rows {
             pq_reader = pq_reader.with_slice(Some((0, n_rows)));
@@ -161,7 +164,7 @@ impl ParquetReader {
 
     /// Read the Parquet file into a LazyFrame for lazy evaluation
     pub fn read_lazy(self) -> Result<LazyFrame> {
-        use polars::prelude::{PlPath, ScanArgsParquet};
+        use polars::prelude::PlPath;
 
         let scan_args = ScanArgsParquet {
             n_rows: self.options.n_rows,
@@ -215,8 +218,8 @@ impl<W: std::io::Write> ParquetWriter<W> {
 
     /// Write a DataFrame to Parquet format
     pub fn finish(self, df: &mut DataFrame) -> Result<()> {
-        let mut writer = polars::prelude::ParquetWriter::new(self.writer)
-            .with_compression(self.options.compression.into());
+        let mut writer =
+            PolarsParquetWriter::new(self.writer).with_compression(self.options.compression.into());
 
         if let Some(row_group_size) = self.options.row_group_size {
             writer = writer.with_row_group_size(Some(row_group_size));
