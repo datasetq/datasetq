@@ -14,11 +14,8 @@ workspace = true
 
 [dependencies]
 # Data processing
-arrow = { workspace = true }
 chrono = { workspace = true }
 
-# Avro support
-apache-avro = { workspace = true, features = ["snappy"] }
 
 # Serialization
 serde = { workspace = true }
@@ -45,11 +42,13 @@ clap = { workspace = true, optional = true }
 # Profiling
 coz = { workspace = true, optional = true }
 
+polars = { workspace = true }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { workspace = true, features = ["lazy", "csv", "json", "temporal", "strings", "ipc", "avro"] }
+arrow = { workspace = true }
+apache-avro = { workspace = true, features = ["snappy"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { workspace = true, default-features = false, features = ["lazy", "csv", "json", "temporal", "strings"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
@@ -57,7 +56,7 @@ criterion = { workspace = true }
 proptest = { workspace = true }
 
 [features]
-default = ["all-formats"]
+default = []
 all-formats = ["csv", "json", "avro"]
 csv = []
 json = []

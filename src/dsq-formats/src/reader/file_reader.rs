@@ -289,6 +289,7 @@ impl FileReader {
     }
 
     /// Read Avro file
+    #[cfg(not(target_arch = "wasm32"))]
     fn read_avro(&self, options: &ReadOptions) -> Result<Value> {
         use apache_avro::Reader;
 
@@ -544,6 +545,7 @@ impl FileReader {
     }
 
     /// Read Arrow file
+    #[cfg(not(target_arch = "wasm32"))]
     fn read_arrow(&self, options: &ReadOptions) -> Result<Value> {
         use polars::io::ipc::IpcReader;
 
@@ -606,8 +608,17 @@ impl crate::reader::data_reader::DataReader for FileReader {
                 }
                 self.read_json(options)
             }
+            #[cfg(not(target_arch = "wasm32"))]
             DataFormat::Avro => self.read_avro(options),
+            #[cfg(not(target_arch = "wasm32"))]
             DataFormat::Arrow => self.read_arrow(options),
+            #[cfg(target_arch = "wasm32")]
+            DataFormat::Avro | DataFormat::Arrow => Err(Error::Format(
+                crate::error::FormatError::UnsupportedFeature(format!(
+                    "{} format is not supported on WASM",
+                    self.format
+                )),
+            )),
             DataFormat::Excel | DataFormat::Orc => Err(Error::Format(
                 crate::error::FormatError::UnsupportedFeature(format!(
                     "{} format does not support reading",

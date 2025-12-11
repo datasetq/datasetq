@@ -13,8 +13,6 @@ categories = ["command-line-utilities", "data-structures"]
 workspace = true
 
 [dependencies]
-# Data processing
-arrow = { workspace = true }
 
 # Serialization
 serde = { workspace = true }
@@ -46,13 +44,12 @@ log = { workspace = true }
 # CLI (optional)
 
 # Local crates
-dsq-formats = { path = "../dsq-formats" }
-dsq-io = { path = "../dsq-io" }
-dsq-parser = { path = "../dsq-parser" }
-dsq-shared = { path = "../dsq-shared" }
-dsq-filter = { path = "../dsq-filter" }
+dsq-formats = { path = "../dsq-formats", default-features=false }
+dsq-io = { path = "../dsq-io", default-features=false }
+dsq-parser = { path = "../dsq-parser", default-features=false }
+dsq-shared = { path = "../dsq-shared", default-features=false }
+dsq-filter = { path = "../dsq-filter", default-features=false }
 rand = { workspace = true, features = ["std_rng"] }
-polars-ops = { workspace = true, features = ["pivot"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
@@ -63,22 +60,28 @@ pretty_assertions = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["rt", "macros", "fs", "io-util"] }
-polars = { workspace = true, features = ["lazy", "csv", "json", "parquet", "temporal", "strings", "is_in"], optional = true }
+polars = { workspace = true }
+polars-ops = "0.51"
 dsq-filter = { path = "../dsq-filter", features = ["rand"] }
 dsq-formats = { path = "../dsq-formats", features = ["parquet", "avro"] }
 once_cell = { workspace = true }
+# Data processing
+arrow = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { workspace = true, features = ["lazy", "csv", "json", "temporal", "strings", "is_in"], optional = true }
+polars = { workspace = true }
+dsq-shared = { path = "../dsq-shared", default-features=false, features = [] }
+dsq-filter = { path = "../dsq-filter", default-features=false, features = [] }
+dsq-formats = { path = "../dsq-formats", default-features=false, features = [] }
 
 [features]
-default = ["all-formats", "io"]
+default = []
 all-formats = ["csv", "json", "parquet", "avro"]
 csv = []
 json = []
 parquet = []
 avro = ["polars/avro"]
 io = []
-filter = ["polars"]
+filter = []
 repl = []
 rand = []

@@ -6,13 +6,14 @@
 use chrono::{DateTime, Duration, NaiveDate};
 use num_traits::identities::Zero;
 use polars::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
+use rayon::iter::IntoParallelIterator;
+#[cfg(not(target_arch = "wasm32"))]
+use rayon::iter::ParallelIterator;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde_json::{Number as JsonNumber, Value as JsonValue};
 use std::collections::HashMap;
 
-use rayon::prelude::*;
-
-/// A value type that bridges between jaq's JSON values and Polars `DataFrames`
 #[derive(Clone)]
 pub enum Value {
     /// Null value
@@ -231,39 +232,66 @@ impl Value {
             .collect();
         let series_vec = series_vec?;
 
-        // Use parallel processing for large datasets (>10k rows)
-        let rows: crate::Result<Vec<_>> = if height > 10_000 {
-            (0..height)
-                .into_par_iter()
-                .map(|row_idx| {
-                    let mut row_obj = serde_json::Map::with_capacity(num_cols);
+        // Use parallel processing for large datasets (>10k rows) when not on wasm
+        let rows: crate::Result<Vec<_>> = {
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                if height > 10_000 {
+                    (0..height)
+                        .into_par_iter()
+                        .map(|row_idx| {
+                            let mut row_obj = serde_json::Map::with_capacity(num_cols);
 
-                    for (col_idx, col_name) in columns.iter().enumerate() {
-                        let series = &series_vec[col_idx];
-                        let value =
-                            Self::series_value_to_json(series.as_materialized_series(), row_idx)?;
-                        row_obj.insert((*col_name).to_string(), value);
-                    }
+                            for (col_idx, col_name) in columns.iter().enumerate() {
+                                let series = &series_vec[col_idx];
+                                let value = Self::series_value_to_json(
+                                    series.as_materialized_series(),
+                                    row_idx,
+                                )?;
+                                row_obj.insert((*col_name).to_string(), value);
+                            }
 
-                    Ok(JsonValue::Object(row_obj))
-                })
-                .collect()
-        } else {
-            // Sequential for smaller datasets to avoid overhead
-            (0..height)
-                .map(|row_idx| {
-                    let mut row_obj = serde_json::Map::with_capacity(num_cols);
+                            Ok(JsonValue::Object(row_obj))
+                        })
+                        .collect()
+                } else {
+                    (0..height)
+                        .map(|row_idx| {
+                            let mut row_obj = serde_json::Map::with_capacity(num_cols);
 
-                    for (col_idx, col_name) in columns.iter().enumerate() {
-                        let series = &series_vec[col_idx];
-                        let value =
-                            Self::series_value_to_json(series.as_materialized_series(), row_idx)?;
-                        row_obj.insert((*col_name).to_string(), value);
-                    }
+                            for (col_idx, col_name) in columns.iter().enumerate() {
+                                let series = &series_vec[col_idx];
+                                let value = Self::series_value_to_json(
+                                    series.as_materialized_series(),
+                                    row_idx,
+                                )?;
+                                row_obj.insert((*col_name).to_string(), value);
+                            }
 
-                    Ok(JsonValue::Object(row_obj))
-                })
-                .collect()
+                            Ok(JsonValue::Object(row_obj))
+                        })
+                        .collect()
+                }
+            }
+            #[cfg(target_arch = "wasm32")]
+            {
+                (0..height)
+                    .map(|row_idx| {
+                        let mut row_obj = serde_json::Map::with_capacity(num_cols);
+
+                        for (col_idx, col_name) in columns.iter().enumerate() {
+                            let series = &series_vec[col_idx];
+                            let value = Self::series_value_to_json(
+                                series.as_materialized_series(),
+                                row_idx,
+                            )?;
+                            row_obj.insert((*col_name).to_string(), value);
+                        }
+
+                        Ok(JsonValue::Object(row_obj))
+                    })
+                    .collect()
+            }
         };
 
         Ok(JsonValue::Array(rows?))

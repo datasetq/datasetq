@@ -31,17 +31,16 @@ serde_json = { workspace = true }
 log = { workspace = true }
 rand = { workspace = true, optional = true }
 lru = { workspace = true }
+polars = { workspace = true }
 
 # Profiling
 coz = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-polars = { workspace = true, features = ["lazy", "csv", "json", "parquet", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids"] }
 dsq-functions = { path = "../dsq-functions", features = ["rand"] }
 rand = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-polars = { workspace = true, features = ["lazy", "csv", "json", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "rows", "chunked_ids"] }
 
 [features]
 rand = ["dep:rand"]
