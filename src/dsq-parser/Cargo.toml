@@ -14,7 +14,7 @@ workspace = true
 
 [dependencies]
 # Shared utilities
-dsq-shared = { path = "../dsq-shared" }
+dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
 
 # Parsing
 nom = { workspace = true }

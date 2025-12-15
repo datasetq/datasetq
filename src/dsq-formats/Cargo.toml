@@ -26,7 +26,7 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 
 # Shared types
-dsq-shared = { path = "../dsq-shared" }
+dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
 
 # Utilities
 regex = { workspace = true }

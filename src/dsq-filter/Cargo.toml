@@ -17,9 +17,9 @@ workspace = true
 
 [dependencies]
 # Core dependencies
-dsq-shared = { path = "../dsq-shared" }
-dsq-parser = { path = "../dsq-parser" }
-dsq-functions = { path = "../dsq-functions", default-features = false }
+dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
+dsq-parser = { version = "0.1.0", path = "../dsq-parser" }
+dsq-functions = { version = "0.1.0", path = "../dsq-functions", default-features = false }
 
 # Error handling
 anyhow = { workspace = true }
@@ -37,7 +37,7 @@ polars = { workspace = true }
 coz = { workspace = true, optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-dsq-functions = { path = "../dsq-functions", features = ["rand"] }
+dsq-functions = { version = "0.1.0", path = "../dsq-functions", features = ["rand"] }
 rand = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

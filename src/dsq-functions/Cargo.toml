@@ -17,7 +17,7 @@ workspace = true
 
 [dependencies]
 # Core dependencies
-dsq-shared = { path = "../dsq-shared" }
+dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
 
 # Big integer support
 num-bigint = { workspace = true }
