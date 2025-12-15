@@ -13,7 +13,7 @@ keywords = ["jq", "data", "csv", "json", "parquet"]
 categories = ["command-line-utilities", "data-structures", "parsing"]
 
 [workspace]
-members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli"]
+members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli", "src/dsq-core", "src/dsq-io"]
 resolver = "2"
 
 [workspace.lints.clippy]
