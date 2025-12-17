@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="datasetq_logo.svg" alt="datasetq logo" width="200"/>
+  <img src="datasetq_logo.svg" alt="datasetq logo" width="100%"/>
 </p>
-
-# datasetq
 
 [![CI](https://github.com/datasetq/datasetq/actions/workflows/ci.yml/badge.svg)](https://github.com/datasetq/datasetq/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/dsq-core.svg)](https://crates.io/crates/dsq-core)
