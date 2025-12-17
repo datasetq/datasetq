@@ -35,7 +35,7 @@ serde_json = "1.0"
 
 # Data processing
 polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "ipc", "strings",  "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows"]}
-arrow = "54"
+arrow = "57"
 
 # Parsing
 nom = "8.0"
@@ -86,7 +86,7 @@ toml = "0.9"
 clap_complete = "4.4"
 getrandom = "0.3.4"
 paste = "1.0"
-itertools = "0.12"
+itertools = "0.14"
 either = "1"
 bytes = "1.5"
 smallvec = "1.11"
