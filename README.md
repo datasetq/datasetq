@@ -1,11 +1,11 @@
-# dsq
+# datasetq 
 
 [![CI](https://github.com/datasetq/datasetq/actions/workflows/ci.yml/badge.svg)](https://github.com/datasetq/datasetq/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/dsq-core.svg)](https://crates.io/crates/dsq-core)
 [![Documentation](https://docs.rs/dsq-core/badge.svg)](https://docs.rs/dsq-core)
 [![Rust 1.69+](https://img.shields.io/badge/rust-1.69+-orange.svg)](https://www.rust-lang.org)
 
-dsq (pronounced "disk") is a high-performance data processing tool that extends jq-like syntax to work with structured data formats including Parquet, Avro, CSV, JSON Lines, Arrow, and more. Built on [Polars](https://pola.rs/), dsq provides fast data manipulation across multiple file formats with familiar filter syntax.
+datasetq is a high-performance data processing tool that extends jq-like syntax to work with structured data formats including Parquet, Avro, CSV, JSON Lines, Arrow, and more. Built on [Polars](https://pola.rs/), dsq provides fast data manipulation across multiple file formats with familiar filter syntax.
 
 ## Key Features
 
