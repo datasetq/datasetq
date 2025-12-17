@@ -29,14 +29,14 @@ curl -fsSL https://github.com/datasetq/datasetq/releases/latest/download/dsq-$(u
 
 Install with Rust toolchain (see <https://rustup.rs/>):
 ```bash
-cargo install --locked dsq
+cargo install --locked dsq-cli
 cargo install --locked --git https://github.com/datasetq/datasetq  # development version
 ```
 
 Or build from the repository:
 ```bash
 cargo build --release  # creates target/release/dsq
-cargo install --locked --path dsq  # installs binary
+cargo install --locked --path dsq-cli  # installs binary
 ```
 
 ## Quick Start
