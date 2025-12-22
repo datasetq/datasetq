@@ -33,6 +33,16 @@ tokio = { workspace = true, features = ["fs", "io-util", "io-std", "macros", "rt
 dsq-formats = { version = "0.1.0", path = "../dsq-formats", features = ["parquet"] }
 # Avro support (for error types)
 apache-avro = { workspace = true }
+# HTTP(S) support (optional)
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"], optional = true }
+# HuggingFace Hub support (optional)
+hf-hub = { version = "0.3", default-features = false, features = ["tokio", "online"], optional = true }
+dirs = { workspace = true, optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[features]
+default = []
+http = ["reqwest"]
+huggingface = ["hf-hub", "dirs"]

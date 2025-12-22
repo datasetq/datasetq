@@ -130,6 +130,7 @@ dsq-core = { version = "0.1.0", path = "src/dsq-core", default-features = false 
 dsq-shared = { version = "0.1.0", path = "src/dsq-shared" }
 dsq-parser = { version = "0.1.0", path = "src/dsq-parser" }
 dsq-filter = { version = "0.1.0", path = "src/dsq-filter" }
+dsq-io = { version = "0.1.0", path = "src/dsq-io" }
 
 # CLI and configuration
 clap = { workspace = true, features = ["derive", "cargo", "env"], optional = true }
@@ -198,6 +199,8 @@ cli = ["clap", "clap_complete", "atty", "env_logger", "num_cpus", "tokio", "serd
 bin = ["cli"]
 filter = []
 wasm = ["serde_json"]
+http = ["dsq-io/http"]
+huggingface = ["dsq-io/huggingface"]
 
 [profile.release]
 opt-level = 3

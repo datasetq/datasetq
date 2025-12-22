@@ -90,11 +90,21 @@ pub struct FileInfo {
     pub column_names: Option<Vec<String>>,
 }
 
-/// Read a file into a Value
+/// Read a file or URL into a Value
+///
+/// Supports local files, HTTP(S) URLs, and HuggingFace URLs (with appropriate features enabled).
 #[cfg(not(target_arch = "wasm32"))]
 pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
     let path = path.as_ref();
-    let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+    let path_str = path.to_string_lossy();
+
+    // Determine format from extension or URL
+    let extension = if is_url(&path_str) {
+        // Extract extension from URL path
+        extract_extension_from_url(&path_str).unwrap_or("")
+    } else {
+        path.extension().and_then(|ext| ext.to_str()).unwrap_or("")
+    };
 
     let format = if extension.is_empty() {
         // No extension, try content detection
@@ -118,7 +128,7 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
         }
     };
 
-    // Read the file bytes
+    // Read the file bytes (dsq_io handles URLs)
     let bytes = dsq_io::read_file(path).await?;
     let cursor = Cursor::new(bytes);
 
@@ -151,6 +161,27 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             &format_options,
         )?),
         _ => Err(Error::operation(format!("Unsupported format: {format:?}"))),
+    }
+}
+
+/// Check if a path string is a URL
+fn is_url(path: &str) -> bool {
+    path.starts_with("http://") || path.starts_with("https://") || path.starts_with("hf://")
+}
+
+/// Extract file extension from a URL
+fn extract_extension_from_url(url: &str) -> Option<&str> {
+    // Remove query string and fragment
+    let path = url.split('?').next()?.split('#').next()?;
+
+    // Get the last path segment
+    let last_segment = path.split('/').last()?;
+
+    // Extract extension
+    if let Some(dot_pos) = last_segment.rfind('.') {
+        Some(&last_segment[dot_pos + 1..])
+    } else {
+        None
     }
 }
 

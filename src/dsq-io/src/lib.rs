@@ -45,6 +45,12 @@ pub mod traits;
 // Options
 pub mod options;
 
+// URL fetching
+#[cfg(feature = "http")]
+pub mod http;
+#[cfg(feature = "huggingface")]
+pub mod huggingface;
+
 // Re-export writer types
 pub use file_writer::{to_path, to_path_with_format, FileWriter};
 pub use memory_writer::{to_memory, MemoryWriter};
@@ -91,16 +97,42 @@ impl Error {
     }
 }
 
-/// Read all bytes from a file asynchronously
+/// Read all bytes from a file or URL asynchronously
+///
+/// Supports:
+/// - Local file paths
+/// - HTTP(S) URLs (when `http` feature is enabled)
+/// - HuggingFace URLs with `hf://` scheme (when `huggingface` feature is enabled)
 ///
 /// # Examples
 ///
 /// ```rust,ignore
 /// use dsq_io::read_file;
 ///
+/// // Local file
 /// let data = read_file("data.txt").await.unwrap();
+///
+/// // HTTP URL (requires `http` feature)
+/// let data = read_file("https://example.com/data.csv").await.unwrap();
+///
+/// // HuggingFace URL (requires `huggingface` feature)
+/// let data = read_file("hf://datasets/user/repo/data.csv").await.unwrap();
 /// ```
 pub async fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
+    let path_str = path.as_ref().to_string_lossy();
+
+    // Check if it's a URL
+    #[cfg(feature = "http")]
+    if http::is_http_url(&path_str) {
+        return http::fetch_http(&path_str).await;
+    }
+
+    #[cfg(feature = "huggingface")]
+    if huggingface::is_huggingface_url(&path_str) {
+        return huggingface::fetch_huggingface(&path_str).await;
+    }
+
+    // Otherwise, treat as local file path
     fs::read(path).await.map_err(Error::from)
 }
 
@@ -165,8 +197,27 @@ pub async fn write_stderr(data: &[u8]) -> Result<()> {
 }
 
 /// Synchronous versions for compatibility
-/// Read all bytes from a file synchronously
+/// Read all bytes from a file or URL synchronously
+///
+/// Supports the same sources as `read_file()`.
 pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
+    // Use tokio runtime for async operations if needed
+    let path_str = path.as_ref().to_string_lossy();
+
+    #[cfg(feature = "http")]
+    if http::is_http_url(&path_str) {
+        return tokio::runtime::Runtime::new()
+            .map_err(|e| Error::Other(format!("Failed to create runtime: {e}")))?
+            .block_on(http::fetch_http(&path_str));
+    }
+
+    #[cfg(feature = "huggingface")]
+    if huggingface::is_huggingface_url(&path_str) {
+        return tokio::runtime::Runtime::new()
+            .map_err(|e| Error::Other(format!("Failed to create runtime: {e}")))?
+            .block_on(huggingface::fetch_huggingface(&path_str));
+    }
+
     std::fs::read(path).map_err(Error::from)
 }
 

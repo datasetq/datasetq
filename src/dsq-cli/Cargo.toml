@@ -62,6 +62,8 @@ parquet = []
 avro = []
 io-arrow = []
 profiling = ["coz", "dsq-filter/profiling", "dsq-formats/profiling"]
+http = ["dsq-io/http"]
+huggingface = ["dsq-io/huggingface"]
 
 [lib]
 name = "dsq_cli"
