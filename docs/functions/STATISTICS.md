@@ -141,6 +141,33 @@ dsq '.sample_values | stdev_s' data.csv
 # Sample std dev
 ```
 
+## Window Functions
+
+### `rolling_std(column, window_size, min_periods?)`
+Calculates rolling (moving) standard deviation over a window of rows.
+
+```bash
+# 3-period rolling standard deviation
+dsq '.value | rolling_std(3)' timeseries.csv
+
+# Rolling std with minimum periods
+dsq '.price | rolling_std(7, 5)' stock_prices.csv
+# 7-day window, requires at least 5 values
+
+# Analyze volatility
+dsq '{
+  price: .price,
+  volatility: (.price | rolling_std(30))
+}' daily_data.csv
+```
+
+**Parameters:**
+- `column`: Column name to calculate rolling std on
+- `window_size`: Number of periods in the rolling window
+- `min_periods` (optional): Minimum number of observations required to have a result (defaults to window_size)
+
+**Returns:** DataFrame or Array with additional `{column}_rolling_std` field/column
+
 ## Correlation
 
 ### `correl(array1, array2)`

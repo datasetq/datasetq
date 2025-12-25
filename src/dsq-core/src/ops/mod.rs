@@ -124,8 +124,8 @@ pub use basic::{
 };
 
 pub use aggregate::{
-    cumulative_agg, group_by, group_by_agg, pivot, rolling_agg, unpivot, AggregationFunction,
-    WindowFunction,
+    cumulative_agg, group_by, group_by_agg, pivot, rolling_agg, rolling_std, unpivot,
+    AggregationFunction, WindowFunction,
 };
 
 pub use join::{

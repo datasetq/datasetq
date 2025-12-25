@@ -956,6 +956,196 @@ pub enum WindowFunction {
     Var,
 }
 
+/// Rolling standard deviation calculation
+///
+/// Apply rolling standard deviation over a window of rows.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use dsq_core::ops::aggregate::rolling_std;
+/// use dsq_core::value::Value;
+///
+/// let result = rolling_std(
+///     &dataframe_value,
+///     "value",                       // column to calculate std for
+///     3,                            // window size
+///     None                          // min_periods (optional)
+/// ).unwrap();
+/// ```
+pub fn rolling_std(
+    value: &Value,
+    column: &str,
+    window_size: usize,
+    min_periods: Option<usize>,
+) -> Result<Value> {
+    let min_periods = min_periods.unwrap_or(window_size);
+
+    match value {
+        Value::DataFrame(df) => {
+            // Get the column to operate on
+            let series = df.column(column).map_err(Error::from)?;
+
+            // Convert to Vec<f64> for manual rolling calculation
+            let mut values: Vec<Option<f64>> = Vec::with_capacity(series.len());
+            for i in 0..series.len() {
+                let val = series.get(i).map_err(Error::from)?;
+                let numeric_val = match val {
+                    AnyValue::Int8(i) => Some(f64::from(i)),
+                    AnyValue::Int16(i) => Some(f64::from(i)),
+                    AnyValue::Int32(i) => Some(f64::from(i)),
+                    AnyValue::Int64(i) =>
+                    {
+                        #[allow(clippy::cast_precision_loss)]
+                        Some(i as f64)
+                    }
+                    AnyValue::UInt8(i) => Some(f64::from(i)),
+                    AnyValue::UInt16(i) => Some(f64::from(i)),
+                    AnyValue::UInt32(i) => Some(f64::from(i)),
+                    AnyValue::UInt64(i) =>
+                    {
+                        #[allow(clippy::cast_precision_loss)]
+                        Some(i as f64)
+                    }
+                    AnyValue::Float32(f) => Some(f64::from(f)),
+                    AnyValue::Float64(f) => Some(f),
+                    AnyValue::Null => None,
+                    _ => {
+                        return Err(TypeError::UnsupportedOperation {
+                            operation: "rolling_std".to_string(),
+                            typ: format!("{val:?}"),
+                        }
+                        .into());
+                    }
+                };
+                values.push(numeric_val);
+            }
+
+            // Calculate rolling std
+            let mut result_values: Vec<Option<f64>> = Vec::with_capacity(values.len());
+            for i in 0..values.len() {
+                let window_start = if i + 1 >= window_size {
+                    i + 1 - window_size
+                } else {
+                    0
+                };
+                let window = &values[window_start..=i];
+
+                // Filter out None values
+                let valid_values: Vec<f64> = window.iter().filter_map(|&v| v).collect();
+
+                if valid_values.len() >= min_periods {
+                    // Calculate std
+                    #[allow(clippy::cast_precision_loss)]
+                    let mean = valid_values.iter().sum::<f64>() / valid_values.len() as f64;
+                    #[allow(clippy::cast_precision_loss)]
+                    let variance = valid_values.iter().map(|x| (x - mean).powi(2)).sum::<f64>()
+                        / (valid_values.len() - 1).max(1) as f64;
+                    result_values.push(Some(variance.sqrt()));
+                } else {
+                    result_values.push(None);
+                }
+            }
+
+            // Create a new series with the result
+            let result_series = Series::new(format!("{column}_rolling_std").into(), result_values);
+
+            // Clone the dataframe and add the new column
+            let mut result_df = df.clone();
+            result_df.with_column(result_series).map_err(Error::from)?;
+
+            Ok(Value::DataFrame(result_df))
+        }
+        Value::LazyFrame(lf) => {
+            // For LazyFrame, we need to collect first
+            let df = lf.clone().collect().map_err(Error::from)?;
+            rolling_std(
+                &Value::DataFrame(df),
+                column,
+                window_size,
+                Some(min_periods),
+            )
+        }
+        Value::Array(arr) => {
+            // For arrays, we can implement a similar logic
+            // Extract values from array of objects
+            let mut values: Vec<Option<f64>> = Vec::with_capacity(arr.len());
+
+            for item in arr {
+                if let Value::Object(obj) = item {
+                    if let Some(val) = obj.get(column) {
+                        let numeric_val = match val {
+                            Value::Int(i) =>
+                            {
+                                #[allow(clippy::cast_precision_loss)]
+                                Some(*i as f64)
+                            }
+                            Value::Float(f) => Some(*f),
+                            Value::Null => None,
+                            _ => {
+                                return Err(TypeError::UnsupportedOperation {
+                                    operation: "rolling_std".to_string(),
+                                    typ: val.type_name().to_string(),
+                                }
+                                .into());
+                            }
+                        };
+                        values.push(numeric_val);
+                    } else {
+                        values.push(None);
+                    }
+                } else {
+                    return Err(TypeError::UnsupportedOperation {
+                        operation: "rolling_std".to_string(),
+                        typ: item.type_name().to_string(),
+                    }
+                    .into());
+                }
+            }
+
+            // Calculate rolling std
+            let mut result_arr = Vec::with_capacity(arr.len());
+            for (i, item) in arr.iter().enumerate() {
+                let window_start = if i + 1 >= window_size {
+                    i + 1 - window_size
+                } else {
+                    0
+                };
+                let window = &values[window_start..=i];
+
+                // Filter out None values
+                let valid_values: Vec<f64> = window.iter().filter_map(|&v| v).collect();
+
+                let rolling_std_val = if valid_values.len() >= min_periods {
+                    // Calculate std
+                    #[allow(clippy::cast_precision_loss)]
+                    let mean = valid_values.iter().sum::<f64>() / valid_values.len() as f64;
+                    #[allow(clippy::cast_precision_loss)]
+                    let variance = valid_values.iter().map(|x| (x - mean).powi(2)).sum::<f64>()
+                        / (valid_values.len() - 1).max(1) as f64;
+                    Value::Float(variance.sqrt())
+                } else {
+                    Value::Null
+                };
+
+                // Clone the object and add the rolling_std field
+                if let Value::Object(obj) = item {
+                    let mut new_obj = obj.clone();
+                    new_obj.insert(format!("{column}_rolling_std"), rolling_std_val);
+                    result_arr.push(Value::Object(new_obj));
+                }
+            }
+
+            Ok(Value::Array(result_arr))
+        }
+        _ => Err(TypeError::UnsupportedOperation {
+            operation: "rolling_std".to_string(),
+            typ: value.type_name().to_string(),
+        }
+        .into()),
+    }
+}
+
 impl WindowFunction {
     /// Get the function name as a string
     #[must_use]
@@ -1603,5 +1793,104 @@ mod tests {
             compare_values_for_ordering(&Value::Int(1), &Value::Float(1.0)),
             std::cmp::Ordering::Equal
         );
+    }
+
+    #[test]
+    fn test_rolling_std() {
+        // Test with DataFrame
+        let df = df! {
+            "value" => [1.0, 2.0, 3.0, 4.0, 5.0]
+        }
+        .unwrap();
+
+        let value = Value::DataFrame(df);
+
+        let result = rolling_std(&value, "value", 3, None).unwrap();
+
+        match result {
+            Value::DataFrame(df) => {
+                assert!(df.column("value_rolling_std").is_ok());
+                let rolling_std_col = df.column("value_rolling_std").unwrap();
+                assert_eq!(rolling_std_col.len(), 5);
+
+                // First two values should be null (not enough data for window of 3)
+                let val0 = rolling_std_col.get(0).unwrap();
+                let val1 = rolling_std_col.get(1).unwrap();
+                assert!(matches!(val0, AnyValue::Null));
+                assert!(matches!(val1, AnyValue::Null));
+
+                // Third value should be std of [1, 2, 3]
+                let val2 = rolling_std_col.get(2).unwrap();
+                if let AnyValue::Float64(f) = val2 {
+                    assert!((f - 1.0).abs() < 0.01); // std([1,2,3]) = 1.0
+                }
+            }
+            _ => panic!("Expected DataFrame"),
+        }
+    }
+
+    #[test]
+    fn test_rolling_std_array() {
+        // Test with Array
+        let array_value = Value::Array(vec![
+            Value::Object(HashMap::from([("value".to_string(), Value::Int(1))])),
+            Value::Object(HashMap::from([("value".to_string(), Value::Int(2))])),
+            Value::Object(HashMap::from([("value".to_string(), Value::Int(3))])),
+            Value::Object(HashMap::from([("value".to_string(), Value::Int(4))])),
+            Value::Object(HashMap::from([("value".to_string(), Value::Int(5))])),
+        ]);
+
+        let result = rolling_std(&array_value, "value", 3, None).unwrap();
+
+        match result {
+            Value::Array(arr) => {
+                assert_eq!(arr.len(), 5);
+
+                // Check first item (should have null rolling_std)
+                if let Value::Object(obj) = &arr[0] {
+                    assert_eq!(obj.get("value_rolling_std"), Some(&Value::Null));
+                }
+
+                // Check third item (should have std of [1, 2, 3])
+                if let Value::Object(obj) = &arr[2] {
+                    if let Some(Value::Float(f)) = obj.get("value_rolling_std") {
+                        assert!((f - 1.0).abs() < 0.01); // std([1,2,3]) = 1.0
+                    } else {
+                        panic!("Expected Float for rolling_std at index 2");
+                    }
+                }
+            }
+            _ => panic!("Expected Array"),
+        }
+    }
+
+    #[test]
+    fn test_rolling_std_min_periods() {
+        // Test with custom min_periods
+        let df = df! {
+            "value" => [1.0, 2.0, 3.0, 4.0, 5.0]
+        }
+        .unwrap();
+
+        let value = Value::DataFrame(df);
+
+        // Window size 3, but min_periods 2
+        let result = rolling_std(&value, "value", 3, Some(2)).unwrap();
+
+        match result {
+            Value::DataFrame(df) => {
+                let rolling_std_col = df.column("value_rolling_std").unwrap();
+
+                // First value should be null (only 1 value)
+                assert!(matches!(rolling_std_col.get(0).unwrap(), AnyValue::Null));
+
+                // Second value should have a result (2 values >= min_periods)
+                assert!(matches!(
+                    rolling_std_col.get(1).unwrap(),
+                    AnyValue::Float64(_)
+                ));
+            }
+            _ => panic!("Expected DataFrame"),
+        }
     }
 }
