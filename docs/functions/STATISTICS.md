@@ -143,6 +143,42 @@ dsq '.sample_values | stdev_s' data.csv
 
 ## Window Functions
 
+### `ewma(column, alpha, min_periods?)`
+Calculates Exponentially Weighted Moving Average (EWMA) for smoothing time series data.
+
+```bash
+# Calculate EWMA with alpha = 0.3
+dsq '.price | ewma(0.3)' stock_prices.csv
+
+# EWMA with minimum periods requirement
+dsq '.value | ewma(0.2, 5)' timeseries.csv
+# Requires at least 5 values before calculating
+
+# Track smoothed trends
+dsq '{
+  original: .sales,
+  smoothed: (.sales | ewma(0.4))
+}' daily_sales.csv
+
+# Convert span to alpha: alpha = 2 / (span + 1)
+# For 10-day EMA: alpha = 2 / 11 ≈ 0.182
+dsq '.price | ewma(0.182)' prices.csv
+```
+
+**Parameters:**
+- `column`: Column name to calculate EWMA on
+- `alpha`: Smoothing factor between 0 and 1 (higher = more weight on recent values)
+- `min_periods` (optional): Minimum number of observations required (defaults to 1)
+
+**Returns:** DataFrame or Array with additional `{column}_ewma` field/column
+
+**Formula:** EWMA(t) = α × Value(t) + (1 - α) × EWMA(t-1)
+
+**Common alpha values:**
+- 0.1-0.2: Heavy smoothing, slow response
+- 0.3-0.5: Moderate smoothing
+- 0.6-0.8: Light smoothing, fast response
+
 ### `rolling_std(column, window_size, min_periods?)`
 Calculates rolling (moving) standard deviation over a window of rows.
 
