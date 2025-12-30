@@ -54,7 +54,7 @@ pub fn builtin_bbands(args: &[Value]) -> Result<Value> {
             use ta::Next;
 
             let mut bb_indicator = BollingerBands::new(period, std_dev_mult).map_err(|e| {
-                dsq_shared::error::operation_error(&format!("Bollinger Bands error: {}", e))
+                dsq_shared::error::operation_error(format!("Bollinger Bands error: {}", e))
             })?;
 
             let bb_values: Vec<Value> = prices

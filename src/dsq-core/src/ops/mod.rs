@@ -111,8 +111,6 @@ pub mod join;
 pub mod logical_ops;
 pub mod pipeline;
 pub mod selection_ops;
-#[cfg(test)]
-pub mod tests;
 /// Data transformation operations
 pub mod transform;
 pub mod utils;

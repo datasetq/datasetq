@@ -91,24 +91,18 @@ pub fn builtin_parabolic_sar(args: &[Value]) -> Result<Value> {
                         sar = ep;
                         ep = lows[i];
                         af = af_step;
-                    } else {
-                        if highs[i] > ep {
-                            ep = highs[i];
-                            af = (af + af_step).min(af_max);
-                        }
-                    }
-                } else {
-                    if highs[i] > sar {
-                        is_long = true;
-                        sar = ep;
+                    } else if highs[i] > ep {
                         ep = highs[i];
-                        af = af_step;
-                    } else {
-                        if lows[i] < ep {
-                            ep = lows[i];
-                            af = (af + af_step).min(af_max);
-                        }
+                        af = (af + af_step).min(af_max);
                     }
+                } else if highs[i] > sar {
+                    is_long = true;
+                    sar = ep;
+                    ep = highs[i];
+                    af = af_step;
+                } else if lows[i] < ep {
+                    ep = lows[i];
+                    af = (af + af_step).min(af_max);
                 }
 
                 psar_values[i] = Value::Float(sar);

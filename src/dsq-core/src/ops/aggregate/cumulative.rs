@@ -1,5 +1,5 @@
-use crate::{Error, Result, TypeError, Value};
 use super::rolling::WindowFunction;
+use crate::{Error, Result, TypeError, Value};
 
 /// Cumulative aggregations
 ///

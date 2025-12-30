@@ -154,11 +154,7 @@ pub fn rolling_std(
             // Calculate rolling std
             let mut result_values: Vec<Option<f64>> = Vec::with_capacity(values.len());
             for i in 0..values.len() {
-                let window_start = if i + 1 >= window_size {
-                    i + 1 - window_size
-                } else {
-                    0
-                };
+                let window_start = (i + 1).saturating_sub(window_size);
                 let window = &values[window_start..=i];
 
                 // Filter out None values
@@ -236,11 +232,7 @@ pub fn rolling_std(
             // Calculate rolling std
             let mut result_arr = Vec::with_capacity(arr.len());
             for (i, item) in arr.iter().enumerate() {
-                let window_start = if i + 1 >= window_size {
-                    i + 1 - window_size
-                } else {
-                    0
-                };
+                let window_start = (i + 1).saturating_sub(window_size);
                 let window = &values[window_start..=i];
 
                 // Filter out None values

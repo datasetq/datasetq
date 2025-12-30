@@ -13,7 +13,7 @@ use inventory;
 /// # Returns
 /// Array of RSI values (0-100)
 pub fn builtin_rsi(args: &[Value]) -> Result<Value> {
-    if args.len() < 1 || args.len() > 2 {
+    if args.is_empty() || args.len() > 2 {
         return Err(dsq_shared::error::operation_error(
             "rsi() expects 1-2 arguments (array of prices, optional period)",
         ));
@@ -47,7 +47,7 @@ pub fn builtin_rsi(args: &[Value]) -> Result<Value> {
             use ta::Next;
 
             let mut rsi_indicator = RelativeStrengthIndex::new(period)
-                .map_err(|e| dsq_shared::error::operation_error(&format!("RSI error: {}", e)))?;
+                .map_err(|e| dsq_shared::error::operation_error(format!("RSI error: {}", e)))?;
 
             let rsi_values: Vec<Value> = prices
                 .iter()

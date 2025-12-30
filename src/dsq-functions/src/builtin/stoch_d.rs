@@ -79,7 +79,7 @@ pub fn builtin_stoch_d(args: &[Value]) -> Result<Value> {
             use ta::Next;
 
             let mut stoch_indicator = SlowStochastic::new(k_period, d_period).map_err(|e| {
-                dsq_shared::error::operation_error(&format!("Stochastic error: {}", e))
+                dsq_shared::error::operation_error(format!("Stochastic error: {}", e))
             })?;
 
             let stoch_values: Vec<Value> = (0..highs.len())

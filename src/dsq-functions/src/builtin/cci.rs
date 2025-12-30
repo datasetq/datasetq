@@ -69,7 +69,7 @@ pub fn builtin_cci(args: &[Value]) -> Result<Value> {
             use ta::Next;
 
             let mut cci_indicator = CommodityChannelIndex::new(period)
-                .map_err(|e| dsq_shared::error::operation_error(&format!("CCI error: {}", e)))?;
+                .map_err(|e| dsq_shared::error::operation_error(format!("CCI error: {}", e)))?;
 
             let cci_values: Vec<Value> = (0..highs.len())
                 .map(|i| {

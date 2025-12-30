@@ -65,7 +65,7 @@ pub fn builtin_macd(args: &[Value]) -> Result<Value> {
             let mut macd_indicator =
                 MovingAverageConvergenceDivergence::new(fast_period, slow_period, signal_period)
                     .map_err(|e| {
-                        dsq_shared::error::operation_error(&format!("MACD error: {}", e))
+                        dsq_shared::error::operation_error(format!("MACD error: {}", e))
                     })?;
 
             let macd_values: Vec<Value> = prices

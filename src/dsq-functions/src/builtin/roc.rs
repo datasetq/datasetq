@@ -43,7 +43,7 @@ pub fn builtin_roc(args: &[Value]) -> Result<Value> {
             use ta::Next;
 
             let mut roc_indicator = RateOfChange::new(period)
-                .map_err(|e| dsq_shared::error::operation_error(&format!("ROC error: {}", e)))?;
+                .map_err(|e| dsq_shared::error::operation_error(format!("ROC error: {}", e)))?;
 
             let roc_values: Vec<Value> = prices
                 .iter()

@@ -69,7 +69,7 @@ pub fn builtin_atr(args: &[Value]) -> Result<Value> {
             use ta::Next;
 
             let mut atr_indicator = AverageTrueRange::new(period)
-                .map_err(|e| dsq_shared::error::operation_error(&format!("ATR error: {}", e)))?;
+                .map_err(|e| dsq_shared::error::operation_error(format!("ATR error: {}", e)))?;
 
             let atr_values: Vec<Value> = (0..highs.len())
                 .map(|i| {

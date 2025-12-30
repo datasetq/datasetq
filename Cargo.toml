@@ -224,6 +224,14 @@ inherits = "dev"
 debug = true
 opt-level = 0
 
+[profile.cli-fast]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
 [[bench]]
 name = "micro_bench"
 harness = false

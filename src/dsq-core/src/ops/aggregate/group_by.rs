@@ -3,7 +3,7 @@ use polars::prelude::*;
 use smallvec::SmallVec;
 use std::collections::HashMap;
 
-use super::{any_value_to_value, compare_values_for_ordering, df_to_array, AggregationFunction};
+use super::{compare_values_for_ordering, df_to_array, AggregationFunction};
 
 pub fn group_by(value: &Value, columns: &[String]) -> Result<Value> {
     if columns.is_empty() {
@@ -222,7 +222,10 @@ fn group_by_agg_array(
 }
 
 /// Apply a single aggregation function to a group of objects
-pub(super) fn apply_aggregation_to_group(agg: &AggregationFunction, group_items: &[&Value]) -> Result<Value> {
+pub(super) fn apply_aggregation_to_group(
+    agg: &AggregationFunction,
+    group_items: &[&Value],
+) -> Result<Value> {
     match agg {
         AggregationFunction::Count => Ok(Value::Int(
             i64::try_from(group_items.len()).unwrap_or(i64::MAX),
