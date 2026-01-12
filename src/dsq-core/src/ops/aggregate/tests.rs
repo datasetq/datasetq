@@ -1,7 +1,14 @@
 use super::*;
 use crate::ops::basic::SortOptions;
 use crate::ops::pipeline::*;
-use polars::prelude::*;
+use crate::ops::{
+    recommended_batch_size, supports_operation, AddOperation, AndOperation,
+    ArrayConstructOperation, AssignAddOperation, AssignUpdateOperation, DivOperation, EqOperation,
+    FieldAccessOperation, GeOperation, GtOperation, IterateOperation, LeOperation,
+    LiteralOperation, LtOperation, MulOperation, NeOperation, NegationOperation,
+    ObjectConstructOperation, Operation, OperationType, OrOperation, SelectConditionOperation,
+    SliceOperation, SubOperation, VariableOperation,
+};
 use std::collections::HashMap;
 
 fn create_test_dataframe() -> DataFrame {
