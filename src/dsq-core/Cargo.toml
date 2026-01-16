@@ -61,7 +61,7 @@ pretty_assertions = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["rt", "macros", "fs", "io-util"] }
 polars = { workspace = true }
-polars-ops = { version = "0.51", features = ["pivot"] }
+polars-ops = { version = "0.52", features = ["pivot"] }
 dsq-filter = { version = "0.1.0", path = "../dsq-filter", features = ["rand"] }
 dsq-formats = { version = "0.1.0", path = "../dsq-formats", features = ["csv", "json", "parquet", "avro"] }
 once_cell = { workspace = true }
