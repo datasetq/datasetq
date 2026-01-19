@@ -9,6 +9,9 @@ use polars::prelude::*;
 #[cfg(feature = "parquet")]
 use polars::prelude::ParquetWriter;
 
+use crate::error::{Error, FormatError, Result};
+use dsq_shared::value::Value;
+use std::io::Write;
 
 /// Options for writing data
 #[derive(Debug, Clone)]
