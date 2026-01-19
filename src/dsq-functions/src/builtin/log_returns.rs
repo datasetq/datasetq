@@ -4,7 +4,7 @@ use inventory;
 
 /// Logarithmic returns calculation
 ///
-/// Computes log returns: ln(price[i] / price[i-1])
+/// Computes log returns: ln(price\[i\] / price\[i-1\])
 ///
 /// # Arguments
 /// * `values` - Array of price values
