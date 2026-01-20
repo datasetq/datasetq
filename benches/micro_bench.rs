@@ -65,7 +65,7 @@ fn bench_csv_read(c: &mut Criterion) {
         group.throughput(Throughput::Elements(*size as u64));
 
         let csv_data = generate_csv_bytes(*size);
-        let mut csv_file = NamedTempFile::new().unwrap();
+        let mut csv_file = NamedTempFile::with_suffix(".csv").unwrap();
         csv_file.write_all(&csv_data).unwrap();
         let csv_path = csv_file.path();
 
@@ -88,7 +88,7 @@ fn bench_json_read(c: &mut Criterion) {
         group.throughput(Throughput::Elements(*size as u64));
 
         let json_data = generate_json_bytes(*size);
-        let mut json_file = NamedTempFile::new().unwrap();
+        let mut json_file = NamedTempFile::with_suffix(".json").unwrap();
         json_file.write_all(&json_data).unwrap();
         let json_path = json_file.path();
 
@@ -151,7 +151,7 @@ fn bench_pipeline(c: &mut Criterion) {
 
     let size = 10000;
     let csv_data = generate_csv_bytes(size);
-    let mut csv_file = NamedTempFile::new().unwrap();
+    let mut csv_file = NamedTempFile::with_suffix(".csv").unwrap();
     csv_file.write_all(&csv_data).unwrap();
     let csv_path = csv_file.path();
 
