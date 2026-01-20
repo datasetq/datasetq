@@ -1,10 +1,18 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
-use dsq_core::io::{read_file_sync, ReadOptions};
 use dsq_core::ops::OperationPipeline;
 use dsq_core::Value;
+use dsq_formats::{DataReader, ReadOptions};
 use std::io::Write;
+use std::path::Path;
 use tempfile::NamedTempFile;
+
+// Helper function to read file synchronously
+fn read_file_sync(path: &Path, options: &ReadOptions) -> Result<Value, Box<dyn std::error::Error>> {
+    let mut reader = dsq_formats::from_path(path)?;
+    let value = reader.read(options)?;
+    Ok(value)
+}
 
 // Generate test data
 fn generate_csv_bytes(rows: usize) -> Vec<u8> {

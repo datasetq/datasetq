@@ -141,6 +141,69 @@ dsq '.sample_values | stdev_s' data.csv
 # Sample std dev
 ```
 
+## Window Functions
+
+### `ewma(column, alpha, min_periods?)`
+Calculates Exponentially Weighted Moving Average (EWMA) for smoothing time series data.
+
+```bash
+# Calculate EWMA with alpha = 0.3
+dsq '.price | ewma(0.3)' stock_prices.csv
+
+# EWMA with minimum periods requirement
+dsq '.value | ewma(0.2, 5)' timeseries.csv
+# Requires at least 5 values before calculating
+
+# Track smoothed trends
+dsq '{
+  original: .sales,
+  smoothed: (.sales | ewma(0.4))
+}' daily_sales.csv
+
+# Convert span to alpha: alpha = 2 / (span + 1)
+# For 10-day EMA: alpha = 2 / 11 ≈ 0.182
+dsq '.price | ewma(0.182)' prices.csv
+```
+
+**Parameters:**
+- `column`: Column name to calculate EWMA on
+- `alpha`: Smoothing factor between 0 and 1 (higher = more weight on recent values)
+- `min_periods` (optional): Minimum number of observations required (defaults to 1)
+
+**Returns:** DataFrame or Array with additional `{column}_ewma` field/column
+
+**Formula:** EWMA(t) = α × Value(t) + (1 - α) × EWMA(t-1)
+
+**Common alpha values:**
+- 0.1-0.2: Heavy smoothing, slow response
+- 0.3-0.5: Moderate smoothing
+- 0.6-0.8: Light smoothing, fast response
+
+### `rolling_std(column, window_size, min_periods?)`
+Calculates rolling (moving) standard deviation over a window of rows.
+
+```bash
+# 3-period rolling standard deviation
+dsq '.value | rolling_std(3)' timeseries.csv
+
+# Rolling std with minimum periods
+dsq '.price | rolling_std(7, 5)' stock_prices.csv
+# 7-day window, requires at least 5 values
+
+# Analyze volatility
+dsq '{
+  price: .price,
+  volatility: (.price | rolling_std(30))
+}' daily_data.csv
+```
+
+**Parameters:**
+- `column`: Column name to calculate rolling std on
+- `window_size`: Number of periods in the rolling window
+- `min_periods` (optional): Minimum number of observations required to have a result (defaults to window_size)
+
+**Returns:** DataFrame or Array with additional `{column}_rolling_std` field/column
+
 ## Correlation
 
 ### `correl(array1, array2)`

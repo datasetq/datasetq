@@ -36,7 +36,7 @@ apache-avro = { workspace = true }
 # HTTP(S) support (optional)
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"], optional = true }
 # HuggingFace Hub support (optional)
-hf-hub = { version = "0.3", default-features = false, features = ["tokio", "online"], optional = true }
+hf-hub = { version = "0.4", default-features = false, features = ["tokio"], optional = true }
 dirs = { workspace = true, optional = true }
 
 [dev-dependencies]

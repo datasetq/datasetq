@@ -139,6 +139,7 @@ pivot(.key_col, .value_col, .agg_col)
 
 # Window functions
 rolling_avg(.value; 7)  # 7-day rolling average
+rolling_std(.value; 3)  # 3-period rolling standard deviation
 cumulative_sum(.amount)
 
 # String operations on columns

@@ -9,3 +9,4 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Build the CLI binary
 cd "$PROJECT_ROOT"
 cargo build --release --package dsq-cli --bin dsq
+

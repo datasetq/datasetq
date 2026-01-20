@@ -34,7 +34,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Data processing
-polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "ipc", "strings",  "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows"]}
+polars = { version = "0.52", default-features = false, features = ["lazy", "csv", "json", "ipc", "strings",  "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "regex", "timezones"]}
 arrow = "57"
 
 # Parsing
@@ -51,6 +51,9 @@ base64 = "0.22"
 # Big numbers
 num-bigint = { version = "0.4", features = ["serde"] }
 num-traits = "0.2"
+
+# Technical analysis
+ta = "0.5"
 
 # CLI
 clap = { version = "4.4", features = ["derive", "cargo", "env"] }
@@ -162,7 +165,7 @@ rand = { workspace = true, features = ["std_rng"] }
 
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-polars = { workspace = true, features = ["lazy", "csv", "json", "parquet", "ipc", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids", "pivot"]}
+polars = { workspace = true, features = ["lazy", "csv", "json", "parquet", "ipc", "strings", "temporal", "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "chunked_ids", "pivot", "regex", "timezones"]}
 getrandom = { workspace = true, optional = true }
 tokio = { version = "1.35", default-features = false, features = ["fs", "rt-multi-thread", "macros"] }
 # I/O and utilities
@@ -170,7 +173,7 @@ apache-avro = { workspace = true, features = ["snappy"], optional = true }
 coz = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-polars = { version = "0.51", default-features = false, features = ["lazy", "csv", "json", "strings",  "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows"]}
+polars = { version = "0.52", default-features = false, features = ["lazy", "csv", "json", "strings",  "dtype-datetime", "dtype-date", "dtype-time", "describe", "rows", "regex", "timezones"]}
 #polars = { version = "0.51", default-features = false, features = [], optional = true }
 getrandom = { workspace = true, features = ["wasm_js"] }
 tokio = { version = "1.35", default-features = false, features = [], workspace = true }
@@ -224,17 +227,28 @@ inherits = "dev"
 debug = true
 opt-level = 0
 
+[profile.cli-fast]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
 [[bench]]
 name = "micro_bench"
 harness = false
+required-features = ["cli"]
 
 [[bench]]
 name = "comparison_bench"
 harness = false
+required-features = ["cli"]
 
 [[bench]]
 name = "json_reading_bench"
 harness = false
+required-features = ["cli"]
 
 [package.metadata.deb]
 maintainer = "Durable Programming LLC <contact@durableprogramming.com>"

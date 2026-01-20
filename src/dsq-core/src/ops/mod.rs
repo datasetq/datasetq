@@ -111,8 +111,6 @@ pub mod join;
 pub mod logical_ops;
 pub mod pipeline;
 pub mod selection_ops;
-#[cfg(test)]
-pub mod tests;
 /// Data transformation operations
 pub mod transform;
 pub mod utils;
@@ -124,8 +122,8 @@ pub use basic::{
 };
 
 pub use aggregate::{
-    cumulative_agg, group_by, group_by_agg, pivot, rolling_agg, unpivot, AggregationFunction,
-    WindowFunction,
+    cumulative_agg, ewma, group_by, group_by_agg, pivot, rolling_agg, rolling_std, unpivot,
+    AggregationFunction, WindowFunction,
 };
 
 pub use join::{

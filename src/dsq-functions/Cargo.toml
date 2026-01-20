@@ -47,6 +47,7 @@ heck = { workspace = true }
 smartstring = { workspace = true }
 inventory = { workspace = true }
 polars = { workspace = true }
+ta = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 
