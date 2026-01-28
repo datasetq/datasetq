@@ -34,7 +34,7 @@ log = { workspace = true }
 # CLI dependencies
 clap = { workspace = true }
 clap_complete = { workspace = true }
-atty = { workspace = true }
+is-terminal = { workspace = true }
 env_logger = { workspace = true }
 num_cpus = { workspace = true }
 tokio = { workspace = true }
@@ -46,6 +46,9 @@ dirs = { workspace = true }
 tempfile = { workspace = true }
 getrandom = { workspace = true }
 anyhow = { workspace = true }
+
+# SQL support (optional, only for non-WASM)
+dsq-sql = { version = "0.1.0", path = "../dsq-sql", optional = true }
 
 # Profiling
 coz = { workspace = true, optional = true }
@@ -61,6 +64,7 @@ json = []
 parquet = []
 avro = []
 io-arrow = []
+sql = ["dsq-sql"]
 profiling = ["coz", "dsq-filter/profiling", "dsq-formats/profiling"]
 
 [lib]
