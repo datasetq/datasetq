@@ -34,18 +34,16 @@ use std::str::FromStr;
 pub async fn execute_query(query: &str, connection: Option<&str>) -> Result<Value> {
     // Get connection string from argument or environment variable
     let db_url = std::env::var("DATABASE_URL").ok();
-    let connection_str = connection
-        .or_else(|| db_url.as_deref())
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "No database connection specified.\n\n\
+    let connection_str = connection.or_else(|| db_url.as_deref()).ok_or_else(|| {
+        anyhow::anyhow!(
+            "No database connection specified.\n\n\
                 Provide a connection string:\n  \
                 dsq query 'SELECT * FROM users' sqlite://data.db\n\n\
                 Or set DATABASE_URL environment variable:\n  \
                 export DATABASE_URL=sqlite://data.db\n  \
                 dsq query 'SELECT * FROM users'"
-            )
-        })?;
+        )
+    })?;
 
     // Parse connection options
     let options = AnyConnectOptions::from_str(connection_str)

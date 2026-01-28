@@ -6,6 +6,8 @@ authors = ["Durable Programming LLC"]
 description = "SQL query support for dsq"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/durableprogramming/dsq"
+keywords = ["sql", "query", "data", "cli"]
+categories = ["command-line-utilities", "database"]
 
 [lints]
 workspace = true

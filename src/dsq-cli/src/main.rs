@@ -324,7 +324,16 @@ async fn handle_command(command: Commands, config: &Config) -> Result<()> {
             connection,
             output_format,
             output,
-        } => execute_sql_query(&query, connection.as_deref(), output_format, output.as_deref(), config).await,
+        } => {
+            execute_sql_query(
+                &query,
+                connection.as_deref(),
+                output_format,
+                output.as_deref(),
+                config,
+            )
+            .await
+        }
     }
 }
 
@@ -1028,10 +1037,7 @@ async fn merge_files(
 }
 
 #[cfg(feature = "sql")]
-async fn execute_sql_query(
-    query: &str,
-    connection: Option<&str>,
-) -> Result<Value> {
+async fn execute_sql_query(query: &str, connection: Option<&str>) -> Result<Value> {
     // Execute SQL query using dsq-sql crate
     dsq_sql::execute_query(query, connection)
         .await
