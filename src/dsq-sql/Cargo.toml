@@ -1,0 +1,32 @@
+[package]
+name = "dsq-sql"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "SQL query support for dsq"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+
+[lints]
+workspace = true
+
+[dependencies]
+# Core DSQ crates
+dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
+
+# Data processing
+polars = { workspace = true }
+
+# Database - only available for non-WASM targets
+sqlx = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Async
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+[lib]
+name = "dsq_sql"
+path = "src/lib.rs"

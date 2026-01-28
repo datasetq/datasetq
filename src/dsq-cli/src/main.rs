@@ -318,6 +318,13 @@ async fn handle_command(command: Commands, config: &Config) -> Result<()> {
         } => merge_files(&inputs, &output, method, &on, join_type, config).await,
         Commands::Completions { shell } => generate_completions(shell),
         Commands::Config { command } => handle_config_command(command, config),
+        #[cfg(feature = "sql")]
+        Commands::Query {
+            query,
+            connection,
+            output_format,
+            output,
+        } => execute_sql_query(&query, connection.as_deref(), output_format, output.as_deref(), config).await,
     }
 }
 
@@ -1018,6 +1025,17 @@ async fn merge_files(
         output.display()
     );
     Ok(())
+}
+
+#[cfg(feature = "sql")]
+async fn execute_sql_query(
+    query: &str,
+    connection: Option<&str>,
+) -> Result<Value> {
+    // Execute SQL query using dsq-sql crate
+    dsq_sql::execute_query(query, connection)
+        .await
+        .map_err(|e| anyhow::anyhow!(format!("SQL query failed: {}", e)))
 }
 
 #[cfg(test)]
