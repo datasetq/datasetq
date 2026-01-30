@@ -322,17 +322,25 @@ async fn handle_command(command: Commands, config: &Config) -> Result<()> {
         Commands::Query {
             query,
             connection,
-            output_format,
+            output_format: _,
             output,
         } => {
-            execute_sql_query(
-                &query,
-                connection.as_deref(),
-                output_format,
-                output.as_deref(),
-                config,
-            )
-            .await
+            let result = execute_sql_query(&query, connection.as_deref()).await?;
+
+            // Write output based on output path or to stdout
+            if let Some(output_path) = output.as_deref() {
+                let write_options = config.to_write_options();
+                write_file(&result, output_path, &write_options).await?;
+                println!("Query result written to {}", output_path.display());
+            } else {
+                // Write to stdout as JSON
+                let json_value = result.to_json()?;
+                let json_str = serde_json::to_string_pretty(&json_value)
+                    .map_err(|e| anyhow::anyhow!("JSON serialization error: {}", e))?;
+                println!("{}", json_str);
+            }
+
+            Ok(())
         }
     }
 }
