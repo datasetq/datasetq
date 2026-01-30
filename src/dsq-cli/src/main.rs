@@ -318,6 +318,30 @@ async fn handle_command(command: Commands, config: &Config) -> Result<()> {
         } => merge_files(&inputs, &output, method, &on, join_type, config).await,
         Commands::Completions { shell } => generate_completions(shell),
         Commands::Config { command } => handle_config_command(command, config),
+        #[cfg(feature = "sql")]
+        Commands::Query {
+            query,
+            connection,
+            output_format: _,
+            output,
+        } => {
+            let result = execute_sql_query(&query, connection.as_deref()).await?;
+
+            // Write output based on output path or to stdout
+            if let Some(output_path) = output.as_deref() {
+                let write_options = config.to_write_options();
+                write_file(&result, output_path, &write_options).await?;
+                println!("Query result written to {}", output_path.display());
+            } else {
+                // Write to stdout as JSON
+                let json_value = result.to_json()?;
+                let json_str = serde_json::to_string_pretty(&json_value)
+                    .map_err(|e| anyhow::anyhow!("JSON serialization error: {}", e))?;
+                println!("{}", json_str);
+            }
+
+            Ok(())
+        }
     }
 }
 
@@ -1018,6 +1042,14 @@ async fn merge_files(
         output.display()
     );
     Ok(())
+}
+
+#[cfg(feature = "sql")]
+async fn execute_sql_query(query: &str, connection: Option<&str>) -> Result<Value> {
+    // Execute SQL query using dsq-sql crate
+    dsq_sql::execute_query(query, connection)
+        .await
+        .map_err(|e| anyhow::anyhow!(format!("SQL query failed: {}", e)))
 }
 
 #[cfg(test)]

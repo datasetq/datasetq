@@ -930,7 +930,7 @@ impl Config {
             Some(enabled) => enabled,
             None if self.display.color.auto_detect => {
                 // Auto-detect based on terminal capabilities
-                atty::is(atty::Stream::Stdout)
+                std::io::IsTerminal::is_terminal(&std::io::stdout())
                     && std::env::var("TERM").map(|t| t != "dumb").unwrap_or(true)
             }
             None => false,
