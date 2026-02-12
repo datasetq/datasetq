@@ -4,7 +4,7 @@
   env.RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
 
   # https://devenv.sh/packages/
-  packages = [ pkgs.git pkgs.libyaml pkgs.openssl pkgs.zlib pkgs.sccache pkgs.wasm-pack pkgs.coz pkgs.zig pkgs.dpkg];
+  packages = [ pkgs.git pkgs.libyaml pkgs.openssl pkgs.zlib pkgs.sccache pkgs.wasm-pack pkgs.coz pkgs.zig pkgs.dpkg pkgs.clang];
 
   # https://devenv.sh/languages/
   languages.rust = {

@@ -1090,32 +1090,88 @@ pub fn serialize_json<W: Write>(
     _options: &WriteOptions,
     format_options: &FormatWriteOptions,
 ) -> Result<()> {
-    let df = match value {
-        Value::DataFrame(df) => df.clone(),
-        Value::LazyFrame(lf) => (*lf).clone().collect().map_err(Error::from)?,
-        _ => {
-            return Err(Error::operation(
-                "Expected DataFrame for JSON serialization",
-            ));
-        }
-    };
-
     let json_opts = match format_options {
         FormatWriteOptions::Json { lines, pretty } => (*lines, *pretty),
         _ => (false, false),
     };
 
+    // Handle DataFrame and LazyFrame specially for better performance with large datasets
+    // For other types, use the generic Value::to_json() conversion
+    match value {
+        Value::DataFrame(df) => {
+            serialize_dataframe_to_json(&mut writer, df, json_opts.0, json_opts.1)?;
+        }
+        Value::LazyFrame(lf) => {
+            let df = (*lf).clone().collect().map_err(Error::from)?;
+            serialize_dataframe_to_json(&mut writer, &df, json_opts.0, json_opts.1)?;
+        }
+        _ => {
+            // For all other value types, use the generic Value::to_json() conversion
+            let json_value = value
+                .to_json()
+                .map_err(|e| Error::Format(FormatError::SerializationError(e.to_string())))?;
+
+            if json_opts.0 {
+                // JSON Lines mode - each array element on its own line
+                if let JsonValue::Array(arr) = json_value {
+                    for item in arr {
+                        let json_str = if json_opts.1 {
+                            serde_json::to_string_pretty(&item)
+                        } else {
+                            serde_json::to_string(&item)
+                        }
+                        .map_err(|e| {
+                            Error::Format(FormatError::SerializationError(e.to_string()))
+                        })?;
+                        writer.write_all(json_str.as_bytes()).map_err(Error::from)?;
+                        writer.write_all(b"\n").map_err(Error::from)?;
+                    }
+                } else {
+                    // Single value - just output it
+                    let json_str = if json_opts.1 {
+                        serde_json::to_string_pretty(&json_value)
+                    } else {
+                        serde_json::to_string(&json_value)
+                    }
+                    .map_err(|e| Error::Format(FormatError::SerializationError(e.to_string())))?;
+                    writer.write_all(json_str.as_bytes()).map_err(Error::from)?;
+                    writer.write_all(b"\n").map_err(Error::from)?;
+                }
+            } else {
+                // Regular JSON
+                let json_str = if json_opts.1 {
+                    serde_json::to_string_pretty(&json_value)
+                } else {
+                    serde_json::to_string(&json_value)
+                }
+                .map_err(|e| Error::Format(FormatError::SerializationError(e.to_string())))?;
+                writer.write_all(json_str.as_bytes()).map_err(Error::from)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Helper function to serialize DataFrame to JSON
+fn serialize_dataframe_to_json<W: Write>(
+    writer: &mut W,
+    df: &DataFrame,
+    lines: bool,
+    pretty: bool,
+) -> Result<()> {
     let column_names = df
         .get_column_names()
         .iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>();
-    if json_opts.0 {
+
+    if lines {
         // JSON Lines
         for i in 0..df.height() {
             let row = df.get_row(i).map_err(Error::from)?;
             let json_value = row_to_json_value(&row.0, &column_names);
-            let json_str = if json_opts.1 {
+            let json_str = if pretty {
                 serde_json::to_string_pretty(&json_value)
             } else {
                 serde_json::to_string(&json_value)
@@ -1131,7 +1187,7 @@ pub fn serialize_json<W: Write>(
             let row = df.get_row(i).map_err(Error::from)?;
             rows.push(row_to_json_value(&row.0, &column_names));
         }
-        let json_str = if json_opts.1 {
+        let json_str = if pretty {
             serde_json::to_string_pretty(&rows)
         } else {
             serde_json::to_string(&rows)

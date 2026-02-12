@@ -33,6 +33,7 @@ regex = { workspace = true }
 indexmap = { workspace = true }
 itertools = { workspace = true }
 either = { workspace = true }
+base64 = { workspace = true }
 
 # Memory management
 bytes = { workspace = true }
