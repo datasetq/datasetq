@@ -45,7 +45,7 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # Utilities
 indexmap = "2.1"
-regex = "1.10"
+regex = "1.12"
 base64 = "0.22"
 
 # Big numbers
@@ -56,7 +56,7 @@ num-traits = "0.2"
 ta = "0.5"
 
 # CLI
-clap = { version = "4.4", features = ["derive", "cargo", "env"] }
+clap = { version = "4.5", features = ["derive", "cargo", "env"] }
 
 # Async
 tokio = { version = "1.35", default-features = false, features = [] }
@@ -66,9 +66,9 @@ futures = "0.3"
 rayon = "1.10"
 
 # Testing
-tempfile = "3.8"
+tempfile = "3.25"
 criterion = "0.8"
-proptest = "1.4"
+proptest = "1.10"
 pretty_assertions = "1.4"
 
 # Additional shared dependencies (consolidation of crate-specific deps)
@@ -86,7 +86,7 @@ apache-avro = "0.21"
 env_logger = "0.11"
 dirs = "6.0"
 toml = "0.9"
-clap_complete = "4.4"
+clap_complete = "4.5"
 getrandom = "0.3.4"
 paste = "1.0"
 itertools = "0.14"
@@ -102,7 +102,7 @@ base32 = "0.5"
 base58 = "0.2"
 url = "2.4"
 sha2 = "0.10"
-uuid = "1.0"
+uuid = "1.20"
 md5 = "0.8"
 sha1 = "0.10"
 unidecode = "0.3"
@@ -112,7 +112,7 @@ inventory = "0.3"
 wasm-bindgen = "0.2"
 js-sys = "0.3"
 assert_cmd = "2.0"
-predicates = "3.0"
+predicates = "3.1"
 coz = "0.1"
 windows-sys = "0.61.2"
 
