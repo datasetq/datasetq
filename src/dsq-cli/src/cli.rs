@@ -524,7 +524,7 @@ impl From<&Cli> for CliConfig {
             color_output: cli.color.map(|mode| match mode {
                 ColorMode::Always => true,
                 ColorMode::Never => false,
-                ColorMode::Auto => atty::is(atty::Stream::Stdout),
+                ColorMode::Auto => std::io::IsTerminal::is_terminal(&std::io::stdout()),
             }),
             join_output: cli.join_output,
             slurp: cli.slurp,
@@ -668,13 +668,13 @@ impl CliConfig {
         }
 
         self.color_output
-            .unwrap_or_else(|| !self.quiet && atty::is(atty::Stream::Stdout))
+            .unwrap_or_else(|| !self.quiet && std::io::IsTerminal::is_terminal(&std::io::stdout()))
     }
 
     /// Check if we should show progress
     #[allow(dead_code)]
     pub fn should_show_progress(&self) -> bool {
-        !self.quiet && self.verbose > 0 && atty::is(atty::Stream::Stderr)
+        !self.quiet && self.verbose > 0 && std::io::IsTerminal::is_terminal(&std::io::stderr())
     }
 
     /// Get the effective output format
