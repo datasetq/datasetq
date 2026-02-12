@@ -13,7 +13,7 @@ keywords = ["jq", "data", "csv", "json", "parquet"]
 categories = ["command-line-utilities", "data-structures", "parsing"]
 
 [workspace]
-members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli", "src/dsq-core", "src/dsq-io"]
+members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli", "src/dsq-core", "src/dsq-io", "src/dsq-sql"]
 resolver = "2"
 
 [workspace.lints.clippy]
@@ -62,6 +62,9 @@ clap = { version = "4.4", features = ["derive", "cargo", "env"] }
 tokio = { version = "1.35", default-features = false, features = [] }
 futures = "0.3"
 
+# Database
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "any", "sqlite", "postgres", "mysql"] }
+
 # Parallelism
 rayon = "1.10"
 
@@ -90,6 +93,7 @@ clap_complete = "4.4"
 getrandom = "0.3.4"
 paste = "1.0"
 itertools = "0.14"
+memchr = "2.7"
 either = "1"
 bytes = "1.5"
 smallvec = "1.11"
@@ -201,6 +205,7 @@ cli = ["clap", "clap_complete", "is-terminal", "env_logger", "num_cpus", "tokio"
 bin = ["cli"]
 filter = []
 wasm = ["serde_json"]
+sql = []
 
 [profile.release]
 opt-level = 3

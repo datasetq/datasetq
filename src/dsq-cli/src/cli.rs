@@ -330,6 +330,32 @@ pub enum Commands {
         #[command(subcommand)]
         command: ConfigCommands,
     },
+
+    /// Execute SQL query and output results
+    #[cfg(feature = "sql")]
+    #[command(after_help = "EXAMPLES:\n  \
+        # Query SQLite database\n  \
+        dsq query 'SELECT * FROM users' sqlite://data.db\n\n  \
+        # Query PostgreSQL and output as JSON\n  \
+        dsq query 'SELECT * FROM orders WHERE total > 100' postgres://user:pass@localhost/mydb --output-format json\n\n  \
+        # Pipe SQL results to dsq filter\n  \
+        dsq query 'SELECT * FROM users' sqlite://data.db | dsq 'select(.age > 30)'")]
+    Query {
+        /// SQL query to execute
+        query: String,
+
+        /// Database connection string (e.g., sqlite://db.sqlite, postgres://user:pass@host/db)
+        #[arg(value_name = "CONNECTION")]
+        connection: Option<String>,
+
+        /// Output format
+        #[arg(long, value_enum)]
+        output_format: Option<DataFormat>,
+
+        /// Output file (stdout if not specified)
+        #[arg(short, long, value_name = "FILE")]
+        output: Option<PathBuf>,
+    },
 }
 
 /// Configuration management subcommands

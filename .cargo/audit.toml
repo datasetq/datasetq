@@ -6,4 +6,7 @@ ignore = [
     # This is a transitive dependency of polars 0.35.4 and there is no fixed version available.
     # polars pins fast-float 0.2.0 and the fix is not yet released upstream.
     "RUSTSEC-2025-0003",
+    # RUSTSEC-2023-0071: Marvin Attack: potential key recovery through timing sidechannels
+    # This is a transitive dependency of sqlx-mysql and there is no fixed version available.
+    "RUSTSEC-2023-0071",
 ]
