@@ -1,0 +1,27 @@
+[package]
+name = "dsq-io-filesystem"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "Filesystem I/O plugin for dsq"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["io", "filesystem"]
+categories = ["filesystem"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Async
+tokio = { workspace = true, features = ["fs", "io-util", "io-std"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[features]
+default = []

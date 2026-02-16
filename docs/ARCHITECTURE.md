@@ -67,7 +67,7 @@ Foundational parsing component that converts filter language strings into Abstra
 
 ### Key Features
 
-- **Complete DSQ Syntax Support** - Parses all filter language constructs including SQL-like SELECT statements
+- **Complete DSQ Syntax Support** - Parses all jq-compatible filter language constructs
 - **Fast Parsing** - Uses nom for high-performance parsing with zero-copy operations
 - **Comprehensive Error Reporting** - Detailed error messages with position information
 - **AST Generation** - Produces structured AST for processing by dsq-filter

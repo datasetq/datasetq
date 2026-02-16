@@ -1,17 +1,34 @@
-//! HTTP(S) fetching support for dsq-io
+//! HTTP(S) I/O plugin for dsq
 //!
-//! This module provides functionality for fetching files from HTTP and HTTPS URLs.
+//! This crate provides functionality for fetching files from HTTP and HTTPS URLs.
 
-use crate::{Error, Result};
 use reqwest::Client;
 use std::time::Duration;
+
+/// Error type for HTTP I/O operations
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// HTTP I/O error type
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("HTTP error: {0}")]
+    Http(String),
+    #[error("Other error: {0}")]
+    Other(String),
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(e: reqwest::Error) -> Self {
+        Error::Http(e.to_string())
+    }
+}
 
 /// Fetch a file from an HTTP(S) URL
 ///
 /// # Examples
 ///
 /// ```rust,ignore
-/// use dsq_io::http::fetch_http;
+/// use dsq_io_https::fetch_http;
 ///
 /// let data = fetch_http("https://example.com/data.csv").await.unwrap();
 /// ```
@@ -25,10 +42,10 @@ pub async fn fetch_http(url: &str) -> Result<Vec<u8>> {
         .get(url)
         .send()
         .await
-        .map_err(|e| Error::Other(format!("Failed to fetch URL {url}: {e}")))?;
+        .map_err(|e| Error::Http(format!("Failed to fetch URL {url}: {e}")))?;
 
     if !response.status().is_success() {
-        return Err(Error::Other(format!(
+        return Err(Error::Http(format!(
             "HTTP request failed with status: {}",
             response.status()
         )));
@@ -37,9 +54,16 @@ pub async fn fetch_http(url: &str) -> Result<Vec<u8>> {
     let bytes = response
         .bytes()
         .await
-        .map_err(|e| Error::Other(format!("Failed to read response body: {e}")))?;
+        .map_err(|e| Error::Http(format!("Failed to read response body: {e}")))?;
 
     Ok(bytes.to_vec())
+}
+
+/// Synchronous version using tokio runtime
+pub fn fetch_http_sync(url: &str) -> Result<Vec<u8>> {
+    tokio::runtime::Runtime::new()
+        .map_err(|e| Error::Other(format!("Failed to create runtime: {e}")))?
+        .block_on(fetch_http(url))
 }
 
 /// Check if a string is an HTTP(S) URL

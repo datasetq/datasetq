@@ -177,12 +177,17 @@ async fn run() -> Result<()> {
 
     // Main execution path
     let (filter, input_paths) = if let Some(input_path) = cli_config.input_files.first() {
-        if input_path.is_dir() {
+        let path_str = input_path.to_string_lossy();
+        let is_url = path_str.starts_with("http://")
+            || path_str.starts_with("https://")
+            || path_str.starts_with("hf://");
+
+        if !is_url && input_path.is_dir() {
             // Handle example directory
             let (filter, paths) = handle_example_directory(input_path)?;
             (filter, paths)
         } else {
-            // Normal case
+            // Normal case (file or URL)
             let input_paths = cli_config.input_files.clone();
             (filter, input_paths)
         }

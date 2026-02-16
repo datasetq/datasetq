@@ -27,15 +27,20 @@
 //! write_stdout(b"Hello, world!").await.unwrap();
 //! ```
 
-use std::io::{self as std_io, Read, Write};
 use std::path::Path;
-use tokio::fs;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 // Low-level I/O only - format parsing is in dsq-formats
 
 // Re-export from dsq-formats for convenience
 pub use dsq_formats::{serialize, CompressionLevel, DataFormat, FormatWriteOptions, WriteOptions};
+
+// I/O plugins
+pub use dsq_io_filesystem as filesystem;
+#[cfg(feature = "http")]
+pub use dsq_io_https as https;
+#[cfg(feature = "huggingface")]
+pub use dsq_io_huggingface as huggingface;
+pub use dsq_io_uri as uri;
 
 // Writer modules
 pub mod file_writer;
@@ -44,12 +49,6 @@ pub mod traits;
 
 // Options
 pub mod options;
-
-// URL fetching
-#[cfg(feature = "http")]
-pub mod http;
-#[cfg(feature = "huggingface")]
-pub mod huggingface;
 
 // Re-export writer types
 pub use file_writer::{to_path, to_path_with_format, FileWriter};
@@ -121,19 +120,47 @@ impl Error {
 pub async fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
     let path_str = path.as_ref().to_string_lossy();
 
-    // Check if it's a URL
-    #[cfg(feature = "http")]
-    if http::is_http_url(&path_str) {
-        return http::fetch_http(&path_str).await;
-    }
+    // Parse URI to determine the type
+    let uri_info =
+        uri::parse_uri(&path_str).map_err(|e| Error::Other(format!("Failed to parse URI: {e}")))?;
 
-    #[cfg(feature = "huggingface")]
-    if huggingface::is_huggingface_url(&path_str) {
-        return huggingface::fetch_huggingface(&path_str).await;
+    match uri_info.scheme {
+        uri::IoScheme::Http => {
+            #[cfg(feature = "http")]
+            {
+                return https::fetch_http(&path_str)
+                    .await
+                    .map_err(|e| Error::Other(format!("HTTP fetch error: {e}")));
+            }
+            #[cfg(not(feature = "http"))]
+            {
+                return Err(Error::Other(
+                    "HTTP support not enabled. Rebuild with --features http".to_string(),
+                ));
+            }
+        }
+        uri::IoScheme::HuggingFace => {
+            #[cfg(feature = "huggingface")]
+            {
+                return huggingface::fetch_huggingface(&path_str)
+                    .await
+                    .map_err(|e| Error::Other(format!("HuggingFace fetch error: {e}")));
+            }
+            #[cfg(not(feature = "huggingface"))]
+            {
+                return Err(Error::Other(
+                    "HuggingFace support not enabled. Rebuild with --features huggingface"
+                        .to_string(),
+                ));
+            }
+        }
+        uri::IoScheme::File => {
+            // Use filesystem plugin for local files
+            filesystem::read_file(path)
+                .await
+                .map_err(|e| Error::Other(format!("Filesystem read error: {e}")))
+        }
     }
-
-    // Otherwise, treat as local file path
-    fs::read(path).await.map_err(Error::from)
 }
 
 /// Write bytes to a file asynchronously
@@ -146,7 +173,9 @@ pub async fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
 /// write_file("output.txt", b"Hello, world!").await.unwrap();
 /// ```
 pub async fn write_file<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
-    fs::write(path, data).await.map_err(Error::from)
+    filesystem::write_file(path, data)
+        .await
+        .map_err(|e| Error::Other(format!("Filesystem write error: {e}")))
 }
 
 /// Read all bytes from STDIN asynchronously
@@ -159,9 +188,9 @@ pub async fn write_file<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
 /// let data = read_stdin().await.unwrap();
 /// ```
 pub async fn read_stdin() -> Result<Vec<u8>> {
-    let mut buffer = Vec::new();
-    tokio::io::stdin().read_to_end(&mut buffer).await?;
-    Ok(buffer)
+    filesystem::read_stdin()
+        .await
+        .map_err(|e| Error::Other(format!("Stdin read error: {e}")))
 }
 
 /// Write bytes to STDOUT asynchronously
@@ -174,10 +203,9 @@ pub async fn read_stdin() -> Result<Vec<u8>> {
 /// write_stdout(b"Hello, world!").await.unwrap();
 /// ```
 pub async fn write_stdout(data: &[u8]) -> Result<()> {
-    let mut stdout = tokio::io::stdout();
-    stdout.write_all(data).await?;
-    stdout.flush().await?;
-    Ok(())
+    filesystem::write_stdout(data)
+        .await
+        .map_err(|e| Error::Other(format!("Stdout write error: {e}")))
 }
 
 /// Write bytes to STDERR asynchronously
@@ -190,10 +218,9 @@ pub async fn write_stdout(data: &[u8]) -> Result<()> {
 /// write_stderr(b"Error message").await.unwrap();
 /// ```
 pub async fn write_stderr(data: &[u8]) -> Result<()> {
-    let mut stderr = tokio::io::stderr();
-    stderr.write_all(data).await?;
-    stderr.flush().await?;
-    Ok(())
+    filesystem::write_stderr(data)
+        .await
+        .map_err(|e| Error::Other(format!("Stderr write error: {e}")))
 }
 
 /// Synchronous versions for compatibility
@@ -201,50 +228,66 @@ pub async fn write_stderr(data: &[u8]) -> Result<()> {
 ///
 /// Supports the same sources as `read_file()`.
 pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
-    // Use tokio runtime for async operations if needed
     let path_str = path.as_ref().to_string_lossy();
 
-    #[cfg(feature = "http")]
-    if http::is_http_url(&path_str) {
-        return tokio::runtime::Runtime::new()
-            .map_err(|e| Error::Other(format!("Failed to create runtime: {e}")))?
-            .block_on(http::fetch_http(&path_str));
-    }
+    // Parse URI to determine the type
+    let uri_info =
+        uri::parse_uri(&path_str).map_err(|e| Error::Other(format!("Failed to parse URI: {e}")))?;
 
-    #[cfg(feature = "huggingface")]
-    if huggingface::is_huggingface_url(&path_str) {
-        return tokio::runtime::Runtime::new()
-            .map_err(|e| Error::Other(format!("Failed to create runtime: {e}")))?
-            .block_on(huggingface::fetch_huggingface(&path_str));
+    match uri_info.scheme {
+        uri::IoScheme::Http => {
+            #[cfg(feature = "http")]
+            {
+                return https::fetch_http_sync(&path_str)
+                    .map_err(|e| Error::Other(format!("HTTP fetch error: {e}")));
+            }
+            #[cfg(not(feature = "http"))]
+            {
+                return Err(Error::Other(
+                    "HTTP support not enabled. Rebuild with --features http".to_string(),
+                ));
+            }
+        }
+        uri::IoScheme::HuggingFace => {
+            #[cfg(feature = "huggingface")]
+            {
+                return huggingface::fetch_huggingface_sync(&path_str)
+                    .map_err(|e| Error::Other(format!("HuggingFace fetch error: {e}")));
+            }
+            #[cfg(not(feature = "huggingface"))]
+            {
+                return Err(Error::Other(
+                    "HuggingFace support not enabled. Rebuild with --features huggingface"
+                        .to_string(),
+                ));
+            }
+        }
+        uri::IoScheme::File => filesystem::read_file_sync(path)
+            .map_err(|e| Error::Other(format!("Filesystem read error: {e}"))),
     }
-
-    std::fs::read(path).map_err(Error::from)
 }
 
 /// Write bytes to a file synchronously
 pub fn write_file_sync<P: AsRef<Path>>(path: P, data: &[u8]) -> Result<()> {
-    std::fs::write(path, data).map_err(Error::from)
+    filesystem::write_file_sync(path, data)
+        .map_err(|e| Error::Other(format!("Filesystem write error: {e}")))
 }
 
 /// Read all bytes from STDIN synchronously
 pub fn read_stdin_sync() -> Result<Vec<u8>> {
-    let mut buffer = Vec::new();
-    std_io::stdin().read_to_end(&mut buffer)?;
-    Ok(buffer)
+    filesystem::read_stdin_sync().map_err(|e| Error::Other(format!("Stdin read error: {e}")))
 }
 
 /// Write bytes to STDOUT synchronously
 pub fn write_stdout_sync(data: &[u8]) -> Result<()> {
-    std_io::stdout().write_all(data)?;
-    std_io::stdout().flush()?;
-    Ok(())
+    filesystem::write_stdout_sync(data)
+        .map_err(|e| Error::Other(format!("Stdout write error: {e}")))
 }
 
 /// Write bytes to STDERR synchronously
 pub fn write_stderr_sync(data: &[u8]) -> Result<()> {
-    std_io::stderr().write_all(data)?;
-    std_io::stderr().flush()?;
-    Ok(())
+    filesystem::write_stderr_sync(data)
+        .map_err(|e| Error::Other(format!("Stderr write error: {e}")))
 }
 
 #[cfg(test)]

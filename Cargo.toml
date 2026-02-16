@@ -13,7 +13,7 @@ keywords = ["jq", "data", "csv", "json", "parquet"]
 categories = ["command-line-utilities", "data-structures", "parsing"]
 
 [workspace]
-members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli", "src/dsq-core", "src/dsq-io"]
+members = ["src/dsq-shared", "src/dsq-parser", "src/dsq-filter", "src/dsq-functions", "src/dsq-formats", "src/dsq-cli", "src/dsq-core", "src/dsq-io", "src/dsq-io-uri", "src/dsq-io-filesystem", "src/dsq-io-https", "src/dsq-io-huggingface"]
 resolver = "2"
 
 [workspace.lints.clippy]
@@ -191,7 +191,7 @@ dsq-formats = { version = "0.1.0", path = "src/dsq-formats" }
 
 
 [features]
-default = ["csv", "bin"]
+default = ["csv", "bin", "http"]
 all-formats = ["csv", "json", "parquet", "arrow", "avro"]
 csv = []
 json = []

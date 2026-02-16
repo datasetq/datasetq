@@ -1,0 +1,27 @@
+[package]
+name = "dsq-io-https"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "HTTP(S) I/O plugin for dsq"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["io", "http", "https"]
+categories = ["network-programming"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# HTTP client
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
+# Async
+tokio = { workspace = true, features = ["rt"] }
+
+[features]
+default = []

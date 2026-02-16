@@ -1396,14 +1396,55 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "apache-avro",
- "dirs",
  "dsq-formats",
+ "dsq-io-filesystem",
+ "dsq-io-https",
+ "dsq-io-huggingface",
+ "dsq-io-uri",
  "dsq-shared",
- "hf-hub",
  "polars",
- "reqwest",
  "serde_json",
  "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "dsq-io-filesystem"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "tempfile",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "dsq-io-https"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reqwest",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "dsq-io-huggingface"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dirs",
+ "hf-hub",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "dsq-io-uri"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
  "thiserror",
  "tokio",
 ]

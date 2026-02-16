@@ -1,11 +1,30 @@
-//! HuggingFace Hub support for dsq-io
+//! HuggingFace Hub I/O plugin for dsq
 //!
-//! This module provides functionality for fetching files from HuggingFace Hub.
+//! This crate provides functionality for fetching files from HuggingFace Hub.
 
-use crate::{Error, Result};
 use hf_hub::api::tokio::{Api, ApiBuilder};
 use std::env;
 use std::path::PathBuf;
+
+/// Error type for HuggingFace I/O operations
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// HuggingFace I/O error type
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("HuggingFace error: {0}")]
+    HuggingFace(String),
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Other error: {0}")]
+    Other(String),
+}
+
+impl From<hf_hub::api::tokio::ApiError> for Error {
+    fn from(e: hf_hub::api::tokio::ApiError) -> Self {
+        Error::HuggingFace(e.to_string())
+    }
+}
 
 /// Fetch a file from HuggingFace Hub
 ///
@@ -19,7 +38,7 @@ use std::path::PathBuf;
 /// # Examples
 ///
 /// ```rust,ignore
-/// use dsq_io::huggingface::fetch_huggingface;
+/// use dsq_io_huggingface::fetch_huggingface;
 ///
 /// // Fetch a dataset file
 /// let data = fetch_huggingface("hf://datasets/username/dataset-name/data.csv").await.unwrap();
@@ -46,22 +65,29 @@ pub async fn fetch_huggingface(url: &str) -> Result<Vec<u8>> {
             let repo = api.dataset(format!("{owner}/{repo}"));
             repo.get(&file_path)
                 .await
-                .map_err(|e| Error::Other(format!("Failed to fetch from HuggingFace: {e}")))?
+                .map_err(|e| Error::HuggingFace(format!("Failed to fetch from HuggingFace: {e}")))?
         }
         RepoType::Model => {
             let repo = api.model(format!("{owner}/{repo}"));
             repo.get(&file_path)
                 .await
-                .map_err(|e| Error::Other(format!("Failed to fetch from HuggingFace: {e}")))?
+                .map_err(|e| Error::HuggingFace(format!("Failed to fetch from HuggingFace: {e}")))?
         }
     };
 
     // Read the downloaded file
     let bytes = tokio::fs::read(&file_path_local)
         .await
-        .map_err(|e| Error::Other(format!("Failed to read downloaded file: {e}")))?;
+        .map_err(|e| Error::Io(e))?;
 
     Ok(bytes)
+}
+
+/// Synchronous version using tokio runtime
+pub fn fetch_huggingface_sync(url: &str) -> Result<Vec<u8>> {
+    tokio::runtime::Runtime::new()
+        .map_err(|e| Error::Other(format!("Failed to create runtime: {e}")))?
+        .block_on(fetch_huggingface(url))
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -121,7 +147,7 @@ fn get_hf_api() -> Result<Api> {
     // Check if caching is disabled
     if env::var("DATASETQ_HF_NO_CACHE").unwrap_or_default() == "1" {
         // Use default cache location (hf-hub default)
-        return Api::new().map_err(|e| Error::Other(format!("Failed to create HF API: {e}")));
+        return Api::new().map_err(|e| Error::HuggingFace(format!("Failed to create HF API: {e}")));
     }
 
     // Determine cache directory
@@ -138,14 +164,13 @@ fn get_hf_api() -> Result<Api> {
     };
 
     // Create cache directory if it doesn't exist
-    std::fs::create_dir_all(&cache_dir)
-        .map_err(|e| Error::Other(format!("Failed to create cache directory: {e}")))?;
+    std::fs::create_dir_all(&cache_dir).map_err(|e| Error::Io(e))?;
 
     // Build API with custom cache directory
     ApiBuilder::new()
         .with_cache_dir(cache_dir)
         .build()
-        .map_err(|e| Error::Other(format!("Failed to create HF API: {e}")))
+        .map_err(|e| Error::HuggingFace(format!("Failed to create HF API: {e}")))
 }
 
 /// Check if a string is a HuggingFace URL

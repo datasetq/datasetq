@@ -1,0 +1,30 @@
+[package]
+name = "dsq-io-huggingface"
+version = "0.1.0"
+edition = "2021"
+authors = ["Durable Programming LLC"]
+description = "HuggingFace Hub I/O plugin for dsq"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/durableprogramming/dsq"
+keywords = ["io", "huggingface", "hub"]
+categories = ["network-programming"]
+
+[lints]
+workspace = true
+
+[dependencies]
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# HuggingFace Hub
+hf-hub = { version = "0.4", default-features = false, features = ["tokio"] }
+
+# Utilities
+dirs = { workspace = true }
+
+# Async
+tokio = { workspace = true, features = ["fs", "rt"] }
+
+[features]
+default = []
