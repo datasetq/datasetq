@@ -7,5 +7,5 @@ set -e  # Exit on any error
 echo "Running all tests..."
 
 echo "Running cargo test..."
-cargo test
+cargo test --workspace
 

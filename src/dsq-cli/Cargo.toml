@@ -34,7 +34,7 @@ log = { workspace = true }
 # CLI dependencies
 clap = { workspace = true }
 clap_complete = { workspace = true }
-atty = { workspace = true }
+is-terminal = { workspace = true }
 env_logger = { workspace = true }
 num_cpus = { workspace = true }
 tokio = { workspace = true }

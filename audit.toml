@@ -1,0 +1,12 @@
+[advisories]
+ignore = [
+    # paste crate - unmaintained but still functional
+    # This is a procedural macro crate used for code generation
+    # No known security vulnerabilities, just unmaintained
+    "RUSTSEC-2024-0436",
+
+    # bincode crate - unmaintained
+    # Transitive dependency from polars
+    # Polars team is aware and will migrate when ready
+    "RUSTSEC-2025-0141",
+]

@@ -164,11 +164,145 @@ impl Value {
                     Ok(JsonValue::Null)
                 }
             }
-            _ => Err(TypeError::UnsupportedOperation {
-                operation: "to_json".to_string(),
-                typ: format!("{:?}", series.dtype()),
+            DataType::Time => {
+                let val = series.time().map_err(Error::from)?.get(index);
+                if let Some(t) = val {
+                    Ok(JsonValue::String(t.to_string()))
+                } else {
+                    Ok(JsonValue::Null)
+                }
             }
-            .into()),
+            DataType::Duration(_) => {
+                let val = series.duration().map_err(Error::from)?.get(index);
+                if let Some(d) = val {
+                    Ok(JsonValue::Number(JsonNumber::from(d)))
+                } else {
+                    Ok(JsonValue::Null)
+                }
+            }
+            DataType::List(_) => {
+                // Handle list types by getting the value and recursively converting
+                let any_val = series.get(index).map_err(Error::from)?;
+                self.any_value_to_json(&any_val)
+            }
+            DataType::Array(_, _) => {
+                // Handle fixed-size array types
+                let any_val = series.get(index).map_err(Error::from)?;
+                self.any_value_to_json(&any_val)
+            }
+            DataType::Struct(_) => {
+                // Handle struct types by getting the value and converting
+                let any_val = series.get(index).map_err(Error::from)?;
+                self.any_value_to_json(&any_val)
+            }
+            DataType::Categorical(_, _) | DataType::Enum(_, _) => {
+                // Treat categorical/enum as string
+                let any_val = series.get(index).map_err(Error::from)?;
+                match any_val {
+                    AnyValue::Categorical(idx, rev_map, _) | AnyValue::Enum(idx, rev_map, _) => {
+                        Ok(JsonValue::String(rev_map.get(idx).to_string()))
+                    }
+                    AnyValue::Null => Ok(JsonValue::Null),
+                    _ => Ok(JsonValue::String(format!("{}", any_val))),
+                }
+            }
+            DataType::Binary | DataType::BinaryOffset => {
+                // Convert binary to base64 or hex string
+                let any_val = series.get(index).map_err(Error::from)?;
+                match any_val {
+                    AnyValue::Binary(bytes) => {
+                        use base64::{engine::general_purpose::STANDARD, Engine};
+                        Ok(JsonValue::String(STANDARD.encode(bytes)))
+                    }
+                    AnyValue::BinaryOwned(bytes) => {
+                        use base64::{engine::general_purpose::STANDARD, Engine};
+                        Ok(JsonValue::String(STANDARD.encode(&bytes)))
+                    }
+                    AnyValue::Null => Ok(JsonValue::Null),
+                    _ => Ok(JsonValue::String(format!("{:?}", any_val))),
+                }
+            }
+            DataType::Null => Ok(JsonValue::Null),
+            _ => {
+                // For any other types, try to get the value and convert it
+                let any_val = series.get(index).map_err(Error::from)?;
+                self.any_value_to_json(&any_val)
+            }
+        }
+    }
+
+    /// Helper to convert AnyValue to JSON
+    fn any_value_to_json(&self, any_val: &AnyValue) -> Result<JsonValue> {
+        match any_val {
+            AnyValue::Null => Ok(JsonValue::Null),
+            AnyValue::Boolean(b) => Ok(JsonValue::Bool(*b)),
+            AnyValue::Int8(i) => Ok(JsonValue::Number(JsonNumber::from(*i as i64))),
+            AnyValue::Int16(i) => Ok(JsonValue::Number(JsonNumber::from(*i as i64))),
+            AnyValue::Int32(i) => Ok(JsonValue::Number(JsonNumber::from(*i as i64))),
+            AnyValue::Int64(i) => Ok(JsonValue::Number(JsonNumber::from(*i))),
+            AnyValue::UInt8(i) => Ok(JsonValue::Number(JsonNumber::from(*i as u64))),
+            AnyValue::UInt16(i) => Ok(JsonValue::Number(JsonNumber::from(*i as u64))),
+            AnyValue::UInt32(i) => Ok(JsonValue::Number(JsonNumber::from(*i as u64))),
+            AnyValue::UInt64(i) => Ok(JsonValue::Number(JsonNumber::from(*i))),
+            AnyValue::Float32(f) => JsonNumber::from_f64(*f as f64)
+                .map(JsonValue::Number)
+                .ok_or_else(|| TypeError::OutOfRange("Invalid float value".to_string()).into()),
+            AnyValue::Float64(f) => JsonNumber::from_f64(*f)
+                .map(JsonValue::Number)
+                .ok_or_else(|| TypeError::OutOfRange("Invalid float value".to_string()).into()),
+            AnyValue::String(s) => Ok(JsonValue::String(s.to_string())),
+            AnyValue::StringOwned(s) => Ok(JsonValue::String(s.to_string())),
+            AnyValue::Date(d) => Ok(JsonValue::String(d.to_string())),
+            AnyValue::Datetime(dt, _, _) => Ok(JsonValue::String(dt.to_string())),
+            AnyValue::Time(t) => Ok(JsonValue::String(t.to_string())),
+            AnyValue::Duration(d, _) => Ok(JsonValue::Number(JsonNumber::from(*d))),
+            AnyValue::List(series) => {
+                // Convert the inner series to a JSON array
+                let mut arr = Vec::with_capacity(series.len());
+                for i in 0..series.len() {
+                    arr.push(self.series_value_to_json(&series, i)?);
+                }
+                Ok(JsonValue::Array(arr))
+            }
+            AnyValue::Struct(_, _, fields) => {
+                // Convert struct to a JSON object
+                let mut obj = serde_json::Map::new();
+                for field in fields.iter() {
+                    let field_val = self.any_value_to_json(field)?;
+                    // We don't have field names here, so use indices
+                    obj.insert(format!("_{}", obj.len()), field_val);
+                }
+                Ok(JsonValue::Object(obj))
+            }
+            AnyValue::StructOwned(boxed) => {
+                // Convert owned struct to a JSON object
+                let (values, fields) = boxed.as_ref();
+                let mut obj = serde_json::Map::new();
+                for (i, val) in values.iter().enumerate() {
+                    let field_name = fields
+                        .get(i)
+                        .map(|f| f.name().to_string())
+                        .unwrap_or_else(|| format!("_{}", i));
+                    let field_val = self.any_value_to_json(val)?;
+                    obj.insert(field_name, field_val);
+                }
+                Ok(JsonValue::Object(obj))
+            }
+            AnyValue::Binary(bytes) => {
+                use base64::{engine::general_purpose::STANDARD, Engine};
+                Ok(JsonValue::String(STANDARD.encode(bytes)))
+            }
+            AnyValue::BinaryOwned(bytes) => {
+                use base64::{engine::general_purpose::STANDARD, Engine};
+                Ok(JsonValue::String(STANDARD.encode(bytes)))
+            }
+            AnyValue::Categorical(idx, rev_map, _) | AnyValue::Enum(idx, rev_map, _) => {
+                Ok(JsonValue::String(rev_map.get(*idx).to_string()))
+            }
+            _ => {
+                // Fallback for unknown types - convert to string representation
+                Ok(JsonValue::String(format!("{}", any_val)))
+            }
         }
     }
 

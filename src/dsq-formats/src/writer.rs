@@ -883,18 +883,19 @@ mod tests {
     }
 
     #[test]
-    fn test_serialize_csv_wrong_value_type() {
-        let value = Value::String("not a dataframe".to_string());
+    fn test_serialize_csv_scalar_value() {
+        // Scalar values should be serialized as single-cell DataFrames
+        let value = Value::String("test value".to_string());
         let options = WriteOptions::default();
         let format_options = FormatWriteOptions::default();
 
         let mut buffer = Vec::new();
         let result = serialize_csv(Cursor::new(&mut buffer), &value, &options, &format_options);
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Expected DataFrame"));
+        assert!(result.is_ok());
+
+        let output = String::from_utf8(buffer).unwrap();
+        assert!(output.contains("value")); // header column name
+        assert!(output.contains("test value"));
     }
 
     #[test]

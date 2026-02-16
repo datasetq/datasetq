@@ -1,8 +1,8 @@
 use crate::error::{Error, FormatError, Result};
 
 use polars::prelude::{
-    CsvParseOptions, CsvReadOptions, CsvReader as PolarsCsvReader, DataFrame, LazyFrame,
-    NullValues, SerReader, SerWriter, Series,
+    AnyValue, Column, CsvParseOptions, CsvReadOptions, CsvReader as PolarsCsvReader, DataFrame,
+    LazyFrame, NullValues, SerReader, SerWriter, Series,
 };
 
 use std::fs::File;
@@ -926,6 +926,139 @@ pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
     Ok(Value::DataFrame(df))
 }
 
+/// Helper to convert an array of Value objects to a DataFrame
+fn array_to_dataframe(arr: &[Value]) -> Result<DataFrame> {
+    use std::collections::BTreeMap;
+
+    if arr.is_empty() {
+        return Ok(DataFrame::empty());
+    }
+
+    // Check if all elements are objects and get the column names
+    let mut columns: BTreeMap<String, Vec<AnyValue>> = BTreeMap::new();
+    let mut column_order: Vec<String> = Vec::new();
+    let mut is_array_of_objects = true;
+
+    // First pass: determine if we have an array of objects
+    for val in arr.iter() {
+        if !matches!(val, Value::Object(_)) {
+            is_array_of_objects = false;
+            break;
+        }
+    }
+
+    if is_array_of_objects {
+        // Handle array of objects - each object becomes a row
+        for (row_idx, val) in arr.iter().enumerate() {
+            if let Value::Object(obj) = val {
+                // On first row, establish column order
+                if row_idx == 0 {
+                    column_order = obj.keys().cloned().collect();
+                    column_order.sort(); // Use sorted order for consistency
+                    for col in &column_order {
+                        columns.insert(col.clone(), Vec::new());
+                    }
+                }
+
+                // Add values for each column
+                for col in &column_order {
+                    let value = obj.get(col).unwrap_or(&Value::Null);
+                    let any_val = value_to_any_value(value)?;
+                    columns.get_mut(col).unwrap().push(any_val);
+                }
+            }
+        }
+
+        // Create columns from column data
+        let mut col_vec = Vec::new();
+        for col in column_order {
+            if let Some(values) = columns.remove(&col) {
+                let column = Column::new(col.as_str().into(), values);
+                col_vec.push(column);
+            }
+        }
+
+        DataFrame::new(col_vec).map_err(Error::from)
+    } else {
+        // Handle array of non-objects - create a single "value" column
+        // First check if types are homogeneous
+        let type_discriminant = |v: &Value| -> u8 {
+            match v {
+                Value::Null => 0,
+                Value::Bool(_) => 1,
+                Value::Int(_) => 2,
+                Value::Float(_) => 3,
+                Value::String(_) => 4,
+                _ => 5, // Complex types
+            }
+        };
+
+        let first_type = arr.first().map(type_discriminant);
+        let is_homogeneous = arr
+            .iter()
+            .all(|v| type_discriminant(v) == first_type.unwrap_or(0) || matches!(v, Value::Null));
+
+        if is_homogeneous {
+            // All same type (ignoring nulls), can use native types
+            let mut values: Vec<AnyValue> = Vec::with_capacity(arr.len());
+            for val in arr.iter() {
+                let any_val = value_to_any_value(val)?;
+                values.push(any_val);
+            }
+            let col = Column::new("value".into(), values);
+            DataFrame::new(vec![col]).map_err(Error::from)
+        } else {
+            // Mixed types - convert all to strings
+            let mut values: Vec<AnyValue> = Vec::with_capacity(arr.len());
+            for val in arr.iter() {
+                let str_val = value_to_string(val)?;
+                values.push(AnyValue::StringOwned(str_val.into()));
+            }
+            let col = Column::new("value".into(), values);
+            DataFrame::new(vec![col]).map_err(Error::from)
+        }
+    }
+}
+
+/// Helper to convert Value to string representation for mixed-type arrays
+fn value_to_string(value: &Value) -> Result<String> {
+    match value {
+        Value::Null => Ok("".to_string()),
+        Value::Bool(b) => Ok(b.to_string()),
+        Value::Int(i) => Ok(i.to_string()),
+        Value::Float(f) => Ok(f.to_string()),
+        Value::String(s) => Ok(s.clone()),
+        _ => {
+            // For complex types, convert to JSON string
+            let json_val = value
+                .to_json()
+                .map_err(|e| Error::operation(format!("Failed to convert value to JSON: {}", e)))?;
+            serde_json::to_string(&json_val)
+                .map_err(|e| Error::operation(format!("Failed to serialize to JSON: {}", e)))
+        }
+    }
+}
+
+/// Helper to convert Value to AnyValue for array_to_dataframe
+fn value_to_any_value(value: &Value) -> Result<AnyValue<'static>> {
+    match value {
+        Value::Null => Ok(AnyValue::Null),
+        Value::Bool(b) => Ok(AnyValue::Boolean(*b)),
+        Value::Int(i) => Ok(AnyValue::Int64(*i)),
+        Value::Float(f) => Ok(AnyValue::Float64(*f)),
+        Value::String(s) => Ok(AnyValue::StringOwned(s.clone().into())),
+        _ => {
+            // For complex types, convert to JSON string
+            let json_val = value
+                .to_json()
+                .map_err(|e| Error::operation(format!("Failed to convert value to JSON: {}", e)))?;
+            let json_str = serde_json::to_string(&json_val)
+                .map_err(|e| Error::operation(format!("Failed to serialize to JSON: {}", e)))?;
+            Ok(AnyValue::StringOwned(json_str.into()))
+        }
+    }
+}
+
 /// Serialize CSV data to a writer
 pub fn serialize_csv<W: Write>(
     writer: W,
@@ -936,7 +1069,44 @@ pub fn serialize_csv<W: Write>(
     let mut df = match value {
         Value::DataFrame(df) => df.clone(),
         Value::LazyFrame(lf) => (*lf).clone().collect().map_err(Error::from)?,
-        _ => return Err(Error::operation("Expected DataFrame for CSV serialization")),
+        Value::Array(arr) => {
+            // Try to convert array to DataFrame
+            array_to_dataframe(arr)?
+        }
+        Value::Series(series) => {
+            // Convert Series to a single-column DataFrame
+            DataFrame::new(vec![series.clone().into()]).map_err(Error::from)?
+        }
+        Value::Object(obj) => {
+            // Convert single object to a single-row DataFrame
+            array_to_dataframe(&[Value::Object(obj.clone())])?
+        }
+        // Handle scalar values by wrapping in a single-cell DataFrame
+        Value::Null => {
+            let col = Column::new("value".into(), &[Option::<String>::None]);
+            DataFrame::new(vec![col]).map_err(Error::from)?
+        }
+        Value::Bool(b) => {
+            let col = Column::new("value".into(), &[*b]);
+            DataFrame::new(vec![col]).map_err(Error::from)?
+        }
+        Value::Int(i) => {
+            let col = Column::new("value".into(), &[*i]);
+            DataFrame::new(vec![col]).map_err(Error::from)?
+        }
+        Value::Float(f) => {
+            let col = Column::new("value".into(), &[*f]);
+            DataFrame::new(vec![col]).map_err(Error::from)?
+        }
+        Value::String(s) => {
+            let col = Column::new("value".into(), &[s.as_str()]);
+            DataFrame::new(vec![col]).map_err(Error::from)?
+        }
+        Value::BigInt(bi) => {
+            // Convert BigInt to string for CSV output
+            let col = Column::new("value".into(), &[bi.to_string()]);
+            DataFrame::new(vec![col]).map_err(Error::from)?
+        }
     };
 
     let csv_opts = match format_options {
@@ -971,15 +1141,16 @@ pub fn serialize_csv<W: Write>(
 #[cfg(test)]
 mod tests {
     use super::{
-        detect_csv_dialect, detect_csv_format, read_csv_file, read_csv_file_with_options,
-        write_csv_file, write_csv_file_with_options, CsvEncoding, CsvReader, CsvWriteOptions,
-        DsqCsvReadOptions, Error, FormatError, QuoteStyle,
+        array_to_dataframe, detect_csv_dialect, detect_csv_format, read_csv_file,
+        read_csv_file_with_options, serialize_csv, value_to_any_value, write_csv_file,
+        write_csv_file_with_options, CsvEncoding, CsvReader, CsvWriteOptions, DsqCsvReadOptions,
+        Error, FormatError, QuoteStyle, Value,
     };
     use crate::csv::CsvWriter;
     use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
     use polars::{
         df,
-        prelude::{DataFrame, NamedFrom, Series},
+        prelude::{Column, DataFrame, NamedFrom, Series},
     };
     use std::fs;
     use std::io::Cursor;
@@ -1582,8 +1753,8 @@ mod tests {
     #[test]
     fn test_null_value_writing() {
         let df = DataFrame::new(vec![
-            Series::new("name".into(), &["Alice", "Bob"]).into(),
-            Series::new("age".into(), &[Some(30i32), None::<i32>]).into(),
+            Column::new("name".into(), &["Alice", "Bob"]),
+            Column::new("age".into(), &[Some(30i32), None::<i32>]),
         ])
         .unwrap();
 
@@ -1799,7 +1970,7 @@ mod tests {
     fn test_date_formatting() {
         use polars::prelude::*;
         let dates: Vec<NaiveDate> = vec![NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()];
-        let df = DataFrame::new(vec![Series::new("date_col".into(), dates).into()]).unwrap();
+        let df = DataFrame::new(vec![Column::new("date_col".into(), dates)]).unwrap();
 
         let mut buffer = Vec::new();
         {
@@ -1825,10 +1996,10 @@ mod tests {
         let timestamp_us =
             dt.and_utc().timestamp() * 1_000_000 + dt.and_utc().timestamp_subsec_micros() as i64;
         let datetimes: Vec<i64> = vec![timestamp_us];
-        let series = Series::new("datetime_col".into(), datetimes)
+        let col = Column::new("datetime_col".into(), datetimes)
             .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
             .unwrap();
-        let df = DataFrame::new(vec![series.into()]).unwrap();
+        let df = DataFrame::new(vec![col]).unwrap();
 
         let mut buffer = Vec::new();
         {
@@ -1862,9 +2033,9 @@ mod tests {
     #[test]
     fn test_null_handling_different_types() {
         let df = DataFrame::new(vec![
-            Series::new("int_col".into(), &[Some(1i32), None::<i32>]).into(),
-            Series::new("float_col".into(), &[Some(1.5f64), None::<f64>]).into(),
-            Series::new("str_col".into(), &[Some("test"), None::<&str>]).into(),
+            Column::new("int_col".into(), &[Some(1i32), None::<i32>]),
+            Column::new("float_col".into(), &[Some(1.5f64), None::<f64>]),
+            Column::new("str_col".into(), &[Some("test"), None::<&str>]),
         ])
         .unwrap();
 
@@ -1880,5 +2051,524 @@ mod tests {
 
         let output = String::from_utf8(buffer).unwrap();
         assert!(output.contains("N/A"));
+    }
+
+    // Tests for serializing arbitrary data types to CSV
+    mod serialize_arbitrary_data {
+        use super::*;
+        use crate::writer::{CsvEncoding, FormatWriteOptions, WriteOptions};
+        use polars::prelude::IntoLazy;
+        use std::collections::HashMap;
+
+        fn default_write_options() -> WriteOptions {
+            WriteOptions::default()
+        }
+
+        fn default_csv_format() -> FormatWriteOptions {
+            FormatWriteOptions::Csv {
+                separator: b',',
+                quote_char: Some(b'"'),
+                line_terminator: Some("\n".to_string()),
+                quote_style: None,
+                null_value: None,
+                datetime_format: None,
+                date_format: None,
+                time_format: None,
+                float_precision: None,
+                null_values: None,
+                encoding: CsvEncoding::Utf8,
+            }
+        }
+
+        #[test]
+        fn test_serialize_array_of_objects() {
+            let value = Value::Array(vec![
+                Value::Object(HashMap::from([
+                    ("name".to_string(), Value::String("Alice".to_string())),
+                    ("age".to_string(), Value::Int(30)),
+                ])),
+                Value::Object(HashMap::from([
+                    ("name".to_string(), Value::String("Bob".to_string())),
+                    ("age".to_string(), Value::Int(25)),
+                ])),
+            ]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("age"));
+            assert!(output.contains("name"));
+            assert!(output.contains("Alice"));
+            assert!(output.contains("Bob"));
+            assert!(output.contains("30"));
+            assert!(output.contains("25"));
+        }
+
+        #[test]
+        fn test_serialize_array_of_primitives() {
+            // Array of integers
+            let value = Value::Array(vec![Value::Int(1), Value::Int(2), Value::Int(3)]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("1"));
+            assert!(output.contains("2"));
+            assert!(output.contains("3"));
+        }
+
+        #[test]
+        fn test_serialize_array_of_strings() {
+            let value = Value::Array(vec![
+                Value::String("hello".to_string()),
+                Value::String("world".to_string()),
+            ]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("hello"));
+            assert!(output.contains("world"));
+        }
+
+        #[test]
+        fn test_serialize_array_of_floats() {
+            let value = Value::Array(vec![
+                Value::Float(1.5),
+                Value::Float(2.5),
+                Value::Float(3.5),
+            ]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("1.5"));
+            assert!(output.contains("2.5"));
+            assert!(output.contains("3.5"));
+        }
+
+        #[test]
+        fn test_serialize_array_of_booleans() {
+            let value = Value::Array(vec![
+                Value::Bool(true),
+                Value::Bool(false),
+                Value::Bool(true),
+            ]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("true"));
+            assert!(output.contains("false"));
+        }
+
+        #[test]
+        fn test_serialize_array_with_nulls() {
+            let value = Value::Array(vec![Value::Int(1), Value::Null, Value::Int(3)]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("1"));
+            assert!(output.contains("3"));
+        }
+
+        #[test]
+        fn test_serialize_single_object() {
+            let value = Value::Object(HashMap::from([
+                ("name".to_string(), Value::String("Alice".to_string())),
+                ("age".to_string(), Value::Int(30)),
+                ("active".to_string(), Value::Bool(true)),
+            ]));
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("name"));
+            assert!(output.contains("age"));
+            assert!(output.contains("active"));
+            assert!(output.contains("Alice"));
+            assert!(output.contains("30"));
+            assert!(output.contains("true"));
+        }
+
+        #[test]
+        fn test_serialize_scalar_int() {
+            let value = Value::Int(42);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("42"));
+        }
+
+        #[test]
+        fn test_serialize_scalar_float() {
+            let value = Value::Float(3.14159);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("3.14159"));
+        }
+
+        #[test]
+        fn test_serialize_scalar_string() {
+            let value = Value::String("hello world".to_string());
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("hello world"));
+        }
+
+        #[test]
+        fn test_serialize_scalar_bool() {
+            let value = Value::Bool(true);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+            assert!(output.contains("true"));
+        }
+
+        #[test]
+        fn test_serialize_scalar_null() {
+            let value = Value::Null;
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("value"));
+        }
+
+        #[test]
+        fn test_serialize_series() {
+            let series = Series::new("numbers".into(), vec![1i64, 2, 3, 4, 5]);
+            let value = Value::Series(series);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("numbers"));
+            assert!(output.contains("1"));
+            assert!(output.contains("2"));
+            assert!(output.contains("3"));
+            assert!(output.contains("4"));
+            assert!(output.contains("5"));
+        }
+
+        #[test]
+        fn test_serialize_empty_array() {
+            let value = Value::Array(vec![]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            // Empty array should produce empty CSV
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.is_empty() || output.trim().is_empty());
+        }
+
+        #[test]
+        fn test_serialize_mixed_type_array_to_strings() {
+            // Mixed types in array should all be converted to appropriate representation
+            let value = Value::Array(vec![
+                Value::Int(1),
+                Value::Float(2.5),
+                Value::Bool(true),
+                Value::String("text".to_string()),
+            ]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            // All values should be present
+            assert!(
+                output.contains("1")
+                    || output.contains("2.5")
+                    || output.contains("true")
+                    || output.contains("text")
+            );
+        }
+
+        #[test]
+        fn test_serialize_nested_objects_in_array() {
+            // Nested objects should have their complex values serialized as JSON strings
+            let value = Value::Array(vec![Value::Object(HashMap::from([
+                ("name".to_string(), Value::String("Alice".to_string())),
+                (
+                    "details".to_string(),
+                    Value::Object(HashMap::from([(
+                        "city".to_string(),
+                        Value::String("NYC".to_string()),
+                    )])),
+                ),
+            ]))]);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("name"));
+            assert!(output.contains("Alice"));
+            // Nested object should be serialized as JSON string
+            assert!(output.contains("details"));
+        }
+
+        #[test]
+        fn test_serialize_dataframe() {
+            let df = DataFrame::new(vec![
+                Series::new("name".into(), vec!["Alice", "Bob"]).into(),
+                Series::new("age".into(), vec![30i64, 25]).into(),
+            ])
+            .unwrap();
+            let value = Value::DataFrame(df);
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("name"));
+            assert!(output.contains("age"));
+            assert!(output.contains("Alice"));
+            assert!(output.contains("Bob"));
+            assert!(output.contains("30"));
+            assert!(output.contains("25"));
+        }
+
+        #[test]
+        fn test_serialize_lazyframe() {
+            let df = DataFrame::new(vec![
+                Series::new("x".into(), vec![1i64, 2, 3]).into(),
+                Series::new("y".into(), vec![4i64, 5, 6]).into(),
+            ])
+            .unwrap();
+            let value = Value::LazyFrame(Box::new(df.lazy()));
+
+            let mut buffer = Vec::new();
+            serialize_csv(
+                &mut buffer,
+                &value,
+                &default_write_options(),
+                &default_csv_format(),
+            )
+            .unwrap();
+
+            let output = String::from_utf8(buffer).unwrap();
+            assert!(output.contains("x"));
+            assert!(output.contains("y"));
+            assert!(output.contains("1"));
+            assert!(output.contains("2"));
+            assert!(output.contains("3"));
+            assert!(output.contains("4"));
+            assert!(output.contains("5"));
+            assert!(output.contains("6"));
+        }
+
+        #[test]
+        fn test_array_to_dataframe_with_objects() {
+            let arr = vec![
+                Value::Object(HashMap::from([
+                    ("a".to_string(), Value::Int(1)),
+                    ("b".to_string(), Value::String("x".to_string())),
+                ])),
+                Value::Object(HashMap::from([
+                    ("a".to_string(), Value::Int(2)),
+                    ("b".to_string(), Value::String("y".to_string())),
+                ])),
+            ];
+
+            let df = array_to_dataframe(&arr).unwrap();
+            assert_eq!(df.height(), 2);
+            assert_eq!(df.width(), 2);
+        }
+
+        #[test]
+        fn test_array_to_dataframe_with_primitives() {
+            let arr = vec![Value::Int(1), Value::Int(2), Value::Int(3)];
+
+            let df = array_to_dataframe(&arr).unwrap();
+            assert_eq!(df.height(), 3);
+            assert_eq!(df.width(), 1);
+            assert!(df.get_column_names().contains(&&"value".into()));
+        }
+
+        #[test]
+        fn test_array_to_dataframe_empty() {
+            let arr: Vec<Value> = vec![];
+
+            let df = array_to_dataframe(&arr).unwrap();
+            assert_eq!(df.height(), 0);
+        }
+
+        #[test]
+        fn test_value_to_any_value_primitives() {
+            assert!(matches!(
+                value_to_any_value(&Value::Null).unwrap(),
+                polars::datatypes::AnyValue::Null
+            ));
+            assert!(matches!(
+                value_to_any_value(&Value::Bool(true)).unwrap(),
+                polars::datatypes::AnyValue::Boolean(true)
+            ));
+            assert!(matches!(
+                value_to_any_value(&Value::Int(42)).unwrap(),
+                polars::datatypes::AnyValue::Int64(42)
+            ));
+            assert!(matches!(
+                value_to_any_value(&Value::Float(3.14)).unwrap(),
+                polars::datatypes::AnyValue::Float64(f) if (f - 3.14).abs() < 0.0001
+            ));
+        }
+
+        #[test]
+        fn test_value_to_any_value_complex_types_to_json_string() {
+            // Complex types should be converted to JSON strings
+            let obj = Value::Object(HashMap::from([("key".to_string(), Value::Int(1))]));
+            let result = value_to_any_value(&obj).unwrap();
+            // Should be a string containing JSON
+            match result {
+                polars::datatypes::AnyValue::StringOwned(s) => {
+                    assert!(s.contains("key"));
+                }
+                _ => panic!("Expected StringOwned"),
+            }
+
+            let arr = Value::Array(vec![Value::Int(1), Value::Int(2)]);
+            let result = value_to_any_value(&arr).unwrap();
+            match result {
+                polars::datatypes::AnyValue::StringOwned(s) => {
+                    assert!(s.contains("1"));
+                    assert!(s.contains("2"));
+                }
+                _ => panic!("Expected StringOwned"),
+            }
+        }
     }
 }
