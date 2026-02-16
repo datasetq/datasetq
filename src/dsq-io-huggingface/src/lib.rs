@@ -76,9 +76,7 @@ pub async fn fetch_huggingface(url: &str) -> Result<Vec<u8>> {
     };
 
     // Read the downloaded file
-    let bytes = tokio::fs::read(&file_path_local)
-        .await
-        .map_err(|e| Error::Io(e))?;
+    let bytes = tokio::fs::read(&file_path_local).await.map_err(Error::Io)?;
 
     Ok(bytes)
 }
@@ -164,7 +162,7 @@ fn get_hf_api() -> Result<Api> {
     };
 
     // Create cache directory if it doesn't exist
-    std::fs::create_dir_all(&cache_dir).map_err(|e| Error::Io(e))?;
+    std::fs::create_dir_all(&cache_dir).map_err(Error::Io)?;
 
     // Build API with custom cache directory
     ApiBuilder::new()

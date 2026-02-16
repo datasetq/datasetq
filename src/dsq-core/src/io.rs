@@ -175,7 +175,7 @@ fn extract_extension_from_url(url: &str) -> Option<&str> {
     let path = url.split('?').next()?.split('#').next()?;
 
     // Get the last path segment
-    let last_segment = path.split('/').last()?;
+    let last_segment = path.split('/').next_back()?;
 
     // Extract extension
     if let Some(dot_pos) = last_segment.rfind('.') {

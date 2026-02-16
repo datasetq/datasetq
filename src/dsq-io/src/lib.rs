@@ -148,10 +148,10 @@ pub async fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
             }
             #[cfg(not(feature = "huggingface"))]
             {
-                return Err(Error::Other(
+                Err(Error::Other(
                     "HuggingFace support not enabled. Rebuild with --features huggingface"
                         .to_string(),
-                ));
+                ))
             }
         }
         uri::IoScheme::File => {
@@ -238,8 +238,8 @@ pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
         uri::IoScheme::Http => {
             #[cfg(feature = "http")]
             {
-                return https::fetch_http_sync(&path_str)
-                    .map_err(|e| Error::Other(format!("HTTP fetch error: {e}")));
+                https::fetch_http_sync(&path_str)
+                    .map_err(|e| Error::Other(format!("HTTP fetch error: {e}")))
             }
             #[cfg(not(feature = "http"))]
             {
@@ -256,10 +256,10 @@ pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
             }
             #[cfg(not(feature = "huggingface"))]
             {
-                return Err(Error::Other(
+                Err(Error::Other(
                     "HuggingFace support not enabled. Rebuild with --features huggingface"
                         .to_string(),
-                ));
+                ))
             }
         }
         uri::IoScheme::File => filesystem::read_file_sync(path)
