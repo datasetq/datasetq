@@ -662,13 +662,17 @@ impl CliConfig {
     /// Check if output should be colored
     #[allow(dead_code)]
     pub fn should_use_color(&self) -> bool {
+        // If color_output is explicitly set, respect it
+        if let Some(color) = self.color_output {
+            return color;
+        }
+
         // Respect NO_COLOR environment variable (https://no-color.org/)
         if std::env::var("NO_COLOR").is_ok() {
             return false;
         }
 
-        self.color_output
-            .unwrap_or_else(|| !self.quiet && std::io::IsTerminal::is_terminal(&std::io::stdout()))
+        !self.quiet && std::io::IsTerminal::is_terminal(&std::io::stdout())
     }
 
     /// Check if we should show progress
@@ -1537,9 +1541,18 @@ mod tests {
         // Save original value
         let original = env::var("NO_COLOR");
 
+        // Test that explicit color_output takes precedence over NO_COLOR
         env::set_var("NO_COLOR", "1");
         let config = CliConfig {
             color_output: Some(true),
+            ..Default::default()
+        };
+        assert!(config.should_use_color());
+
+        // Test that NO_COLOR is respected when color_output is None
+        let config = CliConfig {
+            color_output: None,
+            quiet: false,
             ..Default::default()
         };
         assert!(!config.should_use_color());
