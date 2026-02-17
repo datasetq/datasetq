@@ -29,10 +29,12 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
-      - name: Install mold linker
+      - name: Install zig
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mold clang
+          wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          sudo mv zig-linux-x86_64-0.13.0 /usr/local/zig
+          echo "/usr/local/zig" >> $GITHUB_PATH
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -70,10 +72,12 @@ jobs:
         with:
           components: clippy
 
-      - name: Install mold linker
+      - name: Install zig
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mold clang
+          wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          sudo mv zig-linux-x86_64-0.13.0 /usr/local/zig
+          echo "/usr/local/zig" >> $GITHUB_PATH
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -81,7 +85,7 @@ jobs:
           shared-key: clippy
 
       - name: Run clippy
-        run: cargo clippy --workspace --all-features -- -A clippy::all -D clippy::correctness
+        run: cargo clippy --workspace --all-features -- -D warnings
 
   docs:
     name: Documentation
@@ -92,10 +96,12 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install mold linker
+      - name: Install zig
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mold clang
+          wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          sudo mv zig-linux-x86_64-0.13.0 /usr/local/zig
+          echo "/usr/local/zig" >> $GITHUB_PATH
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -117,10 +123,12 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install mold linker
+      - name: Install zig
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mold clang
+          wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          sudo mv zig-linux-x86_64-0.13.0 /usr/local/zig
+          echo "/usr/local/zig" >> $GITHUB_PATH
 
       - name: Install cargo-audit
         run: cargo install cargo-audit
@@ -137,10 +145,12 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install mold linker
+      - name: Install zig
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mold clang
+          wget https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz
+          tar -xf zig-linux-x86_64-0.13.0.tar.xz
+          sudo mv zig-linux-x86_64-0.13.0 /usr/local/zig
+          echo "/usr/local/zig" >> $GITHUB_PATH
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2

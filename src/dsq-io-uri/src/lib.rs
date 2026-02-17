@@ -56,11 +56,11 @@ impl UriInfo {
         }
 
         // Check for HuggingFace
-        if uri_str.starts_with("hf://") {
+        if let Some(stripped) = uri_str.strip_prefix("hf://") {
             return Ok(Self {
                 uri: uri_str.to_string(),
                 scheme: IoScheme::HuggingFace,
-                path: uri_str[5..].to_string(), // Strip "hf://"
+                path: stripped.to_string(),
             });
         }
 

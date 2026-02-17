@@ -251,8 +251,8 @@ pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
         uri::IoScheme::HuggingFace => {
             #[cfg(feature = "huggingface")]
             {
-                return huggingface::fetch_huggingface_sync(&path_str)
-                    .map_err(|e| Error::Other(format!("HuggingFace fetch error: {e}")));
+                huggingface::fetch_huggingface_sync(&path_str)
+                    .map_err(|e| Error::Other(format!("HuggingFace fetch error: {e}")))
             }
             #[cfg(not(feature = "huggingface"))]
             {

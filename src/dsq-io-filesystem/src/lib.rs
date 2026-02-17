@@ -93,7 +93,6 @@ pub async fn write_stderr(data: &[u8]) -> Result<()> {
 }
 
 /// Synchronous versions for compatibility
-
 /// Read all bytes from a file synchronously
 pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
     std::fs::read(path).map_err(Error::from)

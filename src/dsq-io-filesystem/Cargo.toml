@@ -6,6 +6,7 @@ authors = ["Durable Programming LLC"]
 description = "Filesystem I/O plugin for dsq"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/durableprogramming/dsq"
+readme = "README.md"
 keywords = ["io", "filesystem"]
 categories = ["filesystem"]
 
