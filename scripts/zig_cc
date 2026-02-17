@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+set -u
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CACHE_DIR="$SCRIPT_DIR/../.local/zig-cache"
+
+mkdir -p "$CACHE_DIR"
+
+export ZIG_GLOBAL_CACHE_DIR="$CACHE_DIR"
+exec zig cc $@
+

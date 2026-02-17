@@ -9,3 +9,4 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Build the main package with bin feature (produces libdsq.so and dsq binary)
 cd "$PROJECT_ROOT"
 cargo build --release --features bin
+

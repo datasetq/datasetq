@@ -2,8 +2,8 @@
 # rustc-wrapper = "sccache"
 
 [target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+linker = "./scripts/zig_cc"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
 
 [target.wasm32-unknown-unknown]
 rustflags = [
@@ -12,3 +12,4 @@ rustflags = [
 
 [env]
 CFLAGS_wasm32_unknown_unknown = "-DZDICT_DISABLE_COVER"
+NIX_CFLAGS_COMPILE = { value = "", force = true }
