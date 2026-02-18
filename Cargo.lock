@@ -1279,7 +1279,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "arrow",
@@ -1314,7 +1314,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-filter"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "coz",
@@ -1334,7 +1334,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-formats"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "apache-avro",
@@ -1358,7 +1358,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-functions"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "base32",
@@ -1392,7 +1392,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-io"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "apache-avro",
@@ -1411,7 +1411,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-io-filesystem"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "tempfile",
@@ -1421,7 +1421,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-io-https"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "reqwest",
@@ -1431,7 +1431,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-io-huggingface"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "dirs",
@@ -1442,7 +1442,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-io-uri"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "thiserror",
@@ -1451,7 +1451,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-parser"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "dsq-shared",
@@ -1466,7 +1466,7 @@ dependencies = [
 
 [[package]]
 name = "dsq-shared"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "base64",
