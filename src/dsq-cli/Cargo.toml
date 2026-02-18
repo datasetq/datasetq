@@ -17,13 +17,13 @@ workspace = true
 
 [dependencies]
 # Core DSQ crates (shared across all targets)
-dsq-core = { version = "0.1.0", path = "../dsq-core", features = ["filter", "io"] }
-dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
-dsq-parser = { version = "0.1.0", path = "../dsq-parser" }
-dsq-filter = { version = "0.1.0", path = "../dsq-filter" }
-dsq-functions = { version = "0.1.0", path = "../dsq-functions" }
-dsq-formats = { version = "0.1.0", path = "../dsq-formats" }
-dsq-io = { version = "0.1.0", path = "../dsq-io" }
+dsq-core = { version = "0.2.0", path = "../dsq-core", features = ["filter", "io"] }
+dsq-shared = { version = "0.2.0", path = "../dsq-shared" }
+dsq-parser = { version = "0.2.0", path = "../dsq-parser" }
+dsq-filter = { version = "0.2.0", path = "../dsq-filter" }
+dsq-functions = { version = "0.2.0", path = "../dsq-functions" }
+dsq-formats = { version = "0.2.0", path = "../dsq-formats" }
+dsq-io = { version = "0.2.0", path = "../dsq-io" }
 
 # Data processing
 polars = { workspace = true }

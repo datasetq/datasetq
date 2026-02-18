@@ -1,6 +1,6 @@
 [package]
 name = "dsq-io"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Durable Programming LLC"]
 description = "I/O utilities for dsq - handles reading and writing to disk, STDIN, STDOUT"
@@ -23,20 +23,20 @@ polars = { workspace = true }
 serde_json = { workspace = true }
 
 # Local crates
-dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
+dsq-shared = { version = "0.2.0", path = "../dsq-shared" }
 
 # I/O plugins
-dsq-io-uri = { version = "0.1.0", path = "../dsq-io-uri" }
-dsq-io-filesystem = { version = "0.1.0", path = "../dsq-io-filesystem" }
-dsq-io-https = { version = "0.1.0", path = "../dsq-io-https", optional = true }
-dsq-io-huggingface = { version = "0.1.0", path = "../dsq-io-huggingface", optional = true }
+dsq-io-uri = { version = "0.2.0", path = "../dsq-io-uri" }
+dsq-io-filesystem = { version = "0.2.0", path = "../dsq-io-filesystem" }
+dsq-io-https = { version = "0.2.0", path = "../dsq-io-https", optional = true }
+dsq-io-huggingface = { version = "0.2.0", path = "../dsq-io-huggingface", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-dsq-formats = { version = "0.1.0", path = "../dsq-formats", features = [] }
+dsq-formats = { version = "0.2.0", path = "../dsq-formats", features = [] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true, features = ["fs", "io-util", "io-std", "macros", "rt"] }
-dsq-formats = { version = "0.1.0", path = "../dsq-formats", features = ["parquet"] }
+dsq-formats = { version = "0.2.0", path = "../dsq-formats", features = ["parquet"] }
 # Avro support (for error types)
 apache-avro = { workspace = true }
 

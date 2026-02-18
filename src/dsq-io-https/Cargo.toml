@@ -1,6 +1,6 @@
 [package]
 name = "dsq-io-https"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Durable Programming LLC"]
 description = "HTTP(S) I/O plugin for dsq"

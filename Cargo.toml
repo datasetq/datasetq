@@ -129,11 +129,11 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 # Core DSQ crates (shared across all targets)
-dsq-core = { version = "0.1.0", path = "src/dsq-core", default-features = false }
-dsq-shared = { version = "0.1.0", path = "src/dsq-shared" }
-dsq-parser = { version = "0.1.0", path = "src/dsq-parser" }
-dsq-filter = { version = "0.1.0", path = "src/dsq-filter" }
-dsq-io = { version = "0.1.0", path = "src/dsq-io" }
+dsq-core = { version = "0.2.0", path = "src/dsq-core", default-features = false }
+dsq-shared = { version = "0.2.0", path = "src/dsq-shared" }
+dsq-parser = { version = "0.2.0", path = "src/dsq-parser" }
+dsq-filter = { version = "0.2.0", path = "src/dsq-filter" }
+dsq-io = { version = "0.2.0", path = "src/dsq-io" }
 
 # CLI and configuration
 clap = { workspace = true, features = ["derive", "cargo", "env"], optional = true }
@@ -186,7 +186,7 @@ predicates = { workspace = true }
 tempfile = { workspace = true }
 criterion = { workspace = true }
 coz = { workspace = true }
-dsq-formats = { version = "0.1.0", path = "src/dsq-formats" }
+dsq-formats = { version = "0.2.0", path = "src/dsq-formats" }
 
 
 

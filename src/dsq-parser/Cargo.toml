@@ -1,6 +1,6 @@
 [package]
 name = "dsq-parser"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Durable Programming LLC"]
 description = "Parser for DSQ filter language that produces an AST"
@@ -14,7 +14,7 @@ workspace = true
 
 [dependencies]
 # Shared utilities
-dsq-shared = { version = "0.1.0", path = "../dsq-shared" }
+dsq-shared = { version = "0.2.0", path = "../dsq-shared" }
 
 # Parsing
 nom = { workspace = true }
