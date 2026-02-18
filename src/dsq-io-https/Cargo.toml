@@ -22,7 +22,7 @@ anyhow = { workspace = true }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 
 # Async
-tokio = { workspace = true, features = ["rt"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread"] }
 
 [features]
 default = []
