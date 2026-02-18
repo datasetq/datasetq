@@ -32,7 +32,7 @@ impl Default for ReadOptions {
         Self {
             max_rows: None,
             infer_schema: true,
-            infer_schema_length: Some(1000),
+            infer_schema_length: None,
             lazy: false,
             #[cfg(any(
                 feature = "csv",

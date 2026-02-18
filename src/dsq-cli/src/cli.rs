@@ -153,6 +153,10 @@ pub struct Cli {
     #[arg(long, value_name = "N")]
     pub limit: Option<usize>,
 
+    /// Number of rows to use for schema inference (None for all rows)
+    #[arg(long, value_name = "N")]
+    pub infer_schema_length: Option<usize>,
+
     /// Select specific columns (can be used multiple times)
     #[arg(long, value_name = "COL", action = clap::ArgAction::Append)]
     pub select: Vec<String>,
@@ -468,6 +472,7 @@ pub struct CliConfig {
     // Processing options
     pub skip_rows: Option<usize>,
     pub limit: Option<usize>,
+    pub infer_schema_length: Option<usize>,
     pub select_columns: Vec<String>,
     pub lazy: bool,
     pub dataframe_optimizations: bool,
@@ -540,6 +545,7 @@ impl From<&Cli> for CliConfig {
             csv_null_values: cli.csv_null_values.clone(),
             skip_rows: cli.skip_rows,
             limit: cli.limit,
+            infer_schema_length: cli.infer_schema_length,
             select_columns: cli.select.clone(),
             lazy: cli.lazy,
             dataframe_optimizations: cli.dataframe_optimizations,

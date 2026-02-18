@@ -792,6 +792,9 @@ impl Config {
         if let Some(has_header) = cli_config.csv_headers {
             self.formats.csv.has_header = has_header;
         }
+        if let Some(infer_len) = cli_config.infer_schema_length {
+            self.formats.csv.infer_schema_length = infer_len;
+        }
 
         // Performance settings
         if let Some(batch_size) = cli_config.batch_size {
