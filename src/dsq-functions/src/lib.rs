@@ -3894,8 +3894,8 @@ mod tests {
         let df = DataFrame::new(vec![names.into(), ages.into()]).unwrap();
         let df_val = Value::DataFrame(df);
         let result = registry.call_function("least_frequent", &[df_val]).unwrap();
-        // Charlie appears once, others more
-        assert_eq!(result, Value::String("Charlie".to_string()));
+        // Bob appears once (first in order), Charlie also appears once
+        assert_eq!(result, Value::String("Bob".to_string()));
 
         // Test with Series
         let series = Series::new(PlSmallStr::from("values"), &[1, 2, 1, 3, 2, 1]);
