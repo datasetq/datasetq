@@ -975,6 +975,7 @@ fn test_builtin_functions() {
         "avg_if",
         "avg_ifs",
         "least_frequent",
+        "most_frequent",
         "mean",
         "avg",
         "median",

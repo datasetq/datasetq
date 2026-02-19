@@ -8,10 +8,10 @@ use std::collections::HashMap;
 
 use crate::FunctionRegistration;
 
-pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
+pub fn builtin_most_frequent(args: &[Value]) -> Result<Value> {
     if args.len() != 1 {
         return Err(dsq_shared::error::operation_error(
-            "least_frequent() expects 1 argument",
+            "most_frequent() expects 1 argument",
         ));
     }
 
@@ -26,20 +26,20 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
                 let entry = counts.entry(key).or_insert_with(|| (val.clone(), 0));
                 entry.1 += 1;
             }
-            let min_count = counts.values().map(|(_, count)| *count).min().unwrap_or(0);
-            let least_frequent: Vec<&Value> = counts
+            let max_count = counts.values().map(|(_, count)| *count).max().unwrap_or(0);
+            let most_frequent: Vec<&Value> = counts
                 .values()
-                .filter(|(_, count)| *count == min_count)
+                .filter(|(_, count)| *count == max_count)
                 .map(|(val, _)| val)
                 .collect();
             // Return the first one (arbitrary choice if multiple have same frequency)
-            Ok(least_frequent.first().map_or(Value::Null, |v| (*v).clone()))
+            Ok(most_frequent.first().map_or(Value::Null, |v| (*v).clone()))
         }
         Value::DataFrame(df) => {
             if df.height() == 0 {
                 return Ok(Value::Null);
             }
-            // For DataFrame, find least frequent value in the first column
+            // For DataFrame, find most frequent value in the first column
             let col_names = df.get_column_names();
             if col_names.is_empty() {
                 return Ok(Value::Null);
@@ -70,12 +70,12 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
                 return Ok(Value::Null);
             }
 
-            let min_count = counts.values().min().copied().unwrap_or(0);
+            let max_count = counts.values().max().copied().unwrap_or(0);
 
-            // Find the first value in order that has the minimum count
+            // Find the first value in order that has the maximum count
             for value in value_order.iter() {
                 let key = serde_json::to_string(&value).unwrap_or_default();
-                if counts.get(&key) == Some(&min_count) {
+                if counts.get(&key) == Some(&max_count) {
                     return Ok(value.clone());
                 }
             }
@@ -95,23 +95,23 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
                     entry.1 += 1;
                 }
             }
-            let min_count = counts.values().map(|(_, count)| *count).min().unwrap_or(0);
-            let least_frequent: Vec<&Value> = counts
+            let max_count = counts.values().map(|(_, count)| *count).max().unwrap_or(0);
+            let most_frequent: Vec<&Value> = counts
                 .values()
-                .filter(|(_, count)| *count == min_count)
+                .filter(|(_, count)| *count == max_count)
                 .map(|(val, _)| val)
                 .collect();
-            Ok(least_frequent.first().map_or(Value::Null, |v| (*v).clone()))
+            Ok(most_frequent.first().map_or(Value::Null, |v| (*v).clone()))
         }
         _ => Err(dsq_shared::error::operation_error(
-            "least_frequent() requires array, DataFrame, or Series",
+            "most_frequent() requires array, DataFrame, or Series",
         )),
     }
 }
 
 inventory::submit! {
     FunctionRegistration {
-        name: "least_frequent",
-        func: builtin_least_frequent,
+        name: "most_frequent",
+        func: builtin_most_frequent,
     }
 }

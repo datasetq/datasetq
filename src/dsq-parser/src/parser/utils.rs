@@ -42,6 +42,7 @@ pub(crate) const BUILTIN_FUNCTIONS: &[&str] = &[
     "avg_if",
     "avg_ifs",
     "least_frequent",
+    "most_frequent",
     "mean",
     "avg",
     "median",
