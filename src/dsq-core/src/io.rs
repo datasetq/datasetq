@@ -35,6 +35,8 @@ static TOKIO_RUNTIME: std::sync::LazyLock<Runtime> =
 pub struct ReadOptions {
     /// Whether to infer schema automatically
     pub infer_schema: bool,
+    /// Number of rows to use for schema inference (None for all rows)
+    pub infer_schema_length: Option<usize>,
     /// Number of rows to read (None for all)
     pub n_rows: Option<usize>,
     /// Skip initial rows
@@ -49,6 +51,7 @@ impl Default for ReadOptions {
     fn default() -> Self {
         Self {
             infer_schema: true,
+            infer_schema_length: None,
             n_rows: None,
             skip_rows: 0,
             chunk_size: None,
@@ -136,6 +139,7 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
     let format_read_options = DsFormatReadOptions {
         max_rows: options.n_rows,
         skip_rows: options.skip_rows,
+        infer_schema_length: options.infer_schema_length,
         ..Default::default()
     };
     let format_options = FormatReadOptions::default();
@@ -455,7 +459,7 @@ fn read_csv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value
     let path_buf = path.as_ref().to_path_buf();
     let mut csv_options = CsvReadOptions::default()
         .with_has_header(true)
-        .with_infer_schema_length(Some(100));
+        .with_infer_schema_length(options.infer_schema_length);
 
     if let Some(n_rows) = options.n_rows {
         csv_options = csv_options.with_n_rows(Some(n_rows));
@@ -482,7 +486,7 @@ fn read_tsv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value
     let path_buf = path.as_ref().to_path_buf();
     let mut csv_options = CsvReadOptions::default()
         .with_has_header(true)
-        .with_infer_schema_length(Some(100));
+        .with_infer_schema_length(options.infer_schema_length);
 
     // Clone and modify parse_options for TSV
     let mut parse_opts = (*csv_options.parse_options).clone();

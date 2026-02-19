@@ -13,3 +13,4 @@ cp target/release/dsq ~/.local/bin/
 
 echo "Installation complete!"
 echo "Make sure ~/.local/bin is in your PATH"
+

@@ -3,6 +3,10 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CACHE_DIR="$SCRIPT_DIR/../.local/zig-cache"
+
+mkdir -p "$CACHE_DIR"
+export ZIG_GLOBAL_CACHE_DIR="$CACHE_DIR"
 
 # Run release scripts in order
 "$SCRIPT_DIR/release/build_cli.sh"

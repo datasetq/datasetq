@@ -910,6 +910,10 @@ pub fn deserialize_csv<R: Read + polars::io::mmap::MmapBytesReader>(
         read_options = read_options.with_skip_rows(options.skip_rows);
     }
 
+    if let Some(infer_len) = options.infer_schema_length {
+        read_options = read_options.with_infer_schema_length(Some(infer_len));
+    }
+
     // Note: with_projection expects column indices, not names
     // We'll handle column selection after reading
     let selected_columns = options.columns.clone();

@@ -110,8 +110,8 @@ pub struct CsvConfig {
     pub null_values: Vec<String>,
     /// Whether to trim whitespace
     pub trim_whitespace: bool,
-    /// Number of rows for schema inference
-    pub infer_schema_length: usize,
+    /// Number of rows for schema inference (None for all rows)
+    pub infer_schema_length: Option<usize>,
 }
 
 /// JSON format configuration
@@ -277,7 +277,7 @@ impl Default for CsvConfig {
             comment_char: None,
             null_values: vec!["".to_string(), "NA".to_string(), "NULL".to_string()],
             trim_whitespace: false,
-            infer_schema_length: 1000,
+            infer_schema_length: None,
         }
     }
 }
@@ -793,7 +793,7 @@ impl Config {
             self.formats.csv.has_header = has_header;
         }
         if let Some(infer_len) = cli_config.infer_schema_length {
-            self.formats.csv.infer_schema_length = infer_len;
+            self.formats.csv.infer_schema_length = Some(infer_len);
         }
 
         // Performance settings
@@ -823,6 +823,7 @@ impl Config {
     pub fn to_read_options(&self) -> ReadOptions {
         ReadOptions {
             infer_schema: true,
+            infer_schema_length: self.formats.csv.infer_schema_length,
             n_rows: None,
             skip_rows: 0,
             chunk_size: None,
@@ -870,6 +871,7 @@ impl Config {
     pub fn get_format_read_options(&self, format: DataFormat) -> ReadOptions {
         let mut options = ReadOptions {
             infer_schema: true,
+            infer_schema_length: None,
             n_rows: None,
             skip_rows: 0,
             chunk_size: None,
@@ -1125,7 +1127,7 @@ mod tests {
             vec!["".to_string(), "NA".to_string(), "NULL".to_string()]
         );
         assert!(!csv.trim_whitespace);
-        assert_eq!(csv.infer_schema_length, 1000);
+        assert_eq!(csv.infer_schema_length, None);
 
         // Test JsonConfig default
         let json = JsonConfig::default();
@@ -2223,7 +2225,7 @@ batch_size = 5000
             comment_char: Some("#".to_string()),
             null_values: vec!["N/A".to_string()],
             trim_whitespace: true,
-            infer_schema_length: 2000,
+            infer_schema_length: Some(2000),
         };
 
         config.merge_csv_config(other);
@@ -2234,7 +2236,7 @@ batch_size = 5000
         assert_eq!(config.formats.csv.comment_char, Some("#".to_string()));
         assert_eq!(config.formats.csv.null_values, vec!["N/A".to_string()]);
         assert!(config.formats.csv.trim_whitespace);
-        assert_eq!(config.formats.csv.infer_schema_length, 2000);
+        assert_eq!(config.formats.csv.infer_schema_length, Some(2000));
     }
 
     #[test]
