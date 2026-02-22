@@ -192,8 +192,17 @@ fn extract_extension_from_url(url: &str) -> Option<&str> {
 /// Synchronous version for compatibility
 #[cfg(not(target_arch = "wasm32"))]
 pub fn read_file_sync<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
-    // Use shared runtime instead of creating new one each time
-    TOKIO_RUNTIME.block_on(read_file(path, options))
+    // Check if we're already inside a Tokio runtime
+    if tokio::runtime::Handle::try_current().is_ok() {
+        // Already in a runtime - we can't use block_on here as it will panic
+        // Instead, we need to use the async version directly
+        // This is a workaround for now - ideally callers should use read_file directly
+        // For now, we'll use futures::executor::block_on which works from any context
+        futures::executor::block_on(read_file(path, options))
+    } else {
+        // Not in a runtime, use our shared runtime
+        TOKIO_RUNTIME.block_on(read_file(path, options))
+    }
 }
 
 /// Read a file into a lazy Value
@@ -302,8 +311,17 @@ pub fn write_file_sync<P: AsRef<Path>>(
     path: P,
     options: &WriteOptions,
 ) -> Result<()> {
-    // Use shared runtime instead of creating new one each time
-    TOKIO_RUNTIME.block_on(write_file(value, path, options))
+    // Check if we're already inside a Tokio runtime
+    if tokio::runtime::Handle::try_current().is_ok() {
+        // Already in a runtime - we can't use block_on here as it will panic
+        // Instead, we need to use the async version directly
+        // This is a workaround for now - ideally callers should use write_file directly
+        // For now, we'll use futures::executor::block_on which works from any context
+        futures::executor::block_on(write_file(value, path, options))
+    } else {
+        // Not in a runtime, use our shared runtime
+        TOKIO_RUNTIME.block_on(write_file(value, path, options))
+    }
 }
 
 /// Convert a file from one format to another
@@ -456,60 +474,47 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
 }
 
 fn read_csv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
-    let path_buf = path.as_ref().to_path_buf();
-    let mut csv_options = CsvReadOptions::default()
+    use polars::prelude::PlPath;
+    use std::sync::Arc;
+
+    // Use LazyCsvReader for truly lazy reading - doesn't read file until executed
+    let pl_path = PlPath::Local(Arc::from(path.as_ref()));
+    let lf = LazyCsvReader::new(pl_path)
         .with_has_header(true)
-        .with_infer_schema_length(options.infer_schema_length);
+        .with_infer_schema_length(options.infer_schema_length)
+        .with_skip_rows(options.skip_rows)
+        .finish()?;
 
-    if let Some(n_rows) = options.n_rows {
-        csv_options = csv_options.with_n_rows(Some(n_rows));
-    }
-
-    if options.skip_rows > 0 {
-        csv_options = csv_options.with_skip_rows(options.skip_rows);
-    }
-
-    // Set optimal batch size for streaming
-    if let Some(chunk_size) = options.chunk_size {
-        csv_options = csv_options.with_chunk_size(chunk_size);
+    // Apply n_rows limit if specified
+    let lf = if let Some(n_rows) = options.n_rows {
+        lf.limit(n_rows as u32)
     } else {
-        // Use a reasonable default batch size for large files
-        csv_options = csv_options.with_chunk_size(50_000);
-    }
+        lf
+    };
 
-    let reader = csv_options.try_into_reader_with_file_path(Some(path_buf))?;
-    let lf = reader.finish()?.lazy();
     Ok(Value::LazyFrame(Box::new(lf)))
 }
 
 fn read_tsv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
-    let path_buf = path.as_ref().to_path_buf();
-    let mut csv_options = CsvReadOptions::default()
+    use polars::prelude::PlPath;
+    use std::sync::Arc;
+
+    // Use LazyCsvReader for truly lazy reading - doesn't read file until executed
+    let pl_path = PlPath::Local(Arc::from(path.as_ref()));
+    let lf = LazyCsvReader::new(pl_path)
         .with_has_header(true)
-        .with_infer_schema_length(options.infer_schema_length);
+        .with_separator(b'\t')
+        .with_infer_schema_length(options.infer_schema_length)
+        .with_skip_rows(options.skip_rows)
+        .finish()?;
 
-    // Clone and modify parse_options for TSV
-    let mut parse_opts = (*csv_options.parse_options).clone();
-    parse_opts.separator = b'\t';
-    csv_options.parse_options = std::sync::Arc::new(parse_opts);
-
-    if let Some(n_rows) = options.n_rows {
-        csv_options = csv_options.with_n_rows(Some(n_rows));
-    }
-
-    if options.skip_rows > 0 {
-        csv_options = csv_options.with_skip_rows(options.skip_rows);
-    }
-
-    // Set optimal batch size for streaming
-    if let Some(chunk_size) = options.chunk_size {
-        csv_options = csv_options.with_chunk_size(chunk_size);
+    // Apply n_rows limit if specified
+    let lf = if let Some(n_rows) = options.n_rows {
+        lf.limit(n_rows as u32)
     } else {
-        csv_options = csv_options.with_chunk_size(50_000);
-    }
+        lf
+    };
 
-    let reader = csv_options.try_into_reader_with_file_path(Some(path_buf))?;
-    let lf = reader.finish()?.lazy();
     Ok(Value::LazyFrame(Box::new(lf)))
 }
 

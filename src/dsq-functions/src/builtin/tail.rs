@@ -41,6 +41,10 @@ pub fn builtin_tail(args: &[Value]) -> Result<Value> {
             let tail_df = df.tail(Some(n));
             Ok(Value::DataFrame(tail_df))
         }
+        Value::LazyFrame(lf) => {
+            let tail_lf = lf.clone().tail(n as u32);
+            Ok(Value::LazyFrame(Box::new(tail_lf)))
+        }
         Value::Series(series) => {
             let tail_series = series.tail(Some(n));
             Ok(Value::Series(tail_series))

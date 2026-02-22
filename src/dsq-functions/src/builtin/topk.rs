@@ -175,8 +175,35 @@ pub fn builtin_topk(args: &[Value]) -> Result<Value> {
 
             Ok(Value::Array(result))
         }
+        Value::LazyFrame(lf) => {
+            // Select only the first column before collecting to avoid materializing entire LazyFrame
+            let schema = (**lf).clone().collect_schema().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get LazyFrame schema: {}", e))
+            })?;
+
+            let col_names: Vec<_> = schema.iter_names().map(|s| s.as_str()).collect();
+            if col_names.is_empty() {
+                return Ok(Value::Array(vec![]));
+            }
+
+            let first_col = col_names[0];
+            let df = lf.clone().select([col(first_col)]).collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_topk(&[
+                Value::DataFrame(df),
+                args[1].clone(),
+                if args.len() == 3 {
+                    args[2].clone()
+                } else {
+                    Value::Bool(true)
+                },
+            ])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "topk() requires array, DataFrame, or Series",
+            "topk() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }
@@ -254,11 +281,7 @@ pub fn builtin_topk_with_counts(args: &[Value]) -> Result<Value> {
 
             // Build result DataFrame
             let values: Vec<Value> = freq_vec.iter().take(k).map(|(_, v)| v.clone()).collect();
-            let counts: Vec<Value> = freq_vec
-                .iter()
-                .take(k)
-                .map(|(c, _)| Value::Int(*c as i64))
-                .collect();
+            let counts: Vec<u64> = freq_vec.iter().take(k).map(|(c, _)| *c as u64).collect();
 
             // Create Series from values and counts
             let value_series = Series::from_any_values(
@@ -280,13 +303,7 @@ pub fn builtin_topk_with_counts(args: &[Value]) -> Result<Value> {
                 dsq_shared::error::operation_error(format!("Failed to create value series: {}", e))
             })?;
 
-            let count_series = Series::new(
-                "count".into(),
-                counts
-                    .iter()
-                    .map(|v| if let Value::Int(i) = v { *i } else { 0 })
-                    .collect::<Vec<_>>(),
-            );
+            let count_series = Series::new("count".into(), counts);
 
             let df =
                 DataFrame::new(vec![value_series.into(), count_series.into()]).map_err(|e| {
@@ -328,7 +345,26 @@ pub fn builtin_topk_with_counts(args: &[Value]) -> Result<Value> {
                 })?;
 
             // Take top k
-            let result_df = sorted.head(Some(k));
+            let top_k_df = sorted.head(Some(k));
+
+            // Cast count column to UInt64 for consistency
+            let count_col = top_k_df.column("count").map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get count column: {}", e))
+            })?;
+            let count_u64 = count_col.cast(&DataType::UInt64).map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to cast count to UInt64: {}", e))
+            })?;
+
+            let value_col = top_k_df.column(series.name()).map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get value column: {}", e))
+            })?;
+
+            let result_df = DataFrame::new(vec![value_col.clone(), count_u64]).map_err(|e| {
+                dsq_shared::error::operation_error(format!(
+                    "Failed to create result DataFrame: {}",
+                    e
+                ))
+            })?;
 
             Ok(Value::DataFrame(result_df))
         }
@@ -355,12 +391,58 @@ pub fn builtin_topk_with_counts(args: &[Value]) -> Result<Value> {
                 })?;
 
             // Take top k
-            let result_df = sorted.head(Some(k));
+            let top_k_df = sorted.head(Some(k));
+
+            // Cast count column to UInt64 for consistency
+            let count_col = top_k_df.column("count").map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get count column: {}", e))
+            })?;
+            let count_u64 = count_col.cast(&DataType::UInt64).map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to cast count to UInt64: {}", e))
+            })?;
+
+            let value_col = top_k_df.column(series.name()).map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get value column: {}", e))
+            })?;
+
+            let result_df = DataFrame::new(vec![value_col.clone(), count_u64]).map_err(|e| {
+                dsq_shared::error::operation_error(format!(
+                    "Failed to create result DataFrame: {}",
+                    e
+                ))
+            })?;
 
             Ok(Value::DataFrame(result_df))
         }
+        Value::LazyFrame(lf) => {
+            // Select only the first column before collecting to avoid materializing entire LazyFrame
+            let schema = (**lf).clone().collect_schema().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get LazyFrame schema: {}", e))
+            })?;
+
+            let col_names: Vec<_> = schema.iter_names().map(|s| s.as_str()).collect();
+            if col_names.is_empty() {
+                return Ok(Value::DataFrame(DataFrame::empty()));
+            }
+
+            let first_col = col_names[0];
+            let df = lf.clone().select([col(first_col)]).collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_topk_with_counts(&[
+                Value::DataFrame(df),
+                args[1].clone(),
+                if args.len() == 3 {
+                    args[2].clone()
+                } else {
+                    Value::Bool(true)
+                },
+            ])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "topk_with_counts() requires array, DataFrame, or Series",
+            "topk_with_counts() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }
@@ -540,10 +622,14 @@ mod tests {
                 panic!("Expected first value to be 'apple'");
             }
 
-            if let Ok(AnyValue::Int64(c)) = count_col.get(0) {
-                assert_eq!(c, 3);
+            if let Ok(count_val) = count_col.get(0) {
+                match count_val {
+                    AnyValue::UInt32(c) => assert_eq!(c, 3),
+                    AnyValue::UInt64(c) => assert_eq!(c, 3),
+                    _ => panic!("Expected count to be UInt32 or UInt64, got {:?}", count_val),
+                }
             } else {
-                panic!("Expected first count to be 3");
+                panic!("Failed to get first count");
             }
         } else {
             panic!("Expected DataFrame result");
@@ -559,11 +645,19 @@ mod tests {
             assert_eq!(df.width(), 2);
 
             let count_col = df.column("count").unwrap().as_materialized_series();
-            if let Ok(AnyValue::Int64(first_count)) = count_col.get(0) {
-                assert_eq!(first_count, 3); // "a" appears 3 times
+            if let Ok(count_val) = count_col.get(0) {
+                match count_val {
+                    AnyValue::UInt32(c) => assert_eq!(c, 3),
+                    AnyValue::UInt64(c) => assert_eq!(c, 3),
+                    _ => panic!("Expected count to be UInt32 or UInt64, got {:?}", count_val),
+                }
             }
-            if let Ok(AnyValue::Int64(second_count)) = count_col.get(1) {
-                assert_eq!(second_count, 2); // "b" appears 2 times
+            if let Ok(count_val) = count_col.get(1) {
+                match count_val {
+                    AnyValue::UInt32(c) => assert_eq!(c, 2),
+                    AnyValue::UInt64(c) => assert_eq!(c, 2),
+                    _ => panic!("Expected count to be UInt32 or UInt64, got {:?}", count_val),
+                }
             }
         } else {
             panic!("Expected DataFrame result");
@@ -597,8 +691,12 @@ mod tests {
                 .unwrap();
         if let Value::DataFrame(df) = result {
             let count_col = df.column("count").unwrap().as_materialized_series();
-            if let Ok(AnyValue::Int64(first_count)) = count_col.get(0) {
-                assert_eq!(first_count, 1); // Least frequent
+            if let Ok(count_val) = count_col.get(0) {
+                match count_val {
+                    AnyValue::UInt32(c) => assert_eq!(c, 1),
+                    AnyValue::UInt64(c) => assert_eq!(c, 1),
+                    _ => panic!("Expected count to be UInt32 or UInt64, got {:?}", count_val),
+                }
             }
         } else {
             panic!("Expected DataFrame result");

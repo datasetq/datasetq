@@ -44,6 +44,10 @@ pub fn builtin_head(args: &[Value]) -> Result<Value> {
             let head_df = df.head(Some(n));
             Ok(Value::DataFrame(head_df))
         }
+        Value::LazyFrame(lf) => {
+            let head_lf = lf.clone().slice(0, n as u32);
+            Ok(Value::LazyFrame(Box::new(head_lf)))
+        }
         Value::Series(series) => {
             let head_series = series.head(Some(n));
             Ok(Value::Series(head_series))

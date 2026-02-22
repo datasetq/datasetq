@@ -18,8 +18,18 @@ pub fn builtin_columns(args: &[Value]) -> Result<Value> {
                 .collect();
             Ok(Value::Array(columns))
         }
+        Value::LazyFrame(lf) => {
+            let schema = lf.clone().collect_schema().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get schema: {}", e))
+            })?;
+            let columns: Vec<Value> = schema
+                .iter_names()
+                .map(|name| Value::String(name.to_string()))
+                .collect();
+            Ok(Value::Array(columns))
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "columns() requires DataFrame argument",
+            "columns() requires DataFrame or LazyFrame argument",
         )),
     }
 }

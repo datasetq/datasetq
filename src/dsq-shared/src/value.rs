@@ -587,6 +587,10 @@ impl Value {
             Value::Array(arr) => Some(arr.len()),
             Value::String(s) => Some(s.len()),
             Value::DataFrame(df) => Some(df.height()),
+            Value::LazyFrame(lf) => {
+                // Collect LazyFrame to get height
+                lf.clone().collect().ok().map(|df| df.height())
+            }
             Value::Series(s) => Some(s.len()),
             _ => None,
         }
@@ -680,6 +684,14 @@ impl Value {
                     Ok(Value::Null)
                 }
             }
+            Value::LazyFrame(lf) => {
+                // For LazyFrame, we need to collect to access by index
+                // This is unavoidable since indexing requires materialization
+                let df = lf.clone().collect().map_err(|e| {
+                    crate::error::operation_error(format!("LazyFrame collect error: {e}"))
+                })?;
+                Value::DataFrame(df).index(idx)
+            }
             _ => Err(crate::error::operation_error(format!(
                 "Cannot index into {}",
                 self.type_name()
@@ -705,6 +717,11 @@ impl Value {
                     Ok(series) => Ok(Value::Series(series.as_materialized_series().clone())),
                     Err(_) => Ok(Value::Null),
                 }
+            }
+            Value::LazyFrame(lf) => {
+                // Use select to extract the column while staying lazy
+                let selected = lf.clone().select(&[col(key)]);
+                Ok(Value::LazyFrame(Box::new(selected)))
             }
             _ => Err(crate::error::operation_error(format!(
                 "Cannot access field '{}' on {}",

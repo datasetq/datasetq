@@ -13,7 +13,7 @@ use polars::prelude::SerWriter;
 use crate::config::Config;
 use dsq_core::error::{Error, Result};
 use dsq_core::filter::{FilterCompiler, FilterExecutor as CoreFilterExecutor};
-use dsq_core::io::{read_file, write_file};
+use dsq_core::io::{read_file, read_file_lazy, write_file};
 use dsq_core::Value;
 
 /// Main executor for dsq operations
@@ -149,6 +149,9 @@ impl Executor {
     /// Read input from a file path
     pub async fn read_input(&self, path: &Path) -> Result<Value> {
         let read_options = self.config.to_read_options();
+
+        // Always use async read_file since we're in an async context
+        // Lazy evaluation is handled internally by read_file when appropriate
         let result = read_file(path, &read_options).await?;
 
         #[cfg(feature = "profiling")]

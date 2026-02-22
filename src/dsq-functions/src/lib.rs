@@ -249,8 +249,18 @@ fn builtin_dtypes(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Object(dtypes_obj))
         }
+        Value::LazyFrame(lf) => {
+            let schema = lf.clone().collect_schema().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get schema: {}", e))
+            })?;
+            let mut dtypes_obj = HashMap::new();
+            for (name, dtype) in schema.iter() {
+                dtypes_obj.insert(name.to_string(), Value::String(dtype.to_string()));
+            }
+            Ok(Value::Object(dtypes_obj))
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "dtypes() requires DataFrame argument",
+            "dtypes() requires DataFrame or LazyFrame argument",
         )),
     }
 }
