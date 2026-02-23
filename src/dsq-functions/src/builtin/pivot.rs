@@ -12,10 +12,16 @@ pub fn builtin_pivot(args: &[Value]) -> Result<Value> {
     }
 
     let df = match &args[0] {
-        Value::DataFrame(df) => df,
+        Value::DataFrame(df) => df.clone(),
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame
+            lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?
+        }
         _ => {
             return Err(dsq_shared::error::operation_error(
-                "pivot() first argument must be a DataFrame",
+                "pivot() first argument must be a DataFrame or LazyFrame",
             ));
         }
     };

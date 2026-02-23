@@ -58,6 +58,15 @@ pub fn builtin_transpose(args: &[Value]) -> Result<Value> {
 
             Ok(Value::Array(result))
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame before transposing
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_transpose(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             // Transpose DataFrame - need to clone since transpose takes &mut self
             let mut df_clone = df.clone();
@@ -70,7 +79,7 @@ pub fn builtin_transpose(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "transpose() requires array or DataFrame",
+            "transpose() requires array, DataFrame, or LazyFrame",
         )),
     }
 }
@@ -184,7 +193,12 @@ mod tests {
     #[test]
     fn test_builtin_transpose_invalid_type() {
         let result = builtin_transpose(&[Value::Int(42)]).unwrap_err();
-        assert!(result.to_string().contains("requires array or DataFrame"));
+        let err_msg = result.to_string();
+        assert!(
+            err_msg.contains("requires array")
+                || err_msg.contains("requires DataFrame")
+                || err_msg.contains("requires LazyFrame")
+        );
     }
 
     #[test]

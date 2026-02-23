@@ -15,6 +15,17 @@ pub fn builtin_avg_ifs(args: &[Value]) -> Result<Value> {
     let masks = &args[1..];
 
     match values {
+        Value::LazyFrame(lf) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            let mut new_args = vec![Value::DataFrame(df)];
+            new_args.extend_from_slice(&args[1..]);
+            builtin_avg_ifs(&new_args)
+        }
         Value::Array(arr) => {
             // Check all masks are arrays of same length
             for mask in masks {
@@ -240,7 +251,7 @@ pub fn builtin_avg_ifs(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "avg_ifs() first argument must be array, DataFrame, or Series",
+            "avg_ifs() first argument must be array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

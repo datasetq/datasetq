@@ -40,6 +40,24 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
     }
 
     match (&args[0], &args[1]) {
+        (Value::LazyFrame(lf), Value::String(column)) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_max_by(&[Value::DataFrame(df), Value::String(column.clone())])
+        }
+        (Value::LazyFrame(lf), Value::Array(key_arr)) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_max_by(&[Value::DataFrame(df), Value::Array(key_arr.clone())])
+        }
         (Value::Array(arr), Value::Array(key_arr)) if arr.len() == key_arr.len() => {
             if arr.is_empty() {
                 return Ok(Value::Null);
@@ -129,7 +147,7 @@ pub fn builtin_max_by(args: &[Value]) -> Result<Value> {
             Ok(Value::Object(row_obj))
         }
         _ => Err(dsq_shared::error::operation_error(
-            "max_by() requires (array, array), (dataframe, string), or (dataframe, array)",
+            "max_by() requires (array, array), (dataframe, string), (dataframe, array), (lazyframe, string), or (lazyframe, array)",
         )),
     }
 }

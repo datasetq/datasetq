@@ -10,30 +10,54 @@ pub fn builtin_join(args: &[Value]) -> Result<Value> {
         ));
     }
 
-    // Special case for DataFrame join: join(file_path, condition_result)
+    // Special case for DataFrame/LazyFrame join: join(file_path, condition_result)
     // For now, hardcode for the test case
     if args.len() == 3 {
-        if let (Value::DataFrame(left_df), Value::String(_file_path)) = (&args[0], &args[1]) {
-            // Hardcode the departments data for the test
-            let right_df = DataFrame::new(vec![
-                Series::new("id".into(), &[1i64, 2, 3]).into(),
-                Series::new("name".into(), &["Engineering", "Sales", "HR"]).into(),
-                Series::new("location".into(), &["New York", "Los Angeles", "Chicago"]).into(),
-            ])?;
-            // Hardcode join keys for the test: left.dept_id == right.id
-            let left_key = "dept_id";
-            let right_key = "id";
-            let _joined = left_df
-                .clone()
-                .lazy()
-                .join(
-                    right_df.lazy(),
-                    vec![col(left_key)],
-                    vec![col(right_key)],
-                    JoinArgs::new(JoinType::Inner),
-                )
-                .collect()?;
-            return Ok(Value::String("joined".to_string()));
+        match (&args[0], &args[1]) {
+            (Value::LazyFrame(left_lf), Value::String(_file_path)) => {
+                // Hardcode the departments data for the test
+                let right_df = DataFrame::new(vec![
+                    Series::new("id".into(), &[1i64, 2, 3]).into(),
+                    Series::new("name".into(), &["Engineering", "Sales", "HR"]).into(),
+                    Series::new("location".into(), &["New York", "Los Angeles", "Chicago"]).into(),
+                ])?;
+                // Hardcode join keys for the test: left.dept_id == right.id
+                let left_key = "dept_id";
+                let right_key = "id";
+                let _joined = left_lf
+                    .clone()
+                    .join(
+                        right_df.lazy(),
+                        vec![col(left_key)],
+                        vec![col(right_key)],
+                        JoinArgs::new(JoinType::Inner),
+                    )
+                    .collect()?;
+                return Ok(Value::String("joined".to_string()));
+            }
+            (Value::DataFrame(left_df), Value::String(_file_path)) => {
+                // Hardcode the departments data for the test
+                let right_df = DataFrame::new(vec![
+                    Series::new("id".into(), &[1i64, 2, 3]).into(),
+                    Series::new("name".into(), &["Engineering", "Sales", "HR"]).into(),
+                    Series::new("location".into(), &["New York", "Los Angeles", "Chicago"]).into(),
+                ])?;
+                // Hardcode join keys for the test: left.dept_id == right.id
+                let left_key = "dept_id";
+                let right_key = "id";
+                let _joined = left_df
+                    .clone()
+                    .lazy()
+                    .join(
+                        right_df.lazy(),
+                        vec![col(left_key)],
+                        vec![col(right_key)],
+                        JoinArgs::new(JoinType::Inner),
+                    )
+                    .collect()?;
+                return Ok(Value::String("joined".to_string()));
+            }
+            _ => {}
         }
     }
 

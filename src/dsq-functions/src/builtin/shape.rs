@@ -10,6 +10,22 @@ pub fn builtin_shape(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Get schema to determine width
+            let schema = (**lf).clone().collect_schema().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get LazyFrame schema: {}", e))
+            })?;
+
+            let width = schema.len();
+
+            // Collect to get height (unfortunately we need to materialize for this)
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            let shape = vec![Value::Int(df.height() as i64), Value::Int(width as i64)];
+            Ok(Value::Array(shape))
+        }
         Value::DataFrame(df) => {
             let shape = vec![
                 Value::Int(df.height() as i64),
@@ -22,7 +38,7 @@ pub fn builtin_shape(args: &[Value]) -> Result<Value> {
             Ok(Value::Array(shape))
         }
         _ => Err(dsq_shared::error::operation_error(
-            "shape() requires DataFrame or Array argument",
+            "shape() requires DataFrame, LazyFrame, or Array argument",
         )),
     }
 }
@@ -92,10 +108,12 @@ mod tests {
     fn test_shape_invalid_type() {
         let result = builtin_shape(&[Value::String("test".to_string())]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("requires DataFrame or Array argument"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("requires DataFrame")
+                || err_msg.contains("requires Array")
+                || err_msg.contains("requires LazyFrame")
+        );
     }
 
     #[test]

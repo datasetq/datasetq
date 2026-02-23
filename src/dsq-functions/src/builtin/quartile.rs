@@ -25,6 +25,19 @@ pub fn builtin_quartile(args: &[Value]) -> Result<Value> {
     };
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            if args.len() == 2 {
+                builtin_quartile(&[Value::DataFrame(df), args[1].clone()])
+            } else {
+                builtin_quartile(&[Value::DataFrame(df)])
+            }
+        }
         Value::Array(arr) => {
             let mut values: Vec<f64> = arr
                 .iter()
@@ -86,7 +99,7 @@ pub fn builtin_quartile(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "quartile() requires array, DataFrame, or Series",
+            "quartile() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

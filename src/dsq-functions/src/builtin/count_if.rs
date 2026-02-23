@@ -14,6 +14,15 @@ pub fn builtin_count_if(args: &[Value]) -> Result<Value> {
     let mask = &args[1];
 
     match (collection, mask) {
+        (Value::LazyFrame(lf), Value::Series(mask_series)) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_count_if(&[Value::DataFrame(df), Value::Series(mask_series.clone())])
+        }
         (Value::Array(arr), Value::Array(mask_arr)) => {
             if arr.len() != mask_arr.len() {
                 return Err(dsq_shared::error::operation_error(
@@ -62,7 +71,7 @@ pub fn builtin_count_if(args: &[Value]) -> Result<Value> {
             Ok(Value::Int(count as i64))
         }
         _ => Err(dsq_shared::error::operation_error(
-            "count_if() requires (array, array) or (dataframe/series, series)",
+            "count_if() requires (array, array) or (dataframe/lazyframe/series, series)",
         )),
     }
 }

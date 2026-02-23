@@ -10,15 +10,7 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
         ));
     }
 
-    let df = match &args[0] {
-        Value::DataFrame(df) => df,
-        _ => {
-            return Err(dsq_shared::error::operation_error(
-                "cut() first argument must be a DataFrame",
-            ));
-        }
-    };
-
+    // Parse column names first
     let columns = match &args[1] {
         Value::Array(arr) => {
             let mut cols = Vec::new();
@@ -41,12 +33,27 @@ pub fn builtin_cut(args: &[Value]) -> Result<Value> {
         }
     };
 
+    let df = match &args[0] {
+        Value::DataFrame(df) => df.clone(),
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame
+            lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?
+        }
+        _ => {
+            return Err(dsq_shared::error::operation_error(
+                "cut() first argument must be a DataFrame or LazyFrame",
+            ));
+        }
+    };
+
     // Select columns that exist, ignore non-existent ones
     let mut selected_series = Vec::new();
     for col_name in &columns {
         if let Ok(series) = df.column(col_name) {
             let mut s = series.clone();
-            s.rename(PlSmallStr::from(col_name));
+            s.rename(PlSmallStr::from(col_name.as_str()));
             selected_series.push(s);
         }
         // Ignore non-existent columns

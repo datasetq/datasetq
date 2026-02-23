@@ -19,6 +19,24 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
     }
 
     match (&args[0], &args[1]) {
+        (Value::LazyFrame(lf), Value::String(_column)) => {
+            // Collect the LazyFrame and apply sort_by to it
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_sort_by(&[Value::DataFrame(df), args[1].clone()])
+        }
+        (Value::LazyFrame(lf), Value::Array(_)) | (Value::LazyFrame(lf), Value::Series(_)) => {
+            // Collect the LazyFrame and apply sort_by to it
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_sort_by(&[Value::DataFrame(df), args[1].clone()])
+        }
         (Value::Array(arr), Value::Array(key_arr)) if arr.len() == key_arr.len() => {
             // Sort array by key array
             let mut indices: Vec<usize> = (0..arr.len()).collect();
@@ -131,7 +149,7 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "sort_by() requires (array, array), (array, string), (dataframe, string/array/series), or (series, series)",
+            "sort_by() requires (array, array), (array, string), (dataframe, string/array/series), (lazyframe, string/array/series), or (series, series)",
         )),
     }
 }

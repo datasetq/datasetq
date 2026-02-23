@@ -10,6 +10,61 @@ pub fn builtin_correl(args: &[Value]) -> Result<Value> {
     }
 
     match (&args[0], &args[1]) {
+        (Value::LazyFrame(lf1), Value::LazyFrame(lf2)) => {
+            // Collect both LazyFrames to DataFrames
+            let df1 = lf1.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!(
+                    "Failed to collect first LazyFrame: {}",
+                    e
+                ))
+            })?;
+            let df2 = lf2.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!(
+                    "Failed to collect second LazyFrame: {}",
+                    e
+                ))
+            })?;
+
+            // Get first column from each DataFrame as Series
+            let series1 = df1
+                .get_columns()
+                .first()
+                .ok_or_else(|| {
+                    dsq_shared::error::operation_error("First LazyFrame has no columns")
+                })?
+                .as_materialized_series()
+                .clone();
+            let series2 = df2
+                .get_columns()
+                .first()
+                .ok_or_else(|| {
+                    dsq_shared::error::operation_error("Second LazyFrame has no columns")
+                })?
+                .as_materialized_series()
+                .clone();
+
+            // Recursively call with Series
+            builtin_correl(&[Value::Series(series1), Value::Series(series2)])
+        }
+        (Value::LazyFrame(lf), other) | (other, Value::LazyFrame(lf)) => {
+            // Collect LazyFrame and convert to Series
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            let series = df
+                .get_columns()
+                .first()
+                .ok_or_else(|| dsq_shared::error::operation_error("LazyFrame has no columns"))?
+                .as_materialized_series()
+                .clone();
+
+            // Recursively call with Series and the other argument
+            if matches!(&args[0], Value::LazyFrame(_)) {
+                builtin_correl(&[Value::Series(series), other.clone()])
+            } else {
+                builtin_correl(&[other.clone(), Value::Series(series)])
+            }
+        }
         (Value::Array(arr1), Value::Array(arr2)) if arr1.len() == arr2.len() => {
             let values1: Vec<f64> = arr1
                 .iter()
@@ -58,7 +113,7 @@ pub fn builtin_correl(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "correl() requires two arrays or two series",
+            "correl() requires two arrays, two series, or two LazyFrames",
         )),
     }
 }

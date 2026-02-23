@@ -54,6 +54,13 @@ pub fn builtin_mean(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Object(means))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_mean(&[Value::DataFrame(df)])
+        }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
                 Ok(series.mean().map(Value::Float).unwrap_or(Value::Null))
@@ -62,7 +69,7 @@ pub fn builtin_mean(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "mean() requires array, DataFrame, or Series",
+            "mean() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

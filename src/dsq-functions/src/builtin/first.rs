@@ -26,6 +26,13 @@ pub fn builtin_first(args: &[Value]) -> Result<Value> {
                 Ok(arr[0].clone())
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_first(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             if df.height() == 0 {
                 Ok(Value::Null)

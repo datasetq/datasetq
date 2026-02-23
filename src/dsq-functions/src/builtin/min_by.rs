@@ -40,6 +40,24 @@ pub fn builtin_min_by(args: &[Value]) -> Result<Value> {
     }
 
     match (&args[0], &args[1]) {
+        (Value::LazyFrame(lf), Value::String(column)) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_min_by(&[Value::DataFrame(df), Value::String(column.clone())])
+        }
+        (Value::LazyFrame(lf), Value::Array(key_arr)) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_min_by(&[Value::DataFrame(df), Value::Array(key_arr.clone())])
+        }
         (Value::Array(arr), Value::Array(key_arr)) if arr.len() == key_arr.len() => {
             if arr.is_empty() {
                 return Ok(Value::Null);
@@ -102,7 +120,7 @@ pub fn builtin_min_by(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "min_by() requires (array, array) or (dataframe, string)",
+            "min_by() requires (array, array), (dataframe, string), (lazyframe, string), or (lazyframe, array)",
         )),
     }
 }

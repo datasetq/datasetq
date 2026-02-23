@@ -3,6 +3,7 @@ use dsq_shared::{
     Result,
 };
 use inventory;
+use polars::prelude::*;
 use serde_json;
 use std::collections::HashMap;
 
@@ -16,6 +17,25 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Select only the first column before collecting to avoid materializing entire LazyFrame
+            let schema = (**lf).clone().collect_schema().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to get LazyFrame schema: {}", e))
+            })?;
+
+            let col_names: Vec<_> = schema.iter_names().map(|s| s.as_str()).collect();
+            if col_names.is_empty() {
+                return Ok(Value::Null);
+            }
+
+            let first_col = col_names[0];
+            let df = lf.clone().select([col(first_col)]).collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_least_frequent(&[Value::DataFrame(df)])
+        }
         Value::Array(arr) => {
             if arr.is_empty() {
                 return Ok(Value::Null);
@@ -104,7 +124,7 @@ pub fn builtin_least_frequent(args: &[Value]) -> Result<Value> {
             Ok(least_frequent.first().map_or(Value::Null, |v| (*v).clone()))
         }
         _ => Err(dsq_shared::error::operation_error(
-            "least_frequent() requires array, DataFrame, or Series",
+            "least_frequent() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

@@ -3392,10 +3392,13 @@ mod tests {
         // Test with invalid type
         let result = registry.call_function("std", &[Value::String("test".to_string())]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("requires array, DataFrame, or Series"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("requires array")
+                || err_msg.contains("requires DataFrame")
+                || err_msg.contains("requires LazyFrame")
+                || err_msg.contains("requires Series")
+        );
     }
 
     #[test]

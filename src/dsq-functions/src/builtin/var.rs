@@ -76,6 +76,13 @@ pub fn builtin_var(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Object(vars))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_var(&[Value::DataFrame(df)])
+        }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
                 let mut values = Vec::new();
@@ -109,7 +116,7 @@ pub fn builtin_var(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "var() requires array, DataFrame, or Series",
+            "var() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }
@@ -244,10 +251,13 @@ mod tests {
     fn test_builtin_var_invalid_type() {
         let result = builtin_var(&[Value::String("test".to_string())]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("requires array, DataFrame, or Series"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("requires array")
+                || err_msg.contains("requires DataFrame")
+                || err_msg.contains("requires LazyFrame")
+                || err_msg.contains("requires Series")
+        );
     }
 
     #[test]

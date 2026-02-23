@@ -13,6 +13,15 @@ pub fn builtin_sort(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame and apply sort to it
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_sort(&[Value::DataFrame(df)])
+        }
         Value::Array(arr) => {
             let mut sorted = arr.clone();
             sorted.sort_by(compare_values_for_sorting);

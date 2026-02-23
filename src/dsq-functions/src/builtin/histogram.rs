@@ -25,6 +25,53 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
     };
 
     let values = match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Get first column as Series
+            let series = df
+                .get_columns()
+                .first()
+                .ok_or_else(|| dsq_shared::error::operation_error("LazyFrame has no columns"))?
+                .as_materialized_series()
+                .clone();
+
+            // Convert to f64 values
+            match series.cast(&DataType::Float64) {
+                Ok(float_chunked) => {
+                    let f64_series = float_chunked.f64().map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "histogram() failed to cast to f64: {}",
+                            e
+                        ))
+                    })?;
+                    f64_series.into_iter().flatten().collect::<Vec<f64>>()
+                }
+                _ => match series.cast(&DataType::Int64) {
+                    Ok(int_chunked) => {
+                        let i64_series = int_chunked.i64().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "histogram() failed to cast to i64: {}",
+                                e
+                            ))
+                        })?;
+                        i64_series
+                            .into_iter()
+                            .flatten()
+                            .map(|x| x as f64)
+                            .collect::<Vec<f64>>()
+                    }
+                    _ => {
+                        return Err(dsq_shared::error::operation_error(
+                            "histogram() requires numeric data",
+                        ));
+                    }
+                },
+            }
+        }
         Value::Array(arr) => arr
             .iter()
             .filter_map(|v| match v {
@@ -66,7 +113,7 @@ pub fn builtin_histogram(args: &[Value]) -> Result<Value> {
         },
         _ => {
             return Err(dsq_shared::error::operation_error(
-                "histogram() requires array or series",
+                "histogram() requires array, series, or LazyFrame",
             ));
         }
     };

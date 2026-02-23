@@ -30,6 +30,14 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
     }
 
     match (&args[0], &args[1]) {
+        (Value::LazyFrame(lf), Value::String(column)) => {
+            // For LazyFrame, collect to DataFrame and recursively call
+            let df = lf
+                .clone()
+                .collect()
+                .map_err(|e| operation_error(format!("Failed to collect LazyFrame: {}", e)))?;
+            builtin_group_by(&[Value::DataFrame(df), Value::String(column.clone())])
+        }
         (Value::Array(arr), Value::Array(keys)) if arr.len() == keys.len() => {
             // Group array by keys
             let mut groups: HashMap<String, Vec<Value>> = HashMap::new();
@@ -309,7 +317,7 @@ pub fn builtin_group_by(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(operation_error(
-            "group_by() requires (array, string) or (dataframe, string/series)",
+            "group_by() requires (array, string) or (dataframe/lazyframe, string/series)",
         )),
     }
 }

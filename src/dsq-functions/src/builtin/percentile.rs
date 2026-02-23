@@ -22,6 +22,15 @@ pub fn builtin_percentile(args: &[Value]) -> Result<Value> {
     };
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_percentile(&[Value::DataFrame(df), args[1].clone()])
+        }
         Value::Array(arr) => {
             let mut values: Vec<f64> = arr
                 .iter()
@@ -75,7 +84,7 @@ pub fn builtin_percentile(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "percentile() requires array, DataFrame, or Series",
+            "percentile() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

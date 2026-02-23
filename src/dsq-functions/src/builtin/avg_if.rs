@@ -23,6 +23,15 @@ pub fn builtin_avg_if(args: &[Value]) -> Result<Value> {
     let mask = &args[1];
 
     match (values, mask) {
+        (Value::LazyFrame(lf), Value::Series(mask_series)) => {
+            // Collect LazyFrame to DataFrame
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_avg_if(&[Value::DataFrame(df), Value::Series(mask_series.clone())])
+        }
         (Value::Array(arr), Value::Array(mask_arr)) => {
             if arr.len() != mask_arr.len() {
                 return Err(dsq_shared::error::operation_error(
@@ -200,7 +209,7 @@ pub fn builtin_avg_if(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "avg_if() requires (array, array) or (dataframe/series, series)",
+            "avg_if() requires (array, array) or (dataframe/lazyframe/series, series)",
         )),
     }
 }

@@ -64,6 +64,18 @@ pub fn builtin_select(args: &[Value]) -> Result<Value> {
                     )),
                 },
                 Value::Series(mask_series) => match input {
+                    Value::LazyFrame(lf) => {
+                        // Collect the entire LazyFrame since we need to filter by mask
+                        let df = lf.clone().collect().map_err(|e| {
+                            dsq_shared::error::operation_error(format!(
+                                "Failed to collect LazyFrame: {}",
+                                e
+                            ))
+                        })?;
+
+                        // Recursively call with the collected DataFrame
+                        builtin_select(&[Value::DataFrame(df), Value::Series(mask_series.clone())])
+                    }
                     Value::DataFrame(df) => {
                         if df.height() != mask_series.len() {
                             return Err(dsq_shared::error::operation_error(

@@ -28,6 +28,13 @@ pub fn builtin_max(args: &[Value]) -> Result<Value> {
             }
             Ok(max_val.clone())
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_max(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             // Get max of first numeric column
             for col_name in df.get_column_names() {

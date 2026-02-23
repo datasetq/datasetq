@@ -12,6 +12,13 @@ pub fn builtin_count(args: &[Value]) -> Result<Value> {
     match &args[0] {
         Value::Array(arr) => Ok(Value::Int(arr.len() as i64)),
         Value::Object(obj) => Ok(Value::Int(obj.len() as i64)),
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame to get the count
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            Ok(Value::Int(df.height() as i64))
+        }
         Value::DataFrame(df) => Ok(Value::Int(df.height() as i64)),
         Value::Series(series) => Ok(Value::Int(series.len() as i64)),
         Value::String(s) => Ok(Value::Int(s.chars().count() as i64)),

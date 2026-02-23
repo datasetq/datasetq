@@ -45,6 +45,13 @@ pub fn builtin_median(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Object(medians))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_median(&[Value::DataFrame(df)])
+        }
         Value::Series(series) => {
             if series.dtype().is_numeric() {
                 Ok(series.median().map(Value::Float).unwrap_or(Value::Null))
@@ -53,7 +60,7 @@ pub fn builtin_median(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "median() requires array, DataFrame, or Series",
+            "median() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

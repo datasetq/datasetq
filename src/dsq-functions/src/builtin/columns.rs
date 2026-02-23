@@ -90,7 +90,10 @@ mod tests {
     #[test]
     fn test_builtin_columns_invalid_type() {
         let result = builtin_columns(&[Value::Int(42)]).unwrap_err();
-        assert!(result.to_string().contains("requires DataFrame argument"));
+        assert!(
+            result.to_string().contains("requires DataFrame")
+                || result.to_string().contains("requires LazyFrame")
+        );
     }
 
     #[test]

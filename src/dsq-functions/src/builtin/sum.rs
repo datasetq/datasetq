@@ -105,6 +105,13 @@ pub fn builtin_sum(args: &[Value]) -> Result<Value> {
                 ))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_sum(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             // Sum all numeric values in the DataFrame
             let mut sum = 0.0;
@@ -144,7 +151,7 @@ pub fn builtin_sum(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "sum() requires an array, Series, or DataFrame",
+            "sum() requires an array, Series, DataFrame, or LazyFrame",
         )),
     }
 }

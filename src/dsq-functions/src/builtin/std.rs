@@ -39,11 +39,18 @@ pub fn builtin_std(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Object(stds))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_std(&[Value::DataFrame(df)])
+        }
         Value::Series(_series) => {
             Ok(Value::Null) // Placeholder - std calculation for series
         }
         _ => Err(dsq_shared::error::operation_error(
-            "std() requires array, DataFrame, or Series",
+            "std() requires array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

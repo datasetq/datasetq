@@ -13,6 +13,15 @@ pub fn builtin_unique(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame and apply unique to it
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_unique(&[Value::DataFrame(df)])
+        }
         Value::Array(arr) => {
             let mut unique = Vec::new();
             for item in arr {

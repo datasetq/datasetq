@@ -10,6 +10,15 @@ pub fn builtin_reverse(args: &[Value]) -> Result<Value> {
     }
 
     match &args[0] {
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame and apply reverse to it
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_reverse(&[Value::DataFrame(df)])
+        }
         Value::Array(arr) => {
             let mut reversed = arr.clone();
             reversed.reverse();

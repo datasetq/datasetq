@@ -11,127 +11,134 @@ pub fn builtin_melt(args: &[Value]) -> Result<Value> {
         ));
     }
 
-    match &args[0] {
-        Value::DataFrame(df) => {
-            let id_vars = if args.len() >= 2 {
-                match &args[1] {
-                    Value::Array(arr) => {
-                        let mut vars = Vec::new();
-                        for v in arr {
-                            if let Value::String(s) = v {
-                                vars.push(s.clone());
-                            }
-                        }
-                        vars
-                    }
-                    Value::String(s) => vec![s.clone()],
-                    _ => {
-                        return Err(dsq_shared::error::operation_error(
-                            "melt() id_vars must be string or array of strings",
-                        ));
-                    }
-                }
-            } else {
-                // No id variables specified, default to first column
-                df.get_column_names()
-                    .first()
-                    .map(|s| vec![s.to_string()])
-                    .unwrap_or(vec![])
-            };
+    let df = match &args[0] {
+        Value::DataFrame(df) => df.clone(),
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame
+            lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?
+        }
+        _ => {
+            return Err(dsq_shared::error::operation_error(
+                "melt() requires DataFrame or LazyFrame argument",
+            ));
+        }
+    };
 
-            let value_vars = if args.len() >= 3 {
-                match &args[2] {
-                    Value::Array(arr) => {
-                        let mut vars = Vec::new();
-                        for v in arr {
-                            if let Value::String(s) = v {
-                                vars.push(s.clone());
-                            }
-                        }
-                        vars
-                    }
-                    Value::String(s) => vec![s.clone()],
-                    _ => {
-                        return Err(dsq_shared::error::operation_error(
-                            "melt() value_vars must be string or array of strings",
-                        ));
+    let id_vars = if args.len() >= 2 {
+        match &args[1] {
+            Value::Array(arr) => {
+                let mut vars = Vec::new();
+                for v in arr {
+                    if let Value::String(s) = v {
+                        vars.push(s.clone());
                     }
                 }
-            } else {
-                // All columns except id_vars
-                df.get_column_names()
-                    .iter()
-                    .filter(|name| !id_vars.contains(&name.to_string()))
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-            };
-
-            let mut variable_values = Vec::new();
-            let mut value_values = Vec::new();
-            let mut id_columns_data: Vec<Vec<String>> = vec![vec![]; id_vars.len()];
-
-            // Melt each value column
-            for value_var in &value_vars {
-                if let Ok(series) = df.column(value_var) {
-                    for i in 0..df.height() {
-                        // Add variable name
-                        variable_values.push(value_var.clone());
-
-                        // Add value as string
-                        match series.get(i) {
-                            Ok(val) => {
-                                let value = value_from_any_value(val).unwrap_or(Value::Null);
-                                value_values.push(format!("{}", value));
-                            }
-                            _ => {
-                                value_values.push("null".to_string());
-                            }
-                        }
-
-                        // Add id values
-                        for (j, id_var) in id_vars.iter().enumerate() {
-                            if let Ok(id_series) = df.column(id_var) {
-                                match id_series.get(i) {
-                                    Ok(id_val) => {
-                                        let id_value =
-                                            value_from_any_value(id_val).unwrap_or(Value::Null);
-                                        id_columns_data[j].push(format!("{}", id_value));
-                                    }
-                                    _ => {
-                                        id_columns_data[j].push("null".to_string());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                vars
             }
-
-            // Create new DataFrame
-            let mut new_series = Vec::new();
-
-            // Add id columns
-            for (i, id_var) in id_vars.iter().enumerate() {
-                new_series.push(Series::new(id_var.clone().into(), &id_columns_data[i]).into());
-            }
-
-            // Add variable column
-            new_series.push(Series::new(PlSmallStr::from("variable"), &variable_values).into());
-
-            // Add value column
-            new_series.push(Series::new(PlSmallStr::from("value"), &value_values).into());
-
-            match DataFrame::new(new_series) {
-                Ok(melted_df) => Ok(Value::DataFrame(melted_df)),
-                Err(e) => Err(dsq_shared::error::operation_error(format!(
-                    "melt() failed: {}",
-                    e
-                ))),
+            Value::String(s) => vec![s.clone()],
+            _ => {
+                return Err(dsq_shared::error::operation_error(
+                    "melt() id_vars must be string or array of strings",
+                ));
             }
         }
-        _ => Err(dsq_shared::error::operation_error(
-            "melt() requires DataFrame argument",
-        )),
+    } else {
+        // No id variables specified, default to first column
+        df.get_column_names()
+            .first()
+            .map(|s| vec![s.to_string()])
+            .unwrap_or(vec![])
+    };
+
+    let value_vars = if args.len() >= 3 {
+        match &args[2] {
+            Value::Array(arr) => {
+                let mut vars = Vec::new();
+                for v in arr {
+                    if let Value::String(s) = v {
+                        vars.push(s.clone());
+                    }
+                }
+                vars
+            }
+            Value::String(s) => vec![s.clone()],
+            _ => {
+                return Err(dsq_shared::error::operation_error(
+                    "melt() value_vars must be string or array of strings",
+                ));
+            }
+        }
+    } else {
+        // All columns except id_vars
+        df.get_column_names()
+            .iter()
+            .filter(|name| !id_vars.contains(&name.to_string()))
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+    };
+
+    let mut variable_values = Vec::new();
+    let mut value_values = Vec::new();
+    let mut id_columns_data: Vec<Vec<String>> = vec![vec![]; id_vars.len()];
+
+    // Melt each value column
+    for value_var in &value_vars {
+        if let Ok(series) = df.column(value_var) {
+            for i in 0..df.height() {
+                // Add variable name
+                variable_values.push(value_var.clone());
+
+                // Add value as string
+                match series.get(i) {
+                    Ok(val) => {
+                        let value = value_from_any_value(val).unwrap_or(Value::Null);
+                        value_values.push(format!("{}", value));
+                    }
+                    _ => {
+                        value_values.push("null".to_string());
+                    }
+                }
+
+                // Add id values
+                for (j, id_var) in id_vars.iter().enumerate() {
+                    if let Ok(id_series) = df.column(id_var) {
+                        match id_series.get(i) {
+                            Ok(id_val) => {
+                                let id_value = value_from_any_value(id_val).unwrap_or(Value::Null);
+                                id_columns_data[j].push(format!("{}", id_value));
+                            }
+                            _ => {
+                                id_columns_data[j].push("null".to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Create new DataFrame
+    let mut new_series = Vec::new();
+
+    // Add id columns
+    for (i, id_var) in id_vars.iter().enumerate() {
+        new_series.push(Series::new(id_var.clone().into(), &id_columns_data[i]).into());
+    }
+
+    // Add variable column
+    new_series.push(Series::new(PlSmallStr::from("variable"), &variable_values).into());
+
+    // Add value column
+    new_series.push(Series::new(PlSmallStr::from("value"), &value_values).into());
+
+    match DataFrame::new(new_series) {
+        Ok(melted_df) => Ok(Value::DataFrame(melted_df)),
+        Err(e) => Err(dsq_shared::error::operation_error(format!(
+            "melt() failed: {}",
+            e
+        ))),
     }
 }
 
@@ -288,10 +295,8 @@ mod tests {
     fn test_builtin_melt_non_dataframe() {
         let result = builtin_melt(&[Value::Int(42)]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("requires DataFrame argument"));
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("requires DataFrame") || err_msg.contains("requires LazyFrame"));
     }
 
     #[test]

@@ -18,6 +18,15 @@ pub fn builtin_filter(args: &[Value]) -> Result<Value> {
             let filtered: Vec<Value> = arr.iter().filter(|v| &filter_value == v).cloned().collect();
             Ok(Value::Array(filtered))
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame before filtering
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+
+            // Recursively call with the collected DataFrame
+            builtin_filter(&[Value::DataFrame(df), filter_value])
+        }
         Value::DataFrame(df) => {
             // Filter rows where the first column matches filter_value
             if let Some(first_col) = df.get_column_names().first() {
