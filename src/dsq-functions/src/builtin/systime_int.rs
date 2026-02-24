@@ -25,6 +25,13 @@ pub fn builtin_systime_int(args: &[Value]) -> Result<Value> {
             let current_times: Vec<Value> = (0..arr.len()).map(|_| Value::Int(seconds)).collect();
             Ok(Value::Array(current_times))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_systime_int(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             // Add a new column with current time for each row
             let mut new_df = df.clone();

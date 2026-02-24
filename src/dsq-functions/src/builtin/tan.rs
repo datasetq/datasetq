@@ -36,6 +36,13 @@ pub fn builtin_tan(args: &[Value]) -> Result<Value> {
             }
             Ok(Value::Array(result))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_tan(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
@@ -85,7 +92,7 @@ pub fn builtin_tan(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "tan() requires numeric, array, DataFrame, or Series",
+            "tan() requires numeric, array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

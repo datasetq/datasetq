@@ -20,6 +20,13 @@ pub fn builtin_array_pop(args: &[Value]) -> Result<Value> {
                 Ok(arr[arr.len() - 1].clone())
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_array_pop(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             if df.height() == 0 {
                 Ok(Value::Null)
@@ -59,7 +66,7 @@ pub fn builtin_array_pop(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "array_pop() requires an array, DataFrame, or list series",
+            "array_pop() requires an array, DataFrame, LazyFrame, or list series",
         )),
     }
 }

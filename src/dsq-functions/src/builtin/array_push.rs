@@ -48,6 +48,13 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
                 ))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_array_push(&[Value::DataFrame(df), args[1].clone()])
+        }
         Value::DataFrame(df) => {
             let value_to_push = &args[1];
             let any_value = match value_to_push {
@@ -97,7 +104,7 @@ pub fn builtin_array_push(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(format!(
-            "array_push() first argument must be an array, list series, or DataFrame, got {}",
+            "array_push() first argument must be an array, list series, DataFrame, or LazyFrame, got {}",
             args[0].type_name()
         ))),
     }

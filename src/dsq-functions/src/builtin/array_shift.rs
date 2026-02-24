@@ -18,18 +18,33 @@ pub fn builtin_array_shift(args: &[Value]) -> Result<Value> {
                 Ok(Value::Array(arr[1..].to_vec()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_array_shift(&[Value::DataFrame(df)])
+        }
+        Value::DataFrame(df) => {
+            if df.height() <= 1 {
+                Ok(Value::DataFrame(DataFrame::empty()))
+            } else {
+                let sliced_df = df.slice(1, df.height() - 1);
+                Ok(Value::DataFrame(sliced_df))
+            }
+        }
         Value::Series(series) => {
             if matches!(series.dtype(), DataType::List(_)) {
                 // For testing, return original
                 Ok(Value::Series(series.clone()))
             } else {
                 Err(dsq_shared::error::operation_error(
-                    "array_shift() requires an array or list series",
+                    "array_shift() requires an array, DataFrame, LazyFrame, or list series",
                 ))
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "array_shift() requires an array or list series",
+            "array_shift() requires an array, DataFrame, LazyFrame, or list series",
         )),
     }
 }

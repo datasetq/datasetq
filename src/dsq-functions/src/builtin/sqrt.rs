@@ -66,6 +66,13 @@ pub fn builtin_sqrt(args: &[Value]) -> Result<Value> {
                 .collect();
             Ok(Value::Array(results?))
         }
+        Value::LazyFrame(lf) => {
+            // Collect to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_sqrt(&[Value::DataFrame(df)])
+        }
         Value::DataFrame(df) => {
             let mut new_series = Vec::new();
             for col_name in df.get_column_names() {
@@ -111,7 +118,7 @@ pub fn builtin_sqrt(args: &[Value]) -> Result<Value> {
             }
         }
         _ => Err(dsq_shared::error::operation_error(
-            "sqrt() requires numeric argument, array, DataFrame, or Series",
+            "sqrt() requires numeric argument, array, DataFrame, LazyFrame, or Series",
         )),
     }
 }

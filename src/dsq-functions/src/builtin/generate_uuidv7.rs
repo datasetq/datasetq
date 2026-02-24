@@ -24,6 +24,16 @@ pub fn builtin_generate_uuidv7(args: &[Value]) -> Result<Value> {
                         .collect();
                     Ok(Value::Array(uuids))
                 }
+                Value::LazyFrame(lf) => {
+                    // Collect to DataFrame and recursively call
+                    let df = lf.clone().collect().map_err(|e| {
+                        dsq_shared::error::operation_error(format!(
+                            "Failed to collect LazyFrame: {}",
+                            e
+                        ))
+                    })?;
+                    builtin_generate_uuidv7(&[Value::DataFrame(df)])
+                }
                 Value::DataFrame(df) => {
                     // Add a new column with UUIDs for each row
                     let mut new_df = df.clone();
