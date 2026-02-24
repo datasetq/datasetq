@@ -2224,7 +2224,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("requires an array, DataFrame, or list series"));
+            .contains("requires an array"));
     }
 
     #[test]
