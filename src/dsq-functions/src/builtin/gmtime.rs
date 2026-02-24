@@ -121,8 +121,15 @@ pub fn builtin_gmtime(args: &[Value]) -> Result<Value> {
             let new_series = Series::new("gmtime".into(), gmtime_values);
             Ok(Value::Series(new_series))
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_gmtime(&[Value::DataFrame(df)])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "gmtime() requires numeric or string timestamp",
+            "gmtime() requires numeric, string timestamp, Array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

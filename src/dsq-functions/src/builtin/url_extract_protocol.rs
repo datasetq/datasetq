@@ -88,8 +88,15 @@ pub fn builtin_url_extract_protocol(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_url_extract_protocol(&[Value::DataFrame(df)])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "url_extract_protocol() requires string, array, DataFrame, or Series",
+            "url_extract_protocol() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

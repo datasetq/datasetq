@@ -101,8 +101,15 @@ pub fn builtin_transliterate(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_transliterate(&[Value::DataFrame(df), args[1].clone(), args[2].clone()])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "transliterate() first argument must be a string, array, DataFrame, or Series",
+            "transliterate() first argument must be a string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

@@ -85,8 +85,15 @@ pub fn builtin_to_ascii(args: &[Value]) -> Result<Value> {
                 ))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_to_ascii(&[Value::DataFrame(df)])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "to_ascii() requires string, array, DataFrame, or Series",
+            "to_ascii() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

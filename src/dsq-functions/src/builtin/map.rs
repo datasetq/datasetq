@@ -74,6 +74,20 @@ pub fn builtin_map(args: &[Value]) -> Result<Value> {
                         Err(e) => Err(operation_error(format!("map() failed on DataFrame: {}", e))),
                     }
                 }
+                (Value::LazyFrame(lf), Value::String(field)) => {
+                    // Collect the LazyFrame to DataFrame and recursively call
+                    let df = lf.clone().collect().map_err(|e| {
+                        operation_error(format!("Failed to collect LazyFrame: {}", e))
+                    })?;
+                    builtin_map(&[Value::DataFrame(df), Value::String(field.clone())])
+                }
+                (Value::LazyFrame(lf), Value::Object(template)) => {
+                    // Collect the LazyFrame to DataFrame and recursively call
+                    let df = lf.clone().collect().map_err(|e| {
+                        operation_error(format!("Failed to collect LazyFrame: {}", e))
+                    })?;
+                    builtin_map(&[Value::DataFrame(df), Value::Object(template.clone())])
+                }
                 _ => Ok(args[0].clone()),
             }
         }

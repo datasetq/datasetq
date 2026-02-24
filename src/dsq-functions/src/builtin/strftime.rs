@@ -249,6 +249,13 @@ pub fn builtin_strftime(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_strftime(&[Value::DataFrame(df), args[1].clone()])
+        }
         _ => Ok(Value::Null),
     }
 }

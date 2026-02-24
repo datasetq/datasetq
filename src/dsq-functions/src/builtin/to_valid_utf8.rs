@@ -47,8 +47,12 @@ pub fn builtin_to_valid_utf8(args: &[Value]) -> Result<Value> {
                 ))
             }
         }
+        Value::LazyFrame(lf) => {
+            // LazyFrames are already valid UTF-8
+            Ok(Value::LazyFrame(lf.clone()))
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "to_valid_utf8() requires string, array, DataFrame, or Series",
+            "to_valid_utf8() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

@@ -125,8 +125,19 @@ pub fn builtin_split(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            if args.len() == 2 {
+                builtin_split(&[Value::DataFrame(df), args[1].clone()])
+            } else {
+                builtin_split(&[Value::DataFrame(df)])
+            }
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "split() requires string, array, DataFrame, or Series",
+            "split() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

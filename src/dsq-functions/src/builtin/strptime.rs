@@ -165,8 +165,15 @@ pub fn builtin_strptime(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_strptime(&[Value::DataFrame(df), format_val.clone()])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "strptime() first argument must be a string, array, DataFrame, or Series",
+            "strptime() first argument must be a string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

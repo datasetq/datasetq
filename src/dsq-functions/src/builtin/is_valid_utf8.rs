@@ -58,8 +58,12 @@ pub fn builtin_is_valid_utf8(args: &[Value]) -> Result<Value> {
                 _ => Ok(Value::Bool(true)), // Other types are not byte data
             }
         }
+        Value::LazyFrame(_lf) => {
+            // LazyFrames are always constructed with valid data
+            Ok(Value::Bool(true))
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "is_valid_utf8() requires string, array, DataFrame, or Series",
+            "is_valid_utf8() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

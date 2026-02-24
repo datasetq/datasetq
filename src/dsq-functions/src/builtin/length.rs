@@ -15,6 +15,13 @@ pub fn builtin_length(args: &[Value]) -> Result<Value> {
         Value::Object(obj) => Ok(Value::Int(obj.len() as i64)),
         Value::DataFrame(df) => Ok(Value::Int(df.height() as i64)),
         Value::Series(s) => Ok(Value::Int(s.len() as i64)),
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_length(&[Value::DataFrame(df)])
+        }
         Value::Null => Ok(Value::Int(0)),
         _ => Ok(Value::Int(1)),
     }

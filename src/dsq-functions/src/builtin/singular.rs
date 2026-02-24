@@ -63,6 +63,13 @@ pub fn builtin_singular(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_singular(&[Value::DataFrame(df)])
+        }
         _ => Ok(args[0].clone()),
     }
 }

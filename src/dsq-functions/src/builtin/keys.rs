@@ -28,6 +28,13 @@ pub fn builtin_keys(args: &[Value]) -> Result<Value> {
                 .collect();
             Ok(Value::Array(columns))
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_keys(&[Value::DataFrame(df)])
+        }
         _ => Ok(Value::Array(Vec::new())),
     }
 }

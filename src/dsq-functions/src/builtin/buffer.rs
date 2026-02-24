@@ -80,6 +80,18 @@ pub fn builtin_buffer(args: &[Value]) -> Result<Value> {
                 Ok(Value::Array(vec![Value::Series(series.clone())]))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf
+                .clone()
+                .collect()
+                .map_err(|e| operation_error(format!("Failed to collect LazyFrame: {}", e)))?;
+            if args.len() > 1 {
+                builtin_buffer(&[Value::DataFrame(df), args[1].clone()])
+            } else {
+                builtin_buffer(&[Value::DataFrame(df)])
+            }
+        }
         _ => {
             // For other types, wrap in an array as a single batch
             if batch_size.is_some() {

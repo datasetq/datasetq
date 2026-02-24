@@ -113,8 +113,15 @@ pub fn builtin_url_set_domain(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_url_set_domain(&[Value::DataFrame(df), args[1].clone()])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "url_set_domain() requires string, array, DataFrame, or Series",
+            "url_set_domain() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

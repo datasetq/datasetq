@@ -187,8 +187,19 @@ pub fn builtin_start_of_week(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            if args.len() == 2 {
+                builtin_start_of_week(&[Value::DataFrame(df), args[1].clone()])
+            } else {
+                builtin_start_of_week(&[Value::DataFrame(df)])
+            }
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "start_of_week() argument must be a date value, array, DataFrame, or Series",
+            "start_of_week() argument must be a date value, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }

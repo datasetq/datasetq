@@ -109,8 +109,15 @@ pub fn builtin_base64_decode(args: &[Value]) -> Result<Value> {
                 Ok(Value::Series(series.clone()))
             }
         }
+        Value::LazyFrame(lf) => {
+            // Collect the LazyFrame to DataFrame and recursively call
+            let df = lf.clone().collect().map_err(|e| {
+                dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
+            })?;
+            builtin_base64_decode(&[Value::DataFrame(df)])
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "base64_decode() requires string, array, DataFrame, or Series",
+            "base64_decode() requires string, array, DataFrame, Series, or LazyFrame",
         )),
     }
 }
