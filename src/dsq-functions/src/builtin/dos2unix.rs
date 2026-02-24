@@ -194,7 +194,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("dos2unix() requires string, array, DataFrame, or Series"));
+            .contains("dos2unix() requires string, array, DataFrame, Series, or LazyFrame"));
     }
 
     #[test]

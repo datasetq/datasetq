@@ -2083,7 +2083,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("requires array, DataFrame, or Series"));
+            .contains("requires array, DataFrame, LazyFrame, or Series"));
     }
 
     #[test]
@@ -2957,7 +2957,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("first argument must be array, DataFrame, or Series"));
+            .contains("first argument must be array, DataFrame, LazyFrame, or Series"));
     }
 
     #[test]
@@ -3094,7 +3094,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("requires (array, array) or (dataframe/series, series)"));
+            .contains("requires (array, array) or (dataframe/lazyframe/series, series)"));
     }
 
     #[test]
@@ -3718,7 +3718,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("requires two arrays or two series"));
+            .contains("requires two arrays, two series, or two LazyFrames"));
 
         // Test with non-array/non-series arguments
         let str1 = Value::String("hello".to_string());
@@ -3728,7 +3728,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("requires two arrays or two series"));
+            .contains("requires two arrays, two series, or two LazyFrames"));
     }
 
     #[test]
@@ -4200,10 +4200,9 @@ mod tests {
         // Test with invalid input type
         let result = registry.call_function("url_strip_port_if_default", &[Value::Int(42)]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("url_strip_port_if_default() requires string, array, DataFrame, or Series"));
+        assert!(result.unwrap_err().to_string().contains(
+            "url_strip_port_if_default() requires string, array, DataFrame, Series, or LazyFrame"
+        ));
 
         // Test with wrong number of arguments
         let result = registry.call_function("url_strip_port_if_default", &[]);
@@ -4292,7 +4291,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("url_strip_port() requires string, array, DataFrame, or Series"));
+            .contains("url_strip_port() requires string, array, DataFrame, Series, or LazyFrame"));
 
         // Test with wrong number of arguments
         let result = registry.call_function("url_strip_port", &[]);
@@ -4530,7 +4529,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("url_set_port() requires string, array, DataFrame, or Series"));
+            .contains("url_set_port() requires string, array, DataFrame, Series, or LazyFrame"));
     }
 
     #[test]

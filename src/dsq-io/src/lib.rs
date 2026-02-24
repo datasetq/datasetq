@@ -134,9 +134,9 @@ pub async fn read_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
             }
             #[cfg(not(feature = "http"))]
             {
-                return Err(Error::Other(
+                Err(Error::Other(
                     "HTTP support not enabled. Rebuild with --features http".to_string(),
-                ));
+                ))
             }
         }
         uri::IoScheme::HuggingFace => {
@@ -243,9 +243,9 @@ pub fn read_file_sync<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
             }
             #[cfg(not(feature = "http"))]
             {
-                return Err(Error::Other(
+                Err(Error::Other(
                     "HTTP support not enabled. Rebuild with --features http".to_string(),
-                ));
+                ))
             }
         }
         uri::IoScheme::HuggingFace => {

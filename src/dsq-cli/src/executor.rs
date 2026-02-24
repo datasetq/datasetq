@@ -13,7 +13,7 @@ use polars::prelude::SerWriter;
 use crate::config::Config;
 use dsq_core::error::{Error, Result};
 use dsq_core::filter::{FilterCompiler, FilterExecutor as CoreFilterExecutor};
-use dsq_core::io::{read_file, read_file_lazy, write_file};
+use dsq_core::io::{read_file, write_file};
 use dsq_core::Value;
 
 /// Main executor for dsq operations

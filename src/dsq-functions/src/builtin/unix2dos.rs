@@ -183,7 +183,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("unix2dos() requires string, array, DataFrame, or Series"));
+            .contains("unix2dos() requires string, array, DataFrame, Series, or LazyFrame"));
     }
 
     #[test]

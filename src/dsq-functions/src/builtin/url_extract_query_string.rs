@@ -235,7 +235,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("requires string, array, DataFrame, or Series"));
+            .contains("requires string, array, DataFrame, Series, or LazyFrame"));
     }
 
     #[test]
