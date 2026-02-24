@@ -587,10 +587,7 @@ impl Value {
             Value::Array(arr) => Some(arr.len()),
             Value::String(s) => Some(s.len()),
             Value::DataFrame(df) => Some(df.height()),
-            Value::LazyFrame(lf) => {
-                // Collect LazyFrame to get height
-                lf.clone().collect().ok().map(|df| df.height())
-            }
+            Value::LazyFrame(_) => None, // LazyFrames are not collected, so len is unknown
             Value::Series(s) => Some(s.len()),
             _ => None,
         }
