@@ -68,6 +68,20 @@ pub fn add_values(a: &Value, b: &Value) -> Result<Value> {
             let result = s + *x;
             Ok(Value::Series(result))
         }
+        (Value::Object(obj_a), Value::Object(obj_b)) => {
+            // Merge two objects, with obj_b values overriding obj_a values
+            let mut result = obj_a.clone();
+            for (key, value) in obj_b {
+                result.insert(key.clone(), value.clone());
+            }
+            Ok(Value::Object(result))
+        }
+        (Value::Array(arr_a), Value::Array(arr_b)) => {
+            // Concatenate two arrays
+            let mut result = arr_a.clone();
+            result.extend(arr_b.clone());
+            Ok(Value::Array(result))
+        }
         _ => Err(crate::error::operation_error(format!(
             "Cannot add {} and {}",
             a.type_name(),

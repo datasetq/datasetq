@@ -2426,7 +2426,7 @@ impl Operation for AssignAddOperation {
             add_val = op.apply(&add_val)?;
         }
 
-        add_values(&target_val, &add_val)
+        dsq_shared::ops::add_values(&target_val, &add_val)
     }
 
     fn description(&self) -> String {
@@ -2600,7 +2600,7 @@ impl Operation for AssignFieldAddOperation {
             Value::Object(obj) => {
                 let mut new_obj = obj.clone();
                 let current_val = obj.get(&self.field).cloned().unwrap_or(Value::Null);
-                let new_val = add_values(&current_val, &add_val)?;
+                let new_val = dsq_shared::ops::add_values(&current_val, &add_val)?;
                 new_obj.insert(self.field.clone(), new_val);
                 Ok(Value::Object(new_obj))
             }
@@ -2616,18 +2616,6 @@ impl Operation for AssignFieldAddOperation {
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
-    }
-}
-
-// Helper function to add two values
-fn add_values(a: &Value, b: &Value) -> Result<Value> {
-    match (a, b) {
-        (Value::Int(a), Value::Int(b)) => Ok(Value::Int(a + b)),
-        (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a + b)),
-        (Value::Int(a), Value::Float(b)) => Ok(Value::Float(*a as f64 + b)),
-        (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a + *b as f64)),
-        (Value::String(a), Value::String(b)) => Ok(Value::String(format!("{}{}", a, b))),
-        _ => Err(dsq_shared::error::operation_error("Cannot add these types")),
     }
 }
 
