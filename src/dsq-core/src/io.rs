@@ -101,6 +101,9 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
     let path = path.as_ref();
     let path_str = path.to_string_lossy();
 
+    // Check if the path contains glob patterns
+    let is_glob = path_str.contains('*') || path_str.contains('?') || path_str.contains('[');
+
     // Determine format from extension or URL
     let extension = if is_url(&path_str) {
         // Extract extension from URL path
@@ -110,7 +113,13 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
     };
 
     let format = if extension.is_empty() {
-        // No extension, try content detection
+        // No extension, require one for globs
+        if is_glob {
+            return Err(Error::operation(
+                "Glob patterns require a file extension (e.g., '*.csv')",
+            ));
+        }
+        // Try content detection for non-glob paths
         let bytes = dsq_io::read_file(path).await?;
         detect_format_from_content(&bytes).ok_or_else(|| {
             Error::operation("Could not detect file format from content".to_string())
@@ -130,6 +139,18 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             }
         }
     };
+
+    // For glob patterns with CSV/TSV/Parquet, use lazy readers which support globs natively
+    if is_glob {
+        return match format {
+            DataFormat::Csv => read_csv_lazy(path, options),
+            DataFormat::Tsv => read_tsv_lazy(path, options),
+            DataFormat::Parquet => read_parquet_lazy(path, options),
+            _ => Err(Error::operation(format!(
+                "Glob patterns are only supported for CSV, TSV, and Parquet files"
+            ))),
+        };
+    }
 
     // Read the file bytes (dsq_io handles URLs)
     let bytes = dsq_io::read_file(path).await?;
@@ -210,10 +231,20 @@ pub fn read_file_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<
     use std::fs;
 
     let path = path.as_ref();
+    let path_str = path.to_string_lossy();
+
+    // Check if the path contains glob patterns
+    let is_glob = path_str.contains('*') || path_str.contains('?') || path_str.contains('[');
+
     let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
 
     let format = if extension.is_empty() {
-        // No extension, try content detection
+        // No extension, try content detection (but skip for globs)
+        if is_glob {
+            return Err(Error::operation(
+                "Glob patterns require a file extension (e.g., '*.csv')",
+            ));
+        }
         let content =
             fs::read(path).map_err(|e| Error::operation(format!("Failed to read file: {e}")))?;
         detect_format_from_content(&content)
@@ -475,10 +506,14 @@ fn read_adt<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
 
 fn read_csv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
     use polars::prelude::PlPath;
-    use std::sync::Arc;
 
     // Use LazyCsvReader for truly lazy reading - doesn't read file until executed
-    let pl_path = PlPath::Local(Arc::from(path.as_ref()));
+    // Use PlPath::new() with string path to enable glob pattern support
+    let path_str = path
+        .as_ref()
+        .to_str()
+        .ok_or_else(|| Error::operation("Invalid UTF-8 in path"))?;
+    let pl_path = PlPath::new(path_str);
     let lf = LazyCsvReader::new(pl_path)
         .with_has_header(true)
         .with_infer_schema_length(options.infer_schema_length)
@@ -497,10 +532,14 @@ fn read_csv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value
 
 fn read_tsv_lazy<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result<Value> {
     use polars::prelude::PlPath;
-    use std::sync::Arc;
 
     // Use LazyCsvReader for truly lazy reading - doesn't read file until executed
-    let pl_path = PlPath::Local(Arc::from(path.as_ref()));
+    // Use PlPath::new() with string path to enable glob pattern support
+    let path_str = path
+        .as_ref()
+        .to_str()
+        .ok_or_else(|| Error::operation("Invalid UTF-8 in path"))?;
+    let pl_path = PlPath::new(path_str);
     let lf = LazyCsvReader::new(pl_path)
         .with_has_header(true)
         .with_separator(b'\t')
@@ -1424,5 +1463,92 @@ mod tests {
         let _result = read_file_sync(path, &options);
         // This might succeed or fail depending on implementation
         // Just ensure it doesn't panic
+    }
+
+    #[tokio::test]
+    async fn test_csv_glob_pattern_support() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        // Create a temporary directory
+        let temp_dir = TempDir::new().unwrap();
+        let dir_path = temp_dir.path();
+
+        // Create multiple CSV files with the same schema
+        let csv_data_1 = "name,age,city\nAlice,30,NYC\nBob,25,LA";
+        let csv_data_2 = "name,age,city\nCharlie,35,SF\nDiana,28,Seattle";
+        let csv_data_3 = "name,age,city\nEve,32,Boston\nFrank,29,Chicago";
+
+        fs::write(dir_path.join("data1.csv"), csv_data_1).unwrap();
+        fs::write(dir_path.join("data2.csv"), csv_data_2).unwrap();
+        fs::write(dir_path.join("data3.csv"), csv_data_3).unwrap();
+
+        // Also create a file with different extension to ensure glob filtering works
+        fs::write(dir_path.join("other.txt"), "should not be read").unwrap();
+
+        // Test with glob pattern
+        let glob_pattern = dir_path.join("data*.csv");
+        let options = ReadOptions::default();
+
+        let result = read_file(&glob_pattern, &options).await;
+        assert!(
+            result.is_ok(),
+            "Failed to read glob pattern: {:?}",
+            result.err()
+        );
+
+        let value = result.unwrap();
+        match value {
+            Value::LazyFrame(lf) => {
+                // Collect the lazy frame to verify it has data from all three files
+                let df = lf.collect().unwrap();
+                // Should have 6 rows total (2 from each file)
+                assert_eq!(df.height(), 6, "Expected 6 rows from 3 CSV files");
+                // Should have 3 columns (name, age, city)
+                assert_eq!(df.width(), 3, "Expected 3 columns");
+            }
+            _ => panic!("Expected LazyFrame, got {:?}", value),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_tsv_glob_pattern_support() {
+        use std::fs;
+        use tempfile::TempDir;
+
+        // Create a temporary directory
+        let temp_dir = TempDir::new().unwrap();
+        let dir_path = temp_dir.path();
+
+        // Create multiple TSV files with the same schema
+        let tsv_data_1 = "name\tage\tcity\nAlice\t30\tNYC\nBob\t25\tLA";
+        let tsv_data_2 = "name\tage\tcity\nCharlie\t35\tSF";
+
+        fs::write(dir_path.join("data1.tsv"), tsv_data_1).unwrap();
+        fs::write(dir_path.join("data2.tsv"), tsv_data_2).unwrap();
+
+        // Test with glob pattern
+        let glob_pattern = dir_path.join("*.tsv");
+        let options = ReadOptions::default();
+
+        let result = read_file(&glob_pattern, &options).await;
+        assert!(
+            result.is_ok(),
+            "Failed to read TSV glob pattern: {:?}",
+            result.err()
+        );
+
+        let value = result.unwrap();
+        match value {
+            Value::LazyFrame(lf) => {
+                // Collect the lazy frame to verify it has data from both files
+                let df = lf.collect().unwrap();
+                // Should have 3 rows total (2 from first file, 1 from second)
+                assert_eq!(df.height(), 3, "Expected 3 rows from 2 TSV files");
+                // Should have 3 columns (name, age, city)
+                assert_eq!(df.width(), 3, "Expected 3 columns");
+            }
+            _ => panic!("Expected LazyFrame, got {:?}", value),
+        }
     }
 }
