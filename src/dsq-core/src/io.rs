@@ -146,9 +146,9 @@ pub async fn read_file<P: AsRef<Path>>(path: P, options: &ReadOptions) -> Result
             DataFormat::Csv => read_csv_lazy(path, options),
             DataFormat::Tsv => read_tsv_lazy(path, options),
             DataFormat::Parquet => read_parquet_lazy(path, options),
-            _ => Err(Error::operation(format!(
-                "Glob patterns are only supported for CSV, TSV, and Parquet files"
-            ))),
+            _ => Err(Error::operation(
+                "Glob patterns are only supported for CSV, TSV, and Parquet files".to_string(),
+            )),
         };
     }
 
@@ -1465,8 +1465,8 @@ mod tests {
         // Just ensure it doesn't panic
     }
 
-    #[tokio::test]
-    async fn test_csv_glob_pattern_support() {
+    #[test]
+    fn test_csv_glob_pattern_support() {
         use std::fs;
         use tempfile::TempDir;
 
@@ -1490,7 +1490,8 @@ mod tests {
         let glob_pattern = dir_path.join("data*.csv");
         let options = ReadOptions::default();
 
-        let result = read_file(&glob_pattern, &options).await;
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let result = rt.block_on(read_file(&glob_pattern, &options));
         assert!(
             result.is_ok(),
             "Failed to read glob pattern: {:?}",
@@ -1511,8 +1512,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_tsv_glob_pattern_support() {
+    #[test]
+    fn test_tsv_glob_pattern_support() {
         use std::fs;
         use tempfile::TempDir;
 
@@ -1531,7 +1532,8 @@ mod tests {
         let glob_pattern = dir_path.join("*.tsv");
         let options = ReadOptions::default();
 
-        let result = read_file(&glob_pattern, &options).await;
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let result = rt.block_on(read_file(&glob_pattern, &options));
         assert!(
             result.is_ok(),
             "Failed to read TSV glob pattern: {:?}",
