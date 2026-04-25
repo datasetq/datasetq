@@ -316,6 +316,87 @@ mod tests {
     }
 
     #[test]
+    fn test_min_by() {
+        use dsq_shared::value::Value;
+        use std::collections::HashMap;
+
+        let data = vec![
+            {
+                let mut obj = HashMap::new();
+                obj.insert("name".to_string(), Value::String("Laptop".to_string()));
+                obj.insert("price".to_string(), Value::Int(1200));
+                Value::Object(obj)
+            },
+            {
+                let mut obj = HashMap::new();
+                obj.insert("name".to_string(), Value::String("Phone".to_string()));
+                obj.insert("price".to_string(), Value::Int(800));
+                Value::Object(obj)
+            },
+            {
+                let mut obj = HashMap::new();
+                obj.insert("name".to_string(), Value::String("Book".to_string()));
+                obj.insert("price".to_string(), Value::Int(20));
+                Value::Object(obj)
+            },
+        ];
+
+        let input = Value::Array(data);
+
+        let result = execute_filter("min_by(.price)", &input);
+        assert!(
+            result.is_ok(),
+            "Failed to execute min_by: {:?}",
+            result.err()
+        );
+
+        let expected = {
+            let mut obj = HashMap::new();
+            obj.insert("name".to_string(), Value::String("Book".to_string()));
+            obj.insert("price".to_string(), Value::Int(20));
+            Value::Object(obj)
+        };
+
+        assert_eq!(result.unwrap(), expected);
+    }
+
+    #[test]
+    fn test_min_by_dataframe() {
+        use dsq_shared::value::Value;
+        use polars::prelude::*;
+
+        let df = DataFrame::new(vec![
+            Series::new("name".into(), &["Laptop", "Phone", "Book", "Shoes"]).into(),
+            Series::new("price".into(), &[1200, 800, 20, 150]).into(),
+            Series::new(
+                "category".into(),
+                &["Electronics", "Electronics", "Books", "Clothing"],
+            )
+            .into(),
+        ])
+        .unwrap();
+
+        let input = Value::DataFrame(df);
+
+        let result = execute_filter("min_by(.price)", &input);
+        assert!(
+            result.is_ok(),
+            "Failed to execute min_by on DataFrame: {:?}",
+            result.err()
+        );
+
+        let expected = {
+            let mut obj = std::collections::HashMap::new();
+            obj.insert("name".to_string(), Value::String("Book".to_string()));
+            obj.insert("price".to_string(), Value::Int(20));
+            obj.insert("category".to_string(), Value::String("Books".to_string()));
+            Value::Object(obj)
+        };
+
+        assert_eq!(result.unwrap(), expected);
+    }
+
+    #[test]
     fn test_add_function() {
         use dsq_shared::value::Value;
 

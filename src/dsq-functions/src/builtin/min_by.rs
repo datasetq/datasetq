@@ -80,21 +80,24 @@ pub fn builtin_min_by(args: &[Value]) -> Result<Value> {
                     let mut min_val = f64::INFINITY;
                     for i in 0..series.len() {
                         if let Ok(val) = series.get(i) {
-                            match val {
-                                AnyValue::Int64(v) => {
-                                    let vf = v as f64;
-                                    if vf < min_val {
-                                        min_val = vf;
-                                        min_idx = i;
-                                    }
+                            let opt_num: Option<f64> = match val {
+                                AnyValue::Int8(v) => Some(v as f64),
+                                AnyValue::Int16(v) => Some(v as f64),
+                                AnyValue::Int32(v) => Some(v as f64),
+                                AnyValue::Int64(v) => Some(v as f64),
+                                AnyValue::UInt8(v) => Some(v as f64),
+                                AnyValue::UInt16(v) => Some(v as f64),
+                                AnyValue::UInt32(v) => Some(v as f64),
+                                AnyValue::UInt64(v) => Some(v as f64),
+                                AnyValue::Float32(v) => Some(v as f64),
+                                AnyValue::Float64(v) => Some(v),
+                                _ => None,
+                            };
+                            if let Some(v) = opt_num {
+                                if v < min_val {
+                                    min_val = v;
+                                    min_idx = i;
                                 }
-                                AnyValue::Float64(v) => {
-                                    if v < min_val {
-                                        min_val = v;
-                                        min_idx = i;
-                                    }
-                                }
-                                _ => {}
                             }
                         }
                     }
@@ -119,8 +122,32 @@ pub fn builtin_min_by(args: &[Value]) -> Result<Value> {
                 )))
             }
         }
+        (Value::DataFrame(df), Value::Array(key_arr)) if df.height() == key_arr.len() => {
+            if df.height() == 0 {
+                return Ok(Value::Null);
+            }
+            let mut min_idx = 0;
+            let mut min_key = &key_arr[0];
+            for (i, key) in key_arr.iter().enumerate().skip(1).take(df.height() - 1) {
+                if compare_values_for_sorting(key, min_key) == std::cmp::Ordering::Less {
+                    min_idx = i;
+                    min_key = key;
+                }
+            }
+            // Return the row as object
+            let mut row_obj = HashMap::new();
+            for col_name in df.get_column_names() {
+                if let Ok(s) = df.column(col_name) {
+                    if let Ok(val) = s.get(min_idx) {
+                        let value = value_from_any_value(val).unwrap_or(Value::Null);
+                        row_obj.insert(col_name.to_string(), value);
+                    }
+                }
+            }
+            Ok(Value::Object(row_obj))
+        }
         _ => Err(dsq_shared::error::operation_error(
-            "min_by() requires (array, array), (dataframe, string), (lazyframe, string), or (lazyframe, array)",
+            "min_by() requires (array, array), (dataframe, string), (dataframe, array), (lazyframe, string), or (lazyframe, array)",
         )),
     }
 }
