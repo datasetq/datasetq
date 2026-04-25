@@ -166,6 +166,8 @@ pub enum UnaryOperator {
     Not,
     /// Delete field (del)
     Del,
+    /// Descending sort key negation (-) — only meaningful as direct arg to sort_by
+    Neg,
 }
 
 /// Object construction entry
@@ -266,7 +268,10 @@ impl fmt::Display for Expr {
                 write!(f, ")")
             }
             Expr::BinaryOp { left, op, right } => write!(f, "{} {} {}", left, op, right),
-            Expr::UnaryOp { op, expr } => write!(f, "{} {}", op, expr),
+            Expr::UnaryOp { op, expr } => match op {
+                UnaryOperator::Neg => write!(f, "-{}", expr),
+                _ => write!(f, "{} {}", op, expr),
+            },
             Expr::Assignment { op, target, value } => write!(f, "{} {} {}", target, op, value),
             Expr::Object { pairs } => {
                 write!(f, "{{")?;
@@ -352,6 +357,7 @@ impl fmt::Display for UnaryOperator {
         match self {
             UnaryOperator::Not => write!(f, "not"),
             UnaryOperator::Del => write!(f, "del"),
+            UnaryOperator::Neg => write!(f, "-"),
         }
     }
 }

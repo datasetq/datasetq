@@ -987,6 +987,11 @@ impl FilterCompiler {
         let operation: Box<dyn Operation + Send + Sync> = match op {
             UnaryOperator::Not => Box::new(NegationOperation::new(expr_filter.operations)),
             UnaryOperator::Del => Box::new(DelOperation::new(expr_filter.operations)),
+            UnaryOperator::Neg => {
+                return Err(dsq_shared::error::operation_error(
+                    "- prefix is only valid as a direct argument to sort_by()",
+                ));
+            }
         };
 
         Ok(CompiledFilter {
@@ -1099,6 +1104,21 @@ impl FilterCompiler {
         let mut complexity = 1; // Base complexity for function call
         let mut requires_lazy = false;
 
+        // For sort_by, detect a leading - on the key expression and inject a descending flag.
+        let (args, descending) = if name == "sort_by" && args.len() == 1 {
+            if let Expr::UnaryOp {
+                op: UnaryOperator::Neg,
+                expr: inner,
+            } = &args[0]
+            {
+                (std::slice::from_ref(inner.as_ref()), true)
+            } else {
+                (args, false)
+            }
+        } else {
+            (args, false)
+        };
+
         for arg in args {
             let arg_filter = self.compile_expr(arg, ctx)?;
             variables.extend(arg_filter.variables);
@@ -1106,6 +1126,12 @@ impl FilterCompiler {
             complexity += arg_filter.complexity;
             requires_lazy |= arg_filter.requires_lazy;
             arg_filters.push(arg_filter.operations);
+        }
+
+        if name == "sort_by" {
+            arg_filters.push(vec![Box::new(LiteralOperation::new(Value::Bool(
+                descending,
+            )))]);
         }
 
         let operation = Box::new(FunctionCallOperation::new(
@@ -1660,10 +1686,17 @@ impl Operation for FunctionCallOperation {
                     .call_function("reverse", std::slice::from_ref(value))
             }
             "sort_by" => {
-                if self.arg_ops.len() != 1 {
+                // arg_ops[0] = key expression, arg_ops[1] = Bool(descending) literal
+                if self.arg_ops.len() != 2 {
                     return Err(dsq_shared::error::operation_error(
                         "sort_by() expects 1 argument",
                     ));
+                }
+
+                // Resolve the descending flag (always a literal, context value is irrelevant)
+                let mut descending_val = Value::Bool(false);
+                for op in &self.arg_ops[1] {
+                    descending_val = op.apply_with_context(&Value::Null, context)?;
                 }
 
                 // Evaluate the sort key for each element
@@ -1677,8 +1710,10 @@ impl Operation for FunctionCallOperation {
                             }
                             key_values.push(key_value);
                         }
-                        self.builtins
-                            .call_function("sort_by", &[value.clone(), Value::Array(key_values)])
+                        self.builtins.call_function(
+                            "sort_by",
+                            &[value.clone(), Value::Array(key_values), descending_val],
+                        )
                     }
                     Value::DataFrame(df) => {
                         // For DataFrame, evaluate the sort key for each row
@@ -1700,8 +1735,10 @@ impl Operation for FunctionCallOperation {
                             }
                             key_values.push(key_value);
                         }
-                        self.builtins
-                            .call_function("sort_by", &[value.clone(), Value::Array(key_values)])
+                        self.builtins.call_function(
+                            "sort_by",
+                            &[value.clone(), Value::Array(key_values), descending_val],
+                        )
                     }
                     _ => Err(dsq_shared::error::operation_error(
                         "sort_by() requires an array or DataFrame",

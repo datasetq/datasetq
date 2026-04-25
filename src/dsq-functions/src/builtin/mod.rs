@@ -65,6 +65,7 @@ pub mod iif;
 pub mod is_valid_utf8;
 pub mod join;
 pub mod keys;
+pub mod kmeans;
 pub mod last;
 pub mod least_frequent;
 pub mod length;

@@ -443,6 +443,25 @@ fn test_function_calls() {
             matches!(&args[0], Expr::FieldAccess { base, fields } if matches!(**base, Expr::Identity) && *fields == vec!["salary"])
         );
     }
+
+    // Descending sort: sort_by(-.salary) parses as sort_by(UnaryOp { Neg, .salary })
+    let filter = parse_success("sort_by(-.salary)");
+    assert!(
+        matches!(filter.expr, Expr::FunctionCall { ref name, ref args } if *name == "sort_by" && args.len() == 1)
+    );
+    if let Expr::FunctionCall { ref args, .. } = filter.expr {
+        assert!(matches!(
+            &args[0],
+            Expr::UnaryOp {
+                op: UnaryOperator::Neg,
+                expr
+            } if matches!(
+                expr.as_ref(),
+                Expr::FieldAccess { base, fields }
+                    if matches!(**base, Expr::Identity) && *fields == vec!["salary"]
+            )
+        ));
+    }
 }
 
 #[test]

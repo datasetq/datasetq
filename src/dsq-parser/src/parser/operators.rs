@@ -7,7 +7,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, multispace1},
-    combinator::{map, opt},
+    combinator::{map, not, opt, peek},
     multi::many0,
     sequence::{delimited, preceded},
     IResult, Parser,
@@ -205,6 +205,18 @@ pub(crate) fn parse_unary_expr(input: &str) -> IResult<&str, Expr> {
             ),
             |(_, _, expr)| Expr::UnaryOp {
                 op: UnaryOperator::Del,
+                expr: Box::new(expr),
+            },
+        ),
+        map(
+            (
+                preceded(ws, char('-')),
+                // Only allow unary - before field access (.) or identifier, not before digits or another -
+                not(peek(alt((nom::character::complete::digit1, tag("-"))))),
+                parse_postfix_expr,
+            ),
+            |(_, _, expr)| Expr::UnaryOp {
+                op: UnaryOperator::Neg,
                 expr: Box::new(expr),
             },
         ),

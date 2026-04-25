@@ -12,40 +12,34 @@ inventory::submit! {
 }
 
 pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
-    if args.len() != 2 {
+    if args.len() != 3 {
         return Err(dsq_shared::error::operation_error(
             "sort_by() expects 2 arguments",
         ));
     }
 
-    match (&args[0], &args[1]) {
+    let descending = matches!(args[2], Value::Bool(true));
+
+    let result = match (&args[0], &args[1]) {
         (Value::LazyFrame(lf), Value::String(_column)) => {
-            // Collect the LazyFrame and apply sort_by to it
             let df = lf.clone().collect().map_err(|e| {
                 dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
             })?;
-
-            // Recursively call with the collected DataFrame
-            builtin_sort_by(&[Value::DataFrame(df), args[1].clone()])
+            builtin_sort_by(&[Value::DataFrame(df), args[1].clone(), args[2].clone()])
         }
         (Value::LazyFrame(lf), Value::Array(_)) | (Value::LazyFrame(lf), Value::Series(_)) => {
-            // Collect the LazyFrame and apply sort_by to it
             let df = lf.clone().collect().map_err(|e| {
                 dsq_shared::error::operation_error(format!("Failed to collect LazyFrame: {}", e))
             })?;
-
-            // Recursively call with the collected DataFrame
-            builtin_sort_by(&[Value::DataFrame(df), args[1].clone()])
+            builtin_sort_by(&[Value::DataFrame(df), args[1].clone(), args[2].clone()])
         }
         (Value::Array(arr), Value::Array(key_arr)) if arr.len() == key_arr.len() => {
-            // Sort array by key array
             let mut indices: Vec<usize> = (0..arr.len()).collect();
             indices.sort_by(|&i, &j| crate::compare_values_for_sorting(&key_arr[i], &key_arr[j]));
             let sorted_arr: Vec<Value> = indices.into_iter().map(|i| arr[i].clone()).collect();
             Ok(Value::Array(sorted_arr))
         }
         (Value::Array(arr), Value::String(field)) => {
-            // Sort array of objects by field
             let mut key_arr = Vec::new();
             for item in arr {
                 if let Value::Object(obj) = item {
@@ -64,8 +58,8 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             Ok(Value::Array(sorted_arr))
         }
         (Value::DataFrame(df), Value::String(column)) => {
-            // Sort DataFrame by column name
-            match df.sort([column.as_str()], SortMultipleOptions::default()) {
+            let opts = SortMultipleOptions::default().with_order_descending(descending);
+            match df.sort([column.as_str()], opts) {
                 Ok(sorted_df) => Ok(Value::DataFrame(sorted_df)),
                 Err(e) => Err(dsq_shared::error::operation_error(format!(
                     "sort_by() failed: {}",
@@ -74,7 +68,6 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             }
         }
         (Value::DataFrame(df), Value::Array(keys)) if df.height() == keys.len() => {
-            // Sort DataFrame by the provided keys array
             let mut indices: Vec<usize> = (0..keys.len()).collect();
             indices.sort_by(|&i, &j| crate::compare_values_for_sorting(&keys[i], &keys[j]));
             let indices_u32: Vec<u32> = indices.into_iter().map(|i| i as u32).collect();
@@ -88,14 +81,13 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             }
         }
         (Value::DataFrame(df), Value::Series(series)) => {
-            // Sort DataFrame by the provided series
-            // Add the series as a temporary column, sort by it, then remove it
             let temp_col_name = "__sort_by_temp_col";
             let mut df_clone = df.clone();
             let mut temp_series = series.clone();
             temp_series.rename(temp_col_name.into());
+            let opts = SortMultipleOptions::default().with_order_descending(descending);
             match df_clone.with_column(temp_series) {
-                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], SortMultipleOptions::default()) {
+                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], opts) {
                     Ok(sorted_df) => match sorted_df.drop(temp_col_name) {
                         Ok(final_df) => Ok(Value::DataFrame(final_df)),
                         Err(e) => Err(dsq_shared::error::operation_error(format!(
@@ -115,15 +107,15 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
             }
         }
         (Value::Series(series), Value::Series(key_series)) => {
-            // Sort series by key_series
             let temp_col_name = "__sort_by_temp_col";
             let mut df = DataFrame::new(vec![series.clone().into()]).map_err(|e| {
                 dsq_shared::error::operation_error(format!("sort_by() failed to create df: {}", e))
             })?;
             let mut temp_series = key_series.clone();
             temp_series.rename(temp_col_name.into());
+            let opts = SortMultipleOptions::default().with_order_descending(descending);
             match df.with_column(temp_series) {
-                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], SortMultipleOptions::default()) {
+                Ok(df_with_sort) => match df_with_sort.sort([temp_col_name], opts) {
                     Ok(sorted_df) => match sorted_df.drop(temp_col_name) {
                         Ok(final_df) => {
                             if let Some(sorted_column) = final_df.get_columns().first() {
@@ -151,6 +143,28 @@ pub fn builtin_sort_by(args: &[Value]) -> Result<Value> {
         _ => Err(dsq_shared::error::operation_error(
             "sort_by() requires (array, array), (array, string), (dataframe, string/array/series), (lazyframe, string/array/series), or (series, series)",
         )),
+    }?;
+
+    // For array-based sorts (non-DataFrame), apply descending by reversing.
+    // DataFrame sorts use Polars' native descending flag above.
+    if descending {
+        match result {
+            Value::Array(mut arr) => {
+                arr.reverse();
+                Ok(Value::Array(arr))
+            }
+            Value::Series(series) => {
+                let len = series.len();
+                let indices: Vec<u32> = (0..len as u32).rev().collect();
+                let indices_ca = UInt32Chunked::from_vec("indices".into(), indices);
+                series.take(&indices_ca).map(Value::Series).map_err(|e| {
+                    dsq_shared::error::operation_error(format!("sort_by() reverse failed: {}", e))
+                })
+            }
+            other => Ok(other),
+        }
+    } else {
+        Ok(result)
     }
 }
 
@@ -176,7 +190,9 @@ mod tests {
             Value::String("c".to_string()),
         ];
         let key_arr = vec![Value::Int(3), Value::Int(1), Value::Int(2)];
-        let result = builtin_sort_by(&[Value::Array(arr), Value::Array(key_arr)]).unwrap();
+        let result =
+            builtin_sort_by(&[Value::Array(arr), Value::Array(key_arr), Value::Bool(false)])
+                .unwrap();
         if let Value::Array(sorted) = result {
             assert_eq!(sorted[0], Value::String("b".to_string()));
             assert_eq!(sorted[1], Value::String("c".to_string()));
@@ -205,8 +221,12 @@ mod tests {
             Value::Object(obj2),
             Value::Object(obj3),
         ];
-        let result =
-            builtin_sort_by(&[Value::Array(arr), Value::String("age".to_string())]).unwrap();
+        let result = builtin_sort_by(&[
+            Value::Array(arr),
+            Value::String("age".to_string()),
+            Value::Bool(false),
+        ])
+        .unwrap();
         if let Value::Array(sorted) = result {
             if let Value::Object(obj) = &sorted[0] {
                 assert_eq!(obj.get("name"), Some(&Value::String("Charlie".to_string())));
@@ -225,8 +245,12 @@ mod tests {
     #[test]
     fn test_sort_by_dataframe_by_column() {
         let df = create_test_dataframe();
-        let result =
-            builtin_sort_by(&[Value::DataFrame(df), Value::String("age".to_string())]).unwrap();
+        let result = builtin_sort_by(&[
+            Value::DataFrame(df),
+            Value::String("age".to_string()),
+            Value::Bool(false),
+        ])
+        .unwrap();
         if let Value::DataFrame(sorted_df) = result {
             let names = sorted_df.column("name").unwrap().str().unwrap();
             assert_eq!(names.get(0), Some("Alice"));
@@ -241,7 +265,9 @@ mod tests {
     fn test_sort_by_dataframe_by_key_array() {
         let df = create_test_dataframe();
         let keys = vec![Value::Int(30), Value::Int(25), Value::Int(35)];
-        let result = builtin_sort_by(&[Value::DataFrame(df), Value::Array(keys)]).unwrap();
+        let result =
+            builtin_sort_by(&[Value::DataFrame(df), Value::Array(keys), Value::Bool(false)])
+                .unwrap();
         if let Value::DataFrame(sorted_df) = result {
             let names = sorted_df.column("name").unwrap().str().unwrap();
             assert_eq!(names.get(0), Some("Bob"));
@@ -256,7 +282,12 @@ mod tests {
     fn test_sort_by_series_by_key_series() {
         let series = Series::new(PlSmallStr::from("values"), &[3, 1, 2]);
         let key_series = Series::new(PlSmallStr::from("keys"), &[30, 10, 20]);
-        let result = builtin_sort_by(&[Value::Series(series), Value::Series(key_series)]).unwrap();
+        let result = builtin_sort_by(&[
+            Value::Series(series),
+            Value::Series(key_series),
+            Value::Bool(false),
+        ])
+        .unwrap();
         if let Value::Series(sorted_series) = result {
             let values = sorted_series.i32().unwrap();
             assert_eq!(values.get(0), Some(1));
@@ -268,6 +299,46 @@ mod tests {
     }
 
     #[test]
+    fn test_sort_by_array_by_key_array_descending() {
+        let arr = vec![
+            Value::String("a".to_string()),
+            Value::String("b".to_string()),
+            Value::String("c".to_string()),
+        ];
+        let key_arr = vec![Value::Int(3), Value::Int(1), Value::Int(2)];
+        let result =
+            builtin_sort_by(&[Value::Array(arr), Value::Array(key_arr), Value::Bool(true)])
+                .unwrap();
+        if let Value::Array(sorted) = result {
+            // descending: key 3 > 2 > 1, so "a", "c", "b"
+            assert_eq!(sorted[0], Value::String("a".to_string()));
+            assert_eq!(sorted[1], Value::String("c".to_string()));
+            assert_eq!(sorted[2], Value::String("b".to_string()));
+        } else {
+            panic!("Expected array result");
+        }
+    }
+
+    #[test]
+    fn test_sort_by_dataframe_by_column_descending() {
+        let df = create_test_dataframe();
+        let result = builtin_sort_by(&[
+            Value::DataFrame(df),
+            Value::String("age".to_string()),
+            Value::Bool(true),
+        ])
+        .unwrap();
+        if let Value::DataFrame(sorted_df) = result {
+            let names = sorted_df.column("name").unwrap().str().unwrap();
+            assert_eq!(names.get(0), Some("Charlie"));
+            assert_eq!(names.get(1), Some("Bob"));
+            assert_eq!(names.get(2), Some("Alice"));
+        } else {
+            panic!("Expected DataFrame result");
+        }
+    }
+
+    #[test]
     fn test_sort_by_wrong_number_of_args() {
         let result = builtin_sort_by(&[Value::Array(vec![])]);
         assert!(result.is_err());
@@ -275,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_sort_by_invalid_args() {
-        let result = builtin_sort_by(&[Value::Int(1), Value::Int(2)]);
+        let result = builtin_sort_by(&[Value::Int(1), Value::Int(2), Value::Bool(false)]);
         assert!(result.is_err());
     }
 
