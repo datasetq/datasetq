@@ -54,6 +54,7 @@ num-traits = "0.2"
 
 # Technical analysis
 ta = "0.5"
+fin-primitives = { version = "4.0.1", default-features = false, features = ["indicators"] }
 
 # CLI
 clap = { version = "4.4", features = ["derive", "cargo", "env"] }
