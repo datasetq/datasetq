@@ -65,22 +65,11 @@ pub fn builtin_atr(args: &[Value]) -> Result<Value> {
                 ));
             }
 
-            use ta::indicators::AverageTrueRange;
-            use ta::Next;
+            use fin_primitives::signals::batch_f64::{atr, AtrSeed};
 
-            let mut atr_indicator = AverageTrueRange::new(period)
-                .map_err(|e| dsq_shared::error::operation_error(format!("ATR error: {}", e)))?;
-
-            let atr_values: Vec<Value> = (0..highs.len())
-                .map(|i| {
-                    let data_item = ta::DataItem::builder()
-                        .high(highs[i])
-                        .low(lows[i])
-                        .close(closes[i])
-                        .volume(0.0)
-                        .build()
-                        .unwrap();
-                    let atr_val = atr_indicator.next(&data_item);
+            let atr_values: Vec<Value> = atr(&highs, &lows, &closes, period, AtrSeed::TaLib)
+                .into_iter()
+                .map(|atr_val| {
                     if atr_val.is_finite() {
                         Value::Float(atr_val)
                     } else {

@@ -43,17 +43,10 @@ pub fn builtin_rsi(args: &[Value]) -> Result<Value> {
                 return Ok(Value::Array(vec![Value::Null; prices.len()]));
             }
 
-            use ta::indicators::RelativeStrengthIndex;
-            use ta::Next;
-
-            let mut rsi_indicator = RelativeStrengthIndex::new(period)
-                .map_err(|e| dsq_shared::error::operation_error(format!("RSI error: {}", e)))?;
-
-            let rsi_values: Vec<Value> = prices
-                .iter()
-                .map(|&price| {
-                    let rsi_val = rsi_indicator.next(price);
-                    if rsi_val.is_finite() && rsi_val >= 0.0 {
+            let rsi_values: Vec<Value> = fin_primitives::signals::batch_f64::rsi(&prices, period)
+                .into_iter()
+                .map(|rsi_val| {
+                    if rsi_val.is_finite() {
                         Value::Float(rsi_val)
                     } else {
                         Value::Null

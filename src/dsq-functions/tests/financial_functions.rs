@@ -175,3 +175,55 @@ fn test_bbands() {
         }
     }
 }
+
+fn floats(xs: &[f64]) -> Value {
+    Value::Array(xs.iter().map(|&x| Value::Float(x)).collect())
+}
+
+#[test]
+fn test_rsi_uses_wilder_smoothing() {
+    // Wilder's RSI example closes; TA-Lib and pandas-ta give 70.46 and 57.92.
+    let prices = floats(&[
+        44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61,
+        46.28, 46.28, 46.00, 46.03, 46.41, 46.22, 45.64,
+    ]);
+    let Ok(Value::Array(rsi)) = dsq_functions::builtin::rsi::builtin_rsi(&[prices, Value::Int(14)])
+    else {
+        panic!("rsi failed");
+    };
+    assert!(matches!(rsi[13], Value::Null));
+    let at = |i: usize| match rsi[i] {
+        Value::Float(f) => f,
+        _ => panic!("expected a value at {i}"),
+    };
+    assert!((at(14) - 70.464135).abs() < 1e-6);
+    assert!((at(19) - 57.915021).abs() < 1e-6);
+}
+
+#[test]
+fn test_atr_uses_wilder_smoothing() {
+    let high = floats(&[
+        48.70, 48.72, 48.90, 48.87, 48.82, 49.05, 49.20, 49.35, 49.92, 50.19, 50.12, 49.66, 49.88,
+        50.19, 50.36, 50.57,
+    ]);
+    let low = floats(&[
+        47.79, 48.14, 48.39, 48.37, 48.24, 48.64, 48.94, 48.86, 49.50, 49.87, 49.20, 48.90, 49.43,
+        49.73, 49.26, 50.09,
+    ]);
+    let close = floats(&[
+        48.16, 48.61, 48.75, 48.63, 48.74, 49.03, 49.07, 49.32, 49.91, 50.13, 49.53, 49.50, 49.75,
+        50.03, 50.31, 50.52,
+    ]);
+    let Ok(Value::Array(atr)) =
+        dsq_functions::builtin::atr::builtin_atr(&[high, low, close, Value::Int(14)])
+    else {
+        panic!("atr failed");
+    };
+    assert!(matches!(atr[13], Value::Null));
+    let at = |i: usize| match atr[i] {
+        Value::Float(f) => f,
+        _ => panic!("expected a value at {i}"),
+    };
+    assert!((at(14) - 0.567857).abs() < 1e-6);
+    assert!((at(15) - 0.561582).abs() < 1e-6);
+}
